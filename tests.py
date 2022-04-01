@@ -29,16 +29,22 @@ class TestSNG(unittest.TestCase):
         self.assertEqual(self.song.filename, "022 Die Liebe des Retters.sng")
         self.assertEqual(self.song.path, os.path.dirname(path))
 
-    def test_params_title(self):
+    def test_header_title(self):
         """
         Checks if param Title is correctly parsed
+
+        Test file that checks that no title is read with sample file which does not contain title line
+        Will also fail if empty line handling does not exist
         :return:
         """
         self.song.parse_param("#Title=Die Liebe des Retters")
         target = {'Title': 'Die Liebe des Retters'}
         self.assertEqual(self.song.header["Title"], target["Title"])
 
-    def test_params_all(self):
+        song = SNG_File('./testData/022 Die Liebe des Retters_missing_title.sng')
+        self.assertNotIn('Title', song.header)
+
+    def test_header_all(self):
         """
         Checks if all params of the test file are correctly parsed
         :return:
@@ -58,6 +64,19 @@ class TestSNG(unittest.TestCase):
             'ChurchSongID': 'FJ5/022'
         }
         self.assertDictEqual(self.song.header, target)
+
+    def test_header_space(self):
+        """
+        Test that checks that header spaces at beginning and end are omitted
+        while others still exists and might invalidate headers params
+        :return:
+        """
+        song = SNG_File('./testData/022 Die Liebe des Retters_space_header.sng')
+        self.assertIn('LangCount', song.header)
+        self.assertEquals('1', song.header['LangCount'])
+        self.assertIn('Title', song.header)
+        self.assertIn('Author', song.header)
+        self.assertNotIn('CCLI', song.header)
 
     def test_file_write(self):
         """
@@ -98,29 +117,6 @@ class TestSNG(unittest.TestCase):
             self.assertIn(marker, target)
 
         self.assertIn("Testnameblock", song.content['$$M=Testnameblock'][0])
-
-    def test_missing_title(self):
-        """
-        Test file that checks that no title is read with sample file which does not contain title line
-        Will also fail if empty line handling does not exist
-        :return:
-        """
-        song = SNG_File('./testData/022 Die Liebe des Retters_missing_title.sng')
-        self.assertNotIn('Title', song.header)
-
-    def test_space_header(self):
-        """
-        Test that checks that header spaces at beginning and end are omitted
-        while others still exists and might invalidate headers params
-        :return:
-        """
-        song = SNG_File('./testData/022 Die Liebe des Retters_space_header.sng')
-        self.assertIn('LangCount', song.header)
-        self.assertEquals('1', song.header['LangCount'])
-        self.assertIn('Title', song.header)
-        self.assertIn('Author', song.header)
-        self.assertNotIn('CCLI', song.header)
-
 
 if __name__ == '__main__':
     unittest.main()
