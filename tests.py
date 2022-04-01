@@ -118,5 +118,6 @@ class TestSNG(unittest.TestCase):
 
         self.assertIn("Testnameblock", song.content['$$M=Testnameblock'][0])
 
+
 if __name__ == '__main__':
     unittest.main()
