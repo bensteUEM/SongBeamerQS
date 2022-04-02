@@ -78,6 +78,14 @@ class TestSNG(unittest.TestCase):
         self.assertIn('Author', song.header)
         self.assertNotIn('CCLI', song.header)
 
+    def test_content_empty_block(self):
+        """
+        Test case with a SNG file that contains and empty block because it ends with ---
+        :return:
+        """
+        song = SNG_File('./testData/618 Wenn die Last der Welt.sng')
+        self.assertEqual(len(song.content), 4)
+
     def test_file_write(self):
         """
         Functions which compares the original file to the one generated after parsing

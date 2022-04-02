@@ -1,3 +1,6 @@
+from logging import debug, warn, warning
+
+
 class SNG_File:
 
     def __init__(self, filename):
@@ -27,14 +30,18 @@ class SNG_File:
                 temp_content.append([])
             else:  # Textzeile
                 temp_content[-1].append(line)
-
         file.close()
+        # Remove empty blocks e.g. EG 618 ends with ---
+        for content in temp_content:
+            if len(content) == 0:
+                temp_content.remove(content)
+
+        debug("Parsing content for: {}".format(self.filename))
         self.parse_content(temp_content)
 
     def parse_content(self, temp_content):
         current_contentname = "Unknown"  # Use Unknown if no content name is specified
         for content in temp_content:
-
             if is_verse_marker_line(content[0]):  # New named content
                 current_contentname = content[0]
                 self.content[current_contentname] = [get_verse_marker_line(content[0])]
@@ -81,6 +88,47 @@ class SNG_File:
                 line = line + "\n"
             new_file.writelines("%s\n" % line for line in result)
         new_file.close()
+
+    def contains_required_headers(self):
+        """
+        Checks if all required headers are present
+        # TODO use enum to store illegal and legal headers args
+        :return:
+        """
+        required = ['Title', 'Author', 'MUSIK', '(c)', 'CCLI', 'Songbook', 'ChurchSongID', 'VerseOrder', 'Version',
+                    'Editor']
+        result = True
+        for key in required:
+            temp = key in self.header.keys()
+            warning(key + " is missing in " + self.filename)
+            result &= temp
+
+        return result
+        # TODO TestCase for header validation
+
+        # TODO Placeholder for additional header validation
+        """
+        if int(self.header["LangCount"]) > 0:
+            required.append('ÜBERSETZUNG')  
+        nice_to_have = ['', 'ÜBERSETZUNG', 'BIBLE', 'RECHTE', 'MUSIK']  # TODO Details klären
+        """
+
+    def contains_illegal_headers(self):
+        """
+        Checks if Header Params are used in the current file which should not be present
+        :return:
+        """
+        illegal = ['TitleFormat', 'FontSize']
+        raise NotImplementedError("List of illegal headers is not complete")  # TODO illegal Header ergänzen
+        # TODO use enum to store illegal and legal headers args
+
+    def remove_illegal_header(self):
+        """
+        Function which should remove header arguments which should not be used with our default format
+
+        :return:
+        """
+        raise NotImplementedError("Removal of illegal headers is not yet implemented")  # TODO removal function
 
 
 def is_verse_marker_line(line):
