@@ -73,10 +73,25 @@ class TestSNG(unittest.TestCase):
         """
         song = SNG_File('./testData/022 Die Liebe des Retters_space_header.sng')
         self.assertIn('LangCount', song.header)
-        self.assertEquals('1', song.header['LangCount'])
+        self.assertEqual('1', song.header['LangCount'])
         self.assertIn('Title', song.header)
         self.assertIn('Author', song.header)
         self.assertNotIn('CCLI', song.header)
+
+    def test_header_title(self):
+        song = SNG_File('./testData/022 Die Liebe des Retters_missing_title.sng')
+        song.fix_title()
+        self.assertEqual("Die Liebe des Retters_missing_title", song.header['Title'])
+
+    def test_header_songbook(self):
+        song = SNG_File('./testData/618 Wenn die Last der Welt.sng', songbook_prefix="test")
+        song.fix_songbook()
+        self.assertEqual("test 618", song.header['Songbook'])
+        self.assertEqual("test 618", song.header['ChurchSongID'])
+
+        song = SNG_File('./testData/571_1 Ubi caritas et amor - Wo die Liebe wohnt.sng')
+        song.fix_songbook()
+        self.assertEqual("", "")
 
     def test_content_empty_block(self):
         """
@@ -91,7 +106,7 @@ class TestSNG(unittest.TestCase):
         Functions which compares the original file to the one generated after parsing
         :return:
         """
-        self.song.write_file("_test")
+        self.song.write_file("_test", False)
 
         original_file = open('./testData/022 Die Liebe des Retters.sng', 'r', encoding='iso-8859-1')
         new_file = open('./testData/022 Die Liebe des Retters_test.sng', 'r', encoding='iso-8859-1')
