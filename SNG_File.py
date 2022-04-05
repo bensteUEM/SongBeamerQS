@@ -1,9 +1,12 @@
-from logging import debug, warn, warning
+from logging import debug, warning
+
+import SNG_DEFAULTS
+from SNG_DEFAULTS import SngDefaultHeader, SngIllegalHeader
 
 
 class SNG_File:
 
-    def __init__(self, filename):
+    def __init__(self, filename, songbook_prefix=""):
         """
         Default Construction for a SNG File and it's params
         :param filename: filename with optional directory which should be opened
@@ -13,6 +16,7 @@ class SNG_File:
         self.path = os.path.dirname(filename)
         self.header = {}
         self.content = {}
+        self.songbook_prefix = songbook_prefix
         self.parse_file(filename)
 
     def parse_file(self, filename):
@@ -65,14 +69,17 @@ class SNG_File:
             value = line_split[1]
             self.header[key] = value
 
-    def write_file(self, suffix="_new"):
+    def write_file(self, suffix="_new", editor_change=True):
         """
         Function used to write a processed SNG_File to disk
         :param suffix: suffix to append to file name - default ist _new, test should use _test overwrite by ""
+        :param editor_change: True if Editor String should be overwritten
         :return:
         """
         filename = self.path + '/' + self.filename[:-4] + suffix + ".sng"
         new_file = open(filename, 'w', encoding='iso-8859-1')
+        if editor_change is True:
+            self.header["Editor"] = SngDefaultHeader["Editor"]
         for key, value in self.header.items():
             new_file.write("#" + key + "=" + value + "\n")
 
@@ -113,22 +120,45 @@ class SNG_File:
         nice_to_have = ['', 'ÜBERSETZUNG', 'BIBLE', 'RECHTE', 'MUSIK']  # TODO Details klären
         """
 
-    def contains_illegal_headers(self):
+    def remove_illegal_headers(self):
         """
-        Checks if Header Params are used in the current file which should not be present
+        removes header params in the current file which should not be present
+        Does not write to disk!
         :return:
         """
-        illegal = ['TitleFormat', 'FontSize']
-        raise NotImplementedError("List of illegal headers is not complete")  # TODO illegal Header ergänzen
-        # TODO use enum to store illegal and legal headers args
 
-    def remove_illegal_header(self):
-        """
-        Function which should remove header arguments which should not be used with our default format
+        for key in self.header.keys():
+            if key in SngIllegalHeader.keys():
+                self.header.pop(key)
 
-        :return:
+    def fix_title(self):
         """
-        raise NotImplementedError("Removal of illegal headers is not yet implemented")  # TODO removal function
+        Helper function which checks the current title and removes and space separated block which contains
+        * only SngTitleNumberChars
+        * any SngSongBookPrefix
+        :return: None - item itself is fixed
+        """
+
+        title_as_list = self.filename[:-4].split(" ")
+
+        for part in title_as_list:
+            if all(digit.upper() in SNG_DEFAULTS.SngTitleNumberChars for digit in part) \
+                    or any(filter_t in part.upper() for filter_t in SNG_DEFAULTS.SngSongBookPrefix):
+                title_as_list.remove(part)
+        self.header['Title'] = " ".join(title_as_list)
+
+    def fix_songbook(self):
+        """
+        Function used to try to fix the songbook and churchsong ID
+        :param songbook_prefix: ID which should be used for this file
+        :return: None
+        """
+        number = self.filename.split(" ")[0]
+        if all(digit in SNG_DEFAULTS.SngTitleNumberChars for digit in number):
+            self.header["Songbook"] = self.songbook_prefix + ' ' + number
+            self.header["ChurchSongID"] = self.songbook_prefix + ' ' + number
+        else:
+            warning('Invalid number format in Filename - can\'t fix songbook of ' + self.filename)
 
 
 def is_verse_marker_line(line):
