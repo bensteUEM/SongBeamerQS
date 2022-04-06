@@ -99,13 +99,10 @@ class SNG_File:
     def contains_required_headers(self):
         """
         Checks if all required headers are present
-        # TODO use enum to store illegal and legal headers args
         :return:
         """
-        required = ['Title', 'Author', 'MUSIK', '(c)', 'CCLI', 'Songbook', 'ChurchSongID', 'VerseOrder', 'Version',
-                    'Editor']
         result = True
-        for key in required:
+        for key in SNG_DEFAULTS.SngRequiredHeader:
             temp = key in self.header.keys()
             warning(key + " is missing in " + self.filename)
             result &= temp
@@ -117,7 +114,7 @@ class SNG_File:
         """
         if int(self.header["LangCount"]) > 0:
             required.append('ÜBERSETZUNG')  
-        nice_to_have = ['', 'ÜBERSETZUNG', 'BIBLE', 'RECHTE', 'MUSIK']  # TODO Details klären
+        nice_to_have = SNG_DEFAULTS.SngOptionalHeader  # TODO Details klären
         """
 
     def remove_illegal_headers(self):
@@ -128,7 +125,7 @@ class SNG_File:
         """
 
         for key in self.header.keys():
-            if key in SngIllegalHeader.keys():
+            if key in SngIllegalHeader:
                 self.header.pop(key)
 
     def fix_title(self):
