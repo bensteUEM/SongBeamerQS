@@ -110,10 +110,19 @@ class TestSNG(unittest.TestCase):
         self.assertEqual(True, check[0], song.filename + ' should contain ' + str(check[1]))
 
         song = SNG_File('./testData/Holy Holy Holy.sng')
+        song.fix_songbook()
         check = song.contains_required_headers()  # TODO check that ChurchSong can be NULL in SNG without removal
         self.assertEqual(True, check[0], song.filename + ' should contain ' + str(check[1]))
 
     def test_header_songbook(self):
+        """
+        Checks that sng prefix is correctly used when reparing songbook prefix
+        1. test prefix
+        2. EG prefix with special number xxx.x
+        3. no prefix
+        4. testprefix without number should trigger warning
+        :return:
+        """
         song = SNG_File('./testData/618 Wenn die Last der Welt.sng', songbook_prefix="test")
         song.fix_songbook()
         self.assertEqual("test 618", song.header['Songbook'])
@@ -122,6 +131,16 @@ class TestSNG(unittest.TestCase):
         song = SNG_File('./testData/571.1 Ubi caritas et amor - Wo die Liebe wohnt.sng', songbook_prefix="EG")
         song.fix_songbook()
         self.assertEqual("EG 571.1", song.header['Songbook'])
+
+        song = SNG_File('./testData/Holy Holy Holy.sng')
+        song.fix_songbook()
+        self.assertEqual(" ", song.header['Songbook'])
+
+        with self.assertLogs(level='WARNING') as cm:
+            song = SNG_File('./testData/Holy Holy Holy.sng', "testprefix")
+            song.fix_songbook()
+        self.assertEqual(cm.output,
+                         ['WARNING:root:Invalid number format in Filename - can\'t fix songbook of ' + song.filename])
 
     def test_content_empty_block(self):
         """

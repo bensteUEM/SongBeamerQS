@@ -146,15 +146,24 @@ class SNG_File:
     def fix_songbook(self):
         """
         Function used to try to fix the songbook and churchsong ID
+        gets first space separated block of filename as reference number
+        checks if this part contains only numbers and applies prefix + number for new Songbook and ChurchSongID
+        otherwise writes an empty Songbook and ChurchSongID if no prefix
+        or loggs error for invalid format if prefix is given but no matching number found
         :return: None
         """
         number = self.filename.split(" ")[0]
-        # TODO handle case in which no number is present
+
+        # if
         if all(digit in SNG_DEFAULTS.SngTitleNumberChars for digit in number):
             self.header["Songbook"] = self.songbook_prefix + ' ' + number
             self.header["ChurchSongID"] = self.songbook_prefix + ' ' + number
         else:
-            logging.warning('Invalid number format in Filename - can\'t fix songbook of ' + self.filename)
+            if self.songbook_prefix == '':
+                self.header["Songbook"] = ' '
+                self.header["ChurchSongID"] = ' '
+            else:
+                logging.warning('Invalid number format in Filename - can\'t fix songbook of ' + self.filename)
 
 
 def is_verse_marker_line(line):
