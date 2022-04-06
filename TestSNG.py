@@ -1,3 +1,4 @@
+import logging
 import os.path
 import unittest
 
@@ -79,9 +80,38 @@ class TestSNG(unittest.TestCase):
         self.assertNotIn('CCLI', song.header)
 
     def test_header_title(self):
+        """
+        Checks that header title is fixed for one sample file
+        :return:
+        """
         song = SNG_File('./testData/022 Die Liebe des Retters_missing_title.sng')
+        self.assertNotIn("Title", song.header)
         song.fix_title()
         self.assertEqual("Die Liebe des Retters_missing_title", song.header['Title'])
+
+    def test_header_complete(self):
+        """
+        Checks that all required headers are available for the song
+        using 3 samples
+        * with missing title
+        * complete set
+        * file with translation
+        Info should be logged in case of missing headers
+        :return:
+        """
+        song = SNG_File('./testData/022 Die Liebe des Retters_missing_title.sng')
+        with self.assertLogs(level='INFO') as cm:
+            song.contains_required_headers()
+        self.assertEqual(cm.output, ['INFO:root:Missing required headers in (022 Die Liebe des '
+                                     "Retters_missing_title.sng) ['Title']"])
+
+        song = SNG_File('./testData/022 Die Liebe des Retters.sng')
+        check = song.contains_required_headers()
+        self.assertEqual(True, check[0], song.filename + ' should contain ' + str(check[1]))
+
+        song = SNG_File('./testData/Holy Holy Holy.sng')
+        check = song.contains_required_headers()  # TODO check that ChurchSong can be NULL in SNG without removal
+        self.assertEqual(True, check[0], song.filename + ' should contain ' + str(check[1]))
 
     def test_header_songbook(self):
         song = SNG_File('./testData/618 Wenn die Last der Welt.sng', songbook_prefix="test")
@@ -89,9 +119,9 @@ class TestSNG(unittest.TestCase):
         self.assertEqual("test 618", song.header['Songbook'])
         self.assertEqual("test 618", song.header['ChurchSongID'])
 
-        song = SNG_File('./testData/571_1 Ubi caritas et amor - Wo die Liebe wohnt.sng')
+        song = SNG_File('./testData/571.1 Ubi caritas et amor - Wo die Liebe wohnt.sng', songbook_prefix="EG")
         song.fix_songbook()
-        self.assertEqual("", "")
+        self.assertEqual("EG 571.1", song.header['Songbook'])
 
     def test_content_empty_block(self):
         """

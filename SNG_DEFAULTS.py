@@ -9,7 +9,6 @@ SngDefaultHeader = {
 SngRequiredHeader = [
     'Title',
     'Author',
-    'MUSIK',
     '(c)',
     'CCLI',
     'Songbook',
@@ -20,10 +19,10 @@ SngRequiredHeader = [
 ]
 
 SngOptionalHeader = [
-    'ÜBERSETZUNG',
-    'BIBLE',
-    'RECHTE',
-    'MUSIK'
+    'MUSIK',  # TODO left out in many cases when identical to Author ...
+    'Translation',
+    'BIBLE',  # TODO check spelling
+    'RECHTE',  # TODO check spelling
 ]
 
 SngIllegalHeader = [

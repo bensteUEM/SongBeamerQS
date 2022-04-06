@@ -1,4 +1,4 @@
-from logging import debug, warning
+import logging
 
 import SNG_DEFAULTS
 from SNG_DEFAULTS import SngDefaultHeader, SngIllegalHeader
@@ -40,7 +40,7 @@ class SNG_File:
             if len(content) == 0:
                 temp_content.remove(content)
 
-        debug("Parsing content for: {}".format(self.filename))
+        logging.debug("Parsing content for: {}".format(self.filename))
         self.parse_content(temp_content)
 
     def parse_content(self, temp_content):
@@ -91,31 +91,30 @@ class SNG_File:
                         result.append("---")
                     if len(slide) != 0:
                         result.extend(slide)
-            for line in result:
-                line = line + "\n"
             new_file.writelines("%s\n" % line for line in result)
         new_file.close()
 
     def contains_required_headers(self):
         """
         Checks if all required headers are present
-        :return:
+        Logs info in case something is missing and returns respective list of keys
+        :return: bool, list of missing keys
         """
-        result = True
+        missing = []
         for key in SNG_DEFAULTS.SngRequiredHeader:
-            temp = key in self.header.keys()
-            warning(key + " is missing in " + self.filename)
-            result &= temp
+            if not key in self.header.keys():
+                missing.append(key)
 
-        return result
-        # TODO TestCase for header validation
+        if 'LangCount' in self.header:
+            if int(self.header['LangCount']) > 1:
+                if 'Translation' not in self.header.keys():
+                    missing.append('Translation')
+                    # TODO add test case
 
-        # TODO Placeholder for additional header validation
-        """
-        if int(self.header["LangCount"]) > 0:
-            required.append('ÜBERSETZUNG')  
-        nice_to_have = SNG_DEFAULTS.SngOptionalHeader  # TODO Details klären
-        """
+        result = len(missing) == 0
+        logging.info('Missing required headers in (' + self.filename + ') ' + str(missing))
+
+        return result, missing
 
     def remove_illegal_headers(self):
         """
@@ -147,15 +146,15 @@ class SNG_File:
     def fix_songbook(self):
         """
         Function used to try to fix the songbook and churchsong ID
-        :param songbook_prefix: ID which should be used for this file
         :return: None
         """
         number = self.filename.split(" ")[0]
+        # TODO handle case in which no number is present
         if all(digit in SNG_DEFAULTS.SngTitleNumberChars for digit in number):
             self.header["Songbook"] = self.songbook_prefix + ' ' + number
             self.header["ChurchSongID"] = self.songbook_prefix + ' ' + number
         else:
-            warning('Invalid number format in Filename - can\'t fix songbook of ' + self.filename)
+            logging.warning('Invalid number format in Filename - can\'t fix songbook of ' + self.filename)
 
 
 def is_verse_marker_line(line):
