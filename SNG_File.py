@@ -111,6 +111,8 @@ class SNG_File:
                     missing.append('Translation')
                     # TODO add test case
 
+                    # TODO add TitleLang2 validation
+
         result = len(missing) == 0
         logging.info('Missing required headers in (' + self.filename + ') ' + str(missing))
 
@@ -159,12 +161,16 @@ class SNG_File:
             self.header["Songbook"] = self.songbook_prefix + ' ' + number
             self.header["ChurchSongID"] = self.songbook_prefix + ' ' + number
         else:
-            if self.songbook_prefix == '':
+            if self.songbook_prefix in SNG_DEFAULTS.KnownSongBookPrefix:
+                logging.warning('Invalid number format in Filename - can\'t fix songbook of ' + self.filename)
+            elif not self.songbook_prefix == '':
+                logging.warning('Unknown Songbook Prefix - can\'t fix songbook of ' + self.filename)
+                if "Songbook" not in self.header.keys():
+                    self.header["Songbook"] = self.songbook_prefix + ' ???'
+                    self.header["ChurchSongID"] = self.songbook_prefix + ' ???'
+            else:
                 self.header["Songbook"] = ' '
                 self.header["ChurchSongID"] = ' '
-            else:
-                logging.warning('Invalid number format in Filename - can\'t fix songbook of ' + self.filename)
-
 
 def is_verse_marker_line(line):
     """
