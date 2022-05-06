@@ -118,45 +118,71 @@ def validate_songbook(df_to_change, fix=False):
     return songbook_invalid
 
 
-# TODO Ideensammlung
-# TODO check max number of chars per line
-# TODo make blocks of 4 lines only
+def read_baiersbronn_songs_to_df():
+    """
+    Default method which reads all known directories used at Evangelische Kirchengemeinde Baiersbronn
+    :return:
+    """
+
+    songs = []
+    """
+    For Testing only!
+    dirname = 'testData/'
+    dirprefix = 'TEST'
+    songs = parse_sng_from_directory(dirname, dirprefix)
+    """
+
+    for key, value in SNG_DEFAULTS.KnownFolderWithPrefix.items():
+        dirname = SNG_DEFAULTS.KnownDirectory + key
+        dirprefix = value
+        songs.extend(parse_sng_from_directory(dirname, dirprefix))
+
+    df = pd.DataFrame(songs, columns=["SNG_File"])
+    for index, value in df['SNG_File'].items():
+        df.loc[(index, 'filename')] = value.filename
+        df.loc[(index, 'path')] = value.path
+    return df
+
+
+def generate_title_column(df_to_change):
+    """
+    method used to generate the 'Title' column for all items in a df based on the headers
+    :param df_to_change: Dataframe which should me used
+    :return:
+    """
+
+    for index, value in df_to_change['SNG_File'].items():
+        if 'Title' in value.header.keys():
+            df_to_change.loc[(index, 'Title')] = value.header['Title']
+
+
+def generate_background_image_column(df_to_change):
+    """
+    method used to generate the 'BackgroundImage' column for all items in a df based on the headers
+    :param df_to_change: Dataframe which should me used
+    :return:
+    """
+
+    for index, value in df_to_change['SNG_File'].items():
+        if 'BackgroundImage' in value.header.keys():
+            df_to_change.loc[(index, 'BackgroundImage')] = value.header['BackgroundImage']
 
 
 if __name__ == '__main__':
-
     logging.basicConfig(filename='main.log', encoding='utf-8',
                         format="%(asctime)s %(name)-10s %(levelname)-8s %(message)s",
                         level=logging.DEBUG)
     logging.info("Excecuting Main RUN")
 
-    folder = list(SNG_DEFAULTS.KnownFolderWithPrefix.keys())[1]
-    dirname = SNG_DEFAULTS.KnownDirectory + folder
-    dirprefix = SNG_DEFAULTS.KnownFolderWithPrefix[folder]
+    df = read_baiersbronn_songs_to_df()
+    generate_title_column(df)
+    generate_background_image_column(df)
 
-    """
-    For Testing only!
-    dirname = 'testData/'
-    dirprefix = 'TEST'
-    """
+    # TODO Ideensammlung
+    # TODO check max number of chars per line
+    # TODo make blocks of 4 lines only
 
-    songs = parse_sng_from_directory(dirname, dirprefix)
-
-    for song in songs:
-        """
-        if not song.contains_required_headers():
-            logging.warning(song.filename + " is missing headers - following exist:(" + str(song.header.keys()) + ")")
-        """
-
-    df = pd.DataFrame(songs, columns=["SNG_File"])
-
-    for index, value in df['SNG_File'].items():
-        df.loc[(index, 'filename')] = value.filename
-        df.loc[(index, 'path')] = value.path
-        if 'Title' in value.header.keys():
-            df.loc[(index, 'Title')] = value.header['Title']
-
-    validate_titles(df, True)
-    validate_songbook(df, True)
-
-    logging.info('Method finished')
+    # validate_titles(df, True)
+    # validate_songbook(df, True)
+    df.to_csv("Main_DF_Export.csv")
+    logging.info('Main Method finished')
