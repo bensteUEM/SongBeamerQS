@@ -1,4 +1,3 @@
-import logging
 import os.path
 import unittest
 
@@ -19,6 +18,7 @@ class TestSNG(unittest.TestCase):
         """
         super(TestSNG, self).__init__(*args, **kwargs)
         self.song = SNG_File("./testData/022 Die Liebe des Retters.sng")
+        # #TODO Cleanup - check where used and localize for test
 
     def test_filename(self):
         """
@@ -27,8 +27,9 @@ class TestSNG(unittest.TestCase):
         """
         path = "./testData/"
         filename = "022 Die Liebe des Retters.sng"
-        self.assertEqual(self.song.filename, "022 Die Liebe des Retters.sng")
-        self.assertEqual(self.song.path, os.path.dirname(path))
+        song = SNG_File(path + filename)
+        self.assertEqual(song.filename, filename)
+        self.assertEqual(song.path, os.path.dirname(path))
 
     def test_header_title(self):
         """
@@ -58,10 +59,12 @@ class TestSNG(unittest.TestCase):
             '(c)': '2010 Outbreakband Musik (Verwaltet von Gerth Medien)',
             'Editor': 'SongBeamer 5.15',
             'Version': '3',
-            'VerseOrder': 'Intro,Strophe 1,Strophe 2,Refrain 1,Refrain 1,Strophe 2,Refrain 1,Refrain 1,Bridge,Bridge,Bridge,Bridge,Intro,Refrain 1,Refrain 1,Refrain 1,Refrain 1,STOP',
-            'BackgroundImage': 'Menschen\himmel-und-erde.jpg',
+            'VerseOrder': 'Intro,Strophe 1,Strophe 2,Refrain 1,Refrain 1,Strophe 2,Refrain 1,Refrain 1' +
+                          ',Bridge,Bridge,Bridge,Bridge,Intro,Refrain 1,Refrain 1,Refrain 1,Refrain 1,STOP',
+            'BackgroundImage': r'Menschen\himmel-und-erde.jpg',
             'Songbook': 'FJ5/022',
-            'Comments': '77u/Rm9saWVucmVpaGVuZm9sZ2UgbmFjaCBvZmZpemllbGxlciBBdWZuYWhtZSwgaW4gQmFpZXJzYnJvbm4gZ2dmLiBrw7xyemVyIHVuZCBtaXQgTXVzaWt0ZWFtIGFienVzdGltbWVu',
+            'Comments': '77u/Rm9saWVucmVpaGVuZm9sZ2UgbmFjaCBvZmZpemllbGxlciBBdWZuYWhtZSwgaW4gQmFpZXJzYnJvb' +
+                        'm4gZ2dmLiBrw7xyemVyIHVuZCBtaXQgTXVzaWt0ZWFtIGFienVzdGltbWVu',
             'ChurchSongID': 'FJ5/022'
         }
         self.assertDictEqual(self.song.header, target)
@@ -137,7 +140,7 @@ class TestSNG(unittest.TestCase):
         self.assertEqual(" ", song.header['Songbook'])
 
         with self.assertLogs(level='WARNING') as cm:
-            song = SNG_File('./testData/Holy Holy Holy.sng', "testprefix")
+            song = SNG_File('./testData/Holy Holy Holy.sng', "test")
             song.fix_songbook()
         self.assertEqual(cm.output,
                          ['WARNING:root:Invalid number format in Filename - can\'t fix songbook of ' + song.filename])
