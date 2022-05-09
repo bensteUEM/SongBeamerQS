@@ -26,7 +26,7 @@ class SNG_File:
             line = line.strip()  # clean spaces
             if len(line) == 0:  # Skip empty row
                 continue
-            if line[0] == "#":  # Tech Param for Header
+            if line[0] == "#" and line[1] != "#":  # Tech Param for Header
                 self.parse_param(line)
                 continue
 
