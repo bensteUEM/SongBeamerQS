@@ -193,6 +193,20 @@ class TestSNG(unittest.TestCase):
 
         self.assertIn("Testnameblock", song.content['$$M=Testnameblock'][0])
 
+    def test_missing_block(self):
+        """
+        Checks that a file which does not have any section headers can be read without error
+        :return:
+        """
+
+        # Special Exceptions
+        song = SNG_File('./testData/764 Test Ohne Versmarker.sng')
+
+        self.assertEqual(len(song.content.keys()), 1)
+        self.assertEqual(len(song.content["Unknown"]), 5)
+        self.assertEqual(len(song.content["Unknown"][5]), 2)
+        #TODO complete test case for missing block check
+
 
 if __name__ == '__main__':
     unittest.main()
