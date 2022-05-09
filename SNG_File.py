@@ -29,7 +29,6 @@ class SNG_File:
             if line[0] == "#" and line[1] != "#":  # Tech Param for Header
                 self.parse_param(line)
                 continue
-
             if line == "---":  # For each new Slide within a block add new list and increase index
                 temp_content.append([])
             else:  # Textzeile
@@ -44,17 +43,29 @@ class SNG_File:
         self.parse_content(temp_content)
 
     def parse_content(self, temp_content):
-        current_contentname = "Unknown"  # Use Unknown if no content name is specified
+        """
+        Iterates through a list of slides
+        in case a versemarker is detected a new dict items with the name of the block is created
+        in case there is no previous current content name a new "Unknown" block is created and a new list started
+        otherwise the lines are added to the previously set content block
+        :param temp_content: List of Textline lists preferably each first str entry should be verse marker
+        :return:
+        """
+        current_contentname = None  # Use Unknown if no content name is specified
         for content in temp_content:
             if is_verse_marker_line(content[0]):  # New named content
                 current_contentname = content[0]
                 self.content[current_contentname] = [get_verse_marker_line(content[0])]
                 self.content[current_contentname].append(content[1:])
-            elif content[0] not in self.content.keys() and current_contentname == 'Unknown':  # New unnamed content
-                self.content[current_contentname] = [[current_contentname]]
-                self.content[current_contentname].append(content)
+            elif current_contentname is None:  # New unnamed content
+                current_contentname = "Unknown"
+                self.content["Unknown"] = [["Unknown"]]
+                self.content["Unknown"].append(content)
+
             else:  # regular line for existing content
                 self.content[current_contentname].append(content)
+
+        #TODO need to check that "Unknown" exists in Verse Order
 
     def parse_param(self, line):
         """
@@ -171,6 +182,7 @@ class SNG_File:
             else:
                 self.header["Songbook"] = ' '
                 self.header["ChurchSongID"] = ' '
+
 
 def is_verse_marker_line(line):
     """

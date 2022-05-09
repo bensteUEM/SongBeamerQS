@@ -206,7 +206,7 @@ class TestSNG(unittest.TestCase):
         song = SNG_File('./testData/764 Test Ohne Versmarker.sng')
 
         self.assertEqual(len(song.content.keys()), 1)
-        self.assertEqual(len(song.content["Unknown"]), 5)
+        self.assertEqual(len(song.content["Unknown"]), 1+5)
         self.assertEqual(len(song.content["Unknown"][5]), 2)
         # TODO complete test case for missing block check
 
