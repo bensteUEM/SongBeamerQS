@@ -17,8 +17,6 @@ class TestSNG(unittest.TestCase):
         :param kwargs:
         """
         super(TestSNG, self).__init__(*args, **kwargs)
-        self.song = SNG_File("./testData/022 Die Liebe des Retters.sng")
-        # #TODO Cleanup - check where used and localize for test
 
     def test_filename(self):
         """
@@ -39,18 +37,21 @@ class TestSNG(unittest.TestCase):
         Will also fail if empty line handling does not exist
         :return:
         """
-        self.song.parse_param("#Title=Die Liebe des Retters")
-        target = {'Title': 'Die Liebe des Retters'}
-        self.assertEqual(self.song.header["Title"], target["Title"])
+        song = SNG_File("./testData/022 Die Liebe des Retters.sng")
+        song.parse_param("#Title=Die Liebe des Retters")
 
-        song = SNG_File('./testData/022 Die Liebe des Retters_missing_title.sng')
-        self.assertNotIn('Title', song.header)
+        target = {'Title': 'Die Liebe des Retters'}
+        self.assertEqual(song.header["Title"], target["Title"])
+
+        song2 = SNG_File('./testData/022 Die Liebe des Retters_missing_title.sng')
+        self.assertNotIn('Title', song2.header)
 
     def test_header_all(self):
         """
         Checks if all params of the test file are correctly parsed
         :return:
         """
+        song = SNG_File("./testData/022 Die Liebe des Retters.sng")
         target = {
             'LangCount': '1',
             'Title': 'Die Liebe des Retters',
@@ -67,7 +68,7 @@ class TestSNG(unittest.TestCase):
                         'm4gZ2dmLiBrw7xyemVyIHVuZCBtaXQgTXVzaWt0ZWFtIGFienVzdGltbWVu',
             'ChurchSongID': 'FJ5/022'
         }
-        self.assertDictEqual(self.song.header, target)
+        self.assertDictEqual(song.header, target)
 
     def test_header_space(self):
         """
@@ -158,7 +159,8 @@ class TestSNG(unittest.TestCase):
         Functions which compares the original file to the one generated after parsing
         :return:
         """
-        self.song.write_file("_test", False)
+        song = SNG_File("./testData/022 Die Liebe des Retters.sng")
+        song.write_file("_test", False)
 
         original_file = open('./testData/022 Die Liebe des Retters.sng', 'r', encoding='iso-8859-1')
         new_file = open('./testData/022 Die Liebe des Retters_test.sng', 'r', encoding='iso-8859-1')
@@ -177,21 +179,22 @@ class TestSNG(unittest.TestCase):
         Test to check if a content without proper label is replaced as unknown and custom content header is read
         :return:
         """
+        song = SNG_File("./testData/022 Die Liebe des Retters.sng")
         target = ['Intro', 'Strophe 1', 'Refrain 1', 'Strophe 2', 'Bridge']
-        markers = self.song.content.keys()
-
-        for marker in markers:
-            self.assertIn(marker, target)
-
-        # Special Exceptions
-        song = SNG_File('./testData/022 Die Liebe des Retters_missing_block.sng')
-        target = ['Unknown', '$$M=Testnameblock', 'Refrain 1', 'Strophe 2', 'Bridge']
         markers = song.content.keys()
 
         for marker in markers:
             self.assertIn(marker, target)
 
-        self.assertIn("Testnameblock", song.content['$$M=Testnameblock'][0])
+        # Special Exceptions
+        song2 = SNG_File('./testData/022 Die Liebe des Retters_missing_block.sng')
+        target = ['Unknown', '$$M=Testnameblock', 'Refrain 1', 'Strophe 2', 'Bridge']
+        markers = song2.content.keys()
+
+        for marker in markers:
+            self.assertIn(marker, target)
+
+        self.assertIn("Testnameblock", song2.content['$$M=Testnameblock'][0])
 
     def test_missing_block(self):
         """
@@ -205,7 +208,7 @@ class TestSNG(unittest.TestCase):
         self.assertEqual(len(song.content.keys()), 1)
         self.assertEqual(len(song.content["Unknown"]), 5)
         self.assertEqual(len(song.content["Unknown"][5]), 2)
-        #TODO complete test case for missing block check
+        # TODO complete test case for missing block check
 
 
 if __name__ == '__main__':
