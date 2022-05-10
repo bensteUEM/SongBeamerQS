@@ -17,9 +17,6 @@ def parse_sng_from_directory(directory, songbook_prefix=""):
 
     result = []
     directory_list = filter(lambda x: x.endswith((".sng", ".SNG", ".Sng")), os.listdir(directory))
-    for filename in directory_list:
-        if ".sng" not in filename:
-            directory_list.remove(filename)
     for sng in directory_list:
         current_song = SNG_File(directory + '/' + sng, songbook_prefix)
         if "Editor" not in current_song.header.keys():
