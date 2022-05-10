@@ -16,7 +16,7 @@ def parse_sng_from_directory(directory, songbook_prefix=""):
     logging.info('With Prefix: ' + songbook_prefix)
 
     result = []
-    directory_list = os.listdir(directory)
+    directory_list = filter(lambda x: x.endswith((".sng", ".SNG", ".Sng")), os.listdir(directory))
     for filename in directory_list:
         if ".sng" not in filename:
             directory_list.remove(filename)
@@ -24,7 +24,7 @@ def parse_sng_from_directory(directory, songbook_prefix=""):
         current_song = SNG_File(directory + '/' + sng, songbook_prefix)
         if "Editor" not in current_song.header.keys():
             current_song.header["Editor"] = SNG_DEFAULTS.SngDefaultHeader["Editor"]
-            logging.info("Added missing Editor for:" + value.filename)
+            logging.info("Added missing Editor for:" + sng.filename)
         result.append(current_song)
     return result
 
