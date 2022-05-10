@@ -1,3 +1,4 @@
+import csv
 import logging
 import os.path
 import pandas as pd
@@ -181,5 +182,5 @@ if __name__ == '__main__':
 
     # validate_titles(df, True)
     # validate_songbook(df, True)
-    df.to_csv("Main_DF_Export.csv")
+    df.to_csv("Main_DF_Export.csv", quoting=csv.QUOTE_NONNUMERIC)
     logging.info('Main Method finished')
