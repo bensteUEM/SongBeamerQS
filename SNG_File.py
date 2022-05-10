@@ -56,7 +56,9 @@ class SNG_File:
         """
         current_contentname = None  # Use Unknown if no content name is specified
         for content in temp_content:
-            if is_verse_marker_line(content[0]):  # New named content
+            if len(content) == 0: # Skip in case there is no content
+                continue
+            elif is_verse_marker_line(content[0]):  # New named content
                 current_contentname = content[0]
                 self.content[current_contentname] = [get_verse_marker_line(content[0])]
                 self.content[current_contentname].append(content[1:])

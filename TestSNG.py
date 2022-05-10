@@ -230,5 +230,23 @@ class TestSNG(unittest.TestCase):
                              ' of file ./testData/726 Psalm 047.sng'
                          ])
 
+    def test_broken_file_encoding_repaired(self):
+        """
+        Checks that errrors are logged for sample file which is fixed in encoding
+        :return:
+        """
+
+        song = SNG_File('./testData/726 Psalm 047_fixed.sng')
+        self.assertEqual(song.filename, '726 Psalm 047_fixed.sng')
+
+    def test_short_file(self):
+        """
+        Checks a specific SNG file which contains a header only and no content
+        :return:
+        """
+
+        song = SNG_File('./testData/Lizenz_Lied.sng')
+        self.assertEqual(song.filename, 'Lizenz_Lied.sng')
+
     if __name__ == '__main__':
         unittest.main()
