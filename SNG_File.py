@@ -68,7 +68,7 @@ class SNG_File:
             else:  # regular line for existing content
                 self.content[current_contentname].append(content)
 
-        # TODO need to check that "Unknown" exists in Verse Order
+        # TODO need to check that "Unknown" exists in Verse Order or no Verse Order
 
     def parse_param(self, line):
         """

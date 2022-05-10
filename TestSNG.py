@@ -226,9 +226,9 @@ class TestSNG(unittest.TestCase):
 
         self.assertEqual(cm.output,
                          [
-                             'ERROR:root:Something is wrong with the line ï»¿#LangCount=2'+
+                             'ERROR:root:Something is wrong with the line ï»¿#LangCount=2' +
                              ' of file ./testData/726 Psalm 047.sng'
                          ])
 
-        if __name__ == '__main__':
-            unittest.main()
+    if __name__ == '__main__':
+        unittest.main()
