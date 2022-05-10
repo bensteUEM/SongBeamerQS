@@ -1,3 +1,4 @@
+import logging
 import os.path
 import unittest
 
@@ -17,6 +18,11 @@ class TestSNG(unittest.TestCase):
         :param kwargs:
         """
         super(TestSNG, self).__init__(*args, **kwargs)
+
+        logging.basicConfig(filename='logs/TestSNG.log', encoding='utf-8',
+                            format="%(asctime)s %(name)-10s %(levelname)-8s %(message)s",
+                            level=logging.DEBUG)
+        logging.info("Excecuting Tests RUN")
 
     def test_filename(self):
         """
@@ -201,15 +207,28 @@ class TestSNG(unittest.TestCase):
         Checks that a file which does not have any section headers can be read without error
         :return:
         """
-
-        # Special Exceptions
         song = SNG_File('./testData/764 Test Ohne Versmarker.sng')
 
         self.assertEqual(len(song.content.keys()), 1)
-        self.assertEqual(len(song.content["Unknown"]), 1+5)
+        self.assertEqual(len(song.content["Unknown"]), 1 + 5)
         self.assertEqual(len(song.content["Unknown"][5]), 2)
         # TODO complete test case for missing block check
 
+    def test_broken_file_encoding(self):
+        """
+        Checks that errrors are logged for files with issues while parsing
+        test file uses wrong encoding therefore doesn't have a --- dividing header and content
+        :return:
+        """
 
-if __name__ == '__main__':
-    unittest.main()
+        with self.assertLogs(level='ERROR') as cm:
+            song = SNG_File('./testData/726 Psalm 047.sng')
+
+        self.assertEqual(cm.output,
+                         [
+                             'ERROR:root:Something is wrong with the line ï»¿#LangCount=2'+
+                             ' of file ./testData/726 Psalm 047.sng'
+                         ])
+
+        if __name__ == '__main__':
+            unittest.main()

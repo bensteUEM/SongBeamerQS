@@ -32,6 +32,9 @@ class SNG_File:
             if line == "---":  # For each new Slide within a block add new list and increase index
                 temp_content.append([])
             else:  # Textzeile
+                if len(temp_content) == 0:
+                    logging.error("Something is wrong with the line {} of file {}".format(line, filename))
+                    break
                 temp_content[-1].append(line)
         file.close()
         # Remove empty blocks e.g. EG 618 ends with ---
@@ -65,7 +68,7 @@ class SNG_File:
             else:  # regular line for existing content
                 self.content[current_contentname].append(content)
 
-        #TODO need to check that "Unknown" exists in Verse Order
+        # TODO need to check that "Unknown" exists in Verse Order
 
     def parse_param(self, line):
         """

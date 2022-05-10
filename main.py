@@ -169,7 +169,7 @@ def generate_background_image_column(df_to_change):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(filename='main.log', encoding='utf-8',
+    logging.basicConfig(filename='logs/main.log', encoding='utf-8',
                         format="%(asctime)s %(name)-10s %(levelname)-8s %(message)s",
                         level=logging.DEBUG)
     logging.info("Excecuting Main RUN")
