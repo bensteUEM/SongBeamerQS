@@ -6,7 +6,7 @@ from SNG_DEFAULTS import SngDefaultHeader, SngIllegalHeader
 
 class SNG_File:
 
-    def __init__(self, filename, songbook_prefix=""):
+    def __init__(self, filename, songbook_prefix=''):
         """
         Default Construction for a SNG File and it's params
         :param filename: filename with optional directory which should be opened
@@ -56,7 +56,7 @@ class SNG_File:
         """
         current_contentname = None  # Use Unknown if no content name is specified
         for content in temp_content:
-            if len(content) == 0: # Skip in case there is no content
+            if len(content) == 0:  # Skip in case there is no content
                 continue
             elif is_verse_marker_line(content[0]):  # New named content
                 current_contentname = content[0]
@@ -172,19 +172,29 @@ class SNG_File:
         """
         number = self.filename.split(" ")[0]
 
-        # if
-        if all(digit in SNG_DEFAULTS.SngTitleNumberChars for digit in number):
-            self.header["Songbook"] = self.songbook_prefix + ' ' + number
-            self.header["ChurchSongID"] = self.songbook_prefix + ' ' + number
-        else:
+        if all(digit in SNG_DEFAULTS.SngTitleNumberChars for digit in number):  # Filename starts with number
+            if "FJ" in self.songbook_prefix:
+                songbook = self.songbook_prefix + '/' + number
+            elif "EG" in self.songbook_prefix and 701 <= float(number) <= 758:
+                # EG Psalms in EG Württemberg EG 701-758
+                logging.warning(
+                    'EG Psalm "{}" can not be auto corrected - please adjust manually'.format(self.filename))
+                return
+            else:  # All other cases
+                songbook = self.songbook_prefix + ' ' + number
+            self.header["Songbook"] = songbook
+            self.header["ChurchSongID"] = songbook
+
+        else:  # Filename does not start with number
             if self.songbook_prefix in SNG_DEFAULTS.KnownSongBookPrefix:
                 logging.warning('Invalid number format in Filename - can\'t fix songbook of ' + self.filename)
-            elif not self.songbook_prefix == '':
+
+            elif not self.songbook_prefix == '':  # Not empty Prefix
                 logging.warning('Unknown Songbook Prefix - can\'t fix songbook of ' + self.filename)
                 if "Songbook" not in self.header.keys():
                     self.header["Songbook"] = self.songbook_prefix + ' ???'
                     self.header["ChurchSongID"] = self.songbook_prefix + ' ???'
-            else:
+            else:  # No Prefix or Number
                 self.header["Songbook"] = ' '
                 self.header["ChurchSongID"] = ' '
 

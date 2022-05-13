@@ -248,5 +248,57 @@ class TestSNG(unittest.TestCase):
         song = SNG_File('./testData/Lizenz_Lied.sng')
         self.assertEqual(song.filename, 'Lizenz_Lied.sng')
 
+    def test_wrong_caps_churchsongid(self):
+        """
+        Test that checks for incorrect capitalization in ChurchSongID and it's autocorrect
+        :return:
+        """
+
+        # Corrected Songbook 085 O Haupt voll Blut und Wunden.sng - used "ChurchSongId instead of ChurchSongID"
+        song = SNG_File('./testData/085 O Haupt voll Blut und Wunden.sng', "EG")
+        self.assertNotIn("ChurchSongID", song.header.keys())
+        song.fix_songbook()
+        # self.assertNotIn("ChurchSongId", song.header.keys()) #TODO cleaning function to remove unknown keys?
+        self.assertEqual(song.header["Songbook"], "EG 085")
+        self.assertEqual(song.header["ChurchSongID"], "EG 085")
+
+    def test_EG_Psalm_quality_checks(self):
+        """
+        Test that checks for auto warning on correction of Psalms in EG
+        :return:
+        """
+        # Test Warning for Psalms
+        song = SNG_File('./testData/726 Psalm 047.sng', 'EG')
+        self.assertNotIn("ChurchSongID", song.header.keys())
+
+        with self.assertLogs(level='WARNING') as cm:
+            song.fix_songbook()
+
+        self.assertEqual(cm.output,
+                         ['WARNING:root:EG Psalm "726 Psalm 047.sng" can not be auto corrected - please adjust manually'
+                          ])
+        #TODO continue HERE - #Songbook=EG 709 - Psalm 22 I -> is marked as autocorrect ...
+
+
+        #TODO add test for match Regex for EG Psalm in ChurchSongId?
+
+        #TODO Add test for language marker validation in EG psalms
+
+        #TODO Add test background image validation for EG Psalms
+
+        #TODO Add test check for EG Psalms that #bible header is present
+
+    def test_reformat_slide_4_lines(self):
+        '079 Höher_reformat.sng'
+        raise NotImplemented()
+
+    def test_VerseOrder_complete(self):
+        '079 Höher_reformat.sng'
+        raise NotImplemented()
+
+    def test_Intro_Slide(self):
+        '079 Höher_reformat.sng'
+        raise NotImplemented()
+
     if __name__ == '__main__':
         unittest.main()

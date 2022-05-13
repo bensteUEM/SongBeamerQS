@@ -48,7 +48,7 @@ KnownFolderWithPrefix = {
     'Feiert Jesus 3': 'FJ3',
     'Feiert Jesus 4': 'FJ4',
     'Feiert Jesus 5': 'FJ5',
-    'Gebete': ' ',
+    'Gebete': '',
     'Sonstige Lieder': '',
     'Sonstige Texte': '',
     'Wwdlp': 'Wwdlp'

@@ -64,6 +64,7 @@ def validate_songbook(df_to_change, fix=False):
     :param fix: boolean if data should be fixed
     :return: boolean Series with True for all entries that have issues
     """
+    logging.info("Starting Songbook Validation with fix={}".format(fix))
 
     # Generate Required Columns
     for current_index, current_value in df_to_change["SNG_File"].items():
@@ -71,12 +72,12 @@ def validate_songbook(df_to_change, fix=False):
         if "Songbook" in current_value.header.keys():
             df_to_change.loc[(current_index, "Songbook")] = current_value.header["Songbook"]
         else:
-            logging.info("Song without Songbook in Header:\t" + current_value.filename)
+            logging.debug("Song without Songbook in Header:\t" + current_value.filename)
 
         if "ChurchSongID" in current_value.header.keys():
             df_to_change.loc[(current_index, "ChurchSongID")] = current_value.header["ChurchSongID"]
         else:
-            logging.info("Song without ChurchSongID in Header:" + current_value.filename)
+            logging.debug("Song without ChurchSongID in Header:" + current_value.filename)
 
     # Validate Content of the columns
     songbook_invalid = df_to_change['ChurchSongID'] != df_to_change['Songbook']
@@ -93,6 +94,10 @@ def validate_songbook(df_to_change, fix=False):
     songbook_regex = r"^(Wwdlp \d{3})|(FJ([1-5])\/\d{3})|(EG \d{3}(.\d{1,2})?(( - Psalm )\d{1,3})?)$"
     songbook_invalid |= ~df_to_change["Songbook"].str.fullmatch(songbook_regex, na=False)
 
+    #TODO check sample "EG 709 Psalm 22 I" and why it is corrected - add up to 3 letters at end of Psalm in regex
+    #TODO check why 2022-05-13 14:26:17,426 root       INFO     Corrected Songbook from (EG 085) to (EG 085) in 085 O Haupt voll Blut und Wunden.sng
+
+
     # Check for remaining that "&" should not be present in Songbook
     # songbook_invalid |= df_to_change["Songbook"].str.contains('&')
     # sample is EG 548 & WWDLP 170 = loc 77
@@ -105,22 +110,27 @@ def validate_songbook(df_to_change, fix=False):
 
     number_of_invalid_songbook = len(df_to_change[songbook_invalid])
     if number_of_invalid_songbook > 0:
-        logging.info(str(number_of_invalid_songbook) + " entries with invalid Songbook or ChurchSongID")
+        logging.info('{} of {} entries with invalid Songbook or ChurchSongID'
+                     .format(number_of_invalid_songbook, len(df_to_change))
+                     )
 
     if fix:
+        logging.info('Starting Songbook Fixing')
         for current_index, current_value in df_to_change[songbook_invalid]["SNG_File"].items():
             if 'Songbook' in current_value.header.keys():
                 text = 'Corrected Songbook from (' + current_value.header["Songbook"] + ')'
             else:
                 text = 'New Songbook'
             current_value.fix_songbook()
-            df_to_change.loc[(current_index, "Songbook")] = current_value.header["Songbook"]
-            df_to_change.loc[(current_index, "ChurchSongID")] = current_value.header["ChurchSongID"]
 
-            # if 'Songbook' not in value.header.keys(): #TODO DEBUG wenn ungültige Zeichen in Nummer
-            #    raise NotImplementedError("Strange case ...") #TODO remove
-            # else:
-            logging.info(text + ' to (' + current_value.header['Songbook'] + ') in ' + current_value.filename)
+            if 'Songbook' not in current_value.header.keys():
+                logging.error("Problem occured with Songbook Fixing of {} - check logs!".format(current_value.filename))
+                df_to_change.loc[(current_index, "Songbook")] = None
+                df_to_change.loc[(current_index, "ChurchSongID")] = None
+            else:
+                df_to_change.loc[(current_index, "Songbook")] = current_value.header["Songbook"]
+                df_to_change.loc[(current_index, "ChurchSongID")] = current_value.header["ChurchSongID"]
+                logging.info(text + ' to (' + current_value.header['Songbook'] + ') in ' + current_value.filename)
 
     return songbook_invalid
 
@@ -186,12 +196,12 @@ if __name__ == '__main__':
     generate_background_image_column(df)
 
     # TODO Ideensammlung
-    # TODO check max number of chars per line
-    # TODo make blocks of 4 lines only
+    # - check max number of chars per line
+    # - make blocks of 4 lines only
 
     # validate_titles(df, True)
     # validate_songbook(df, True)
 
     # df.to_csv("Main_DF_Export.csv", quoting=csv.QUOTE_NONNUMERIC)
-    validate_songbook(df)
+    validate_songbook(df, fix=True)
     logging.info('Main Method finished')
