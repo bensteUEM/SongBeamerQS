@@ -79,20 +79,29 @@ def validate_songbook(df_to_change, fix=False):
             logging.info("Song without ChurchSongID in Header:" + current_value.filename)
 
     # Validate Content of the columns
-
     songbook_invalid = df_to_change['ChurchSongID'] != df_to_change['Songbook']
     songbook_invalid |= df_to_change['ChurchSongID'].isna()
     songbook_invalid |= df_to_change['Songbook'].isna()
     # ChurchSongID ' '  or '' is automatically removed from SongBeamer on Editing hence = to isna() after updates
 
-    # TODO check that Songbook Prefix is part of Songbook otherwise mark as invalid
+    # Check for all remaining that songbook prefix is part of songbook
+    songbook_invalid |= \
+        df_to_change[~songbook_invalid].apply(lambda x: x['songbook_prefix'] not in x['Songbook'], axis=1)
 
-    # combined?? with &
-    # Psalm => is EG specific number range 7xx should contain additional - Psalm XXX  not auto validated
-    # TODO log warning if prefix EG and number in specific range?
+    # Check Syntax with Regex, either FJx/yyy, EG YYY, EG YYY.YY or or EG XXX - Psalm X or Wwdlp YYY
+    # ^(Wwdlp \d{3})|(FJ([1-5])\/\d{3})|(EG \d{3}(( - Psalm )\d{1,3})?)$
+    songbook_regex = r"^(Wwdlp \d{3})|(FJ([1-5])\/\d{3})|(EG \d{3}(.\d{1,2})?(( - Psalm )\d{1,3})?)$"
+    songbook_invalid |= ~df_to_change["Songbook"].str.fullmatch(songbook_regex, na=False)
 
-    # if df['ChurchSongID'] == df['ChurchSongID']:
-    # TODO split by ' ' erster Absatz für Songbook darf nur DIGIT oder . enthalten bsp. 190.2
+    # Check for remaining that "&" should not be present in Songbook
+    # songbook_invalid |= df_to_change["Songbook"].str.contains('&')
+    # sample is EG 548 & WWDLP 170 = loc 77
+    # -> no longer needed because of regex check
+
+    # TODO low Prio - check numeric range of songbooks
+    # EG 1 - 851 incl.non numeric e.g. 178.14
+    # EG Psalms in EG Württemberg EG 701-758
+    # Syntax should be EG xxx - Psalm Y
 
     number_of_invalid_songbook = len(df_to_change[songbook_invalid])
     if number_of_invalid_songbook > 0:
@@ -182,5 +191,7 @@ if __name__ == '__main__':
 
     # validate_titles(df, True)
     # validate_songbook(df, True)
-    df.to_csv("Main_DF_Export.csv", quoting=csv.QUOTE_NONNUMERIC)
+
+    # df.to_csv("Main_DF_Export.csv", quoting=csv.QUOTE_NONNUMERIC)
+    validate_songbook(df)
     logging.info('Main Method finished')
