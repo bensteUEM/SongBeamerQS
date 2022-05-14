@@ -1,5 +1,6 @@
 import logging
 import os.path
+import re
 import unittest
 
 from SNG_File import SNG_File
@@ -9,7 +10,6 @@ class TestSNG(unittest.TestCase):
     """
     Test Class for SNG related class and methods
     """
-    maxDiff = None
 
     def __init__(self, *args, **kwargs):
         """
@@ -24,7 +24,7 @@ class TestSNG(unittest.TestCase):
                             level=logging.DEBUG)
         logging.info("Excecuting Tests RUN")
 
-    def test_filename(self):
+    def test_file_name(self):
         """
         Checks if song contains correct filename and path information
         :return:
@@ -152,6 +152,20 @@ class TestSNG(unittest.TestCase):
         self.assertEqual(cm.output,
                          ['WARNING:root:Invalid number format in Filename - can\'t fix songbook of ' + song.filename])
 
+    def test_header_church_song_id_caps(self):
+        """
+        Test that checks for incorrect capitalization in ChurchSongID and it's autocorrect
+        :return:
+        """
+
+        # Corrected Songbook 085 O Haupt voll Blut und Wunden.sng - used "ChurchSongId instead of ChurchSongID"
+        song = SNG_File('./testData/085 O Haupt voll Blut und Wunden.sng', "EG")
+        self.assertNotIn("ChurchSongID", song.header.keys())
+        song.fix_songbook()
+        # self.assertNotIn("ChurchSongId", song.header.keys()) #TODO cleaning function to remove unknown keys?
+        self.assertEqual(song.header["Songbook"], "EG 085")
+        self.assertEqual(song.header["ChurchSongID"], "EG 085")
+
     def test_content_empty_block(self):
         """
         Test case with a SNG file that contains and empty block because it ends with ---
@@ -202,7 +216,7 @@ class TestSNG(unittest.TestCase):
 
         self.assertIn("Testnameblock", song2.content['$$M=Testnameblock'][0])
 
-    def test_missing_block(self):
+    def test_content_missing_block(self):
         """
         Checks that a file which does not have any section headers can be read without error
         :return:
@@ -214,7 +228,7 @@ class TestSNG(unittest.TestCase):
         self.assertEqual(len(song.content["Unknown"][5]), 2)
         # TODO complete test case for missing block check
 
-    def test_broken_file_encoding(self):
+    def test_file_file_encoding(self):
         """
         Checks that errrors are logged for files with issues while parsing
         test file uses wrong encoding therefore doesn't have a --- dividing header and content
@@ -230,7 +244,7 @@ class TestSNG(unittest.TestCase):
                              ' of file ./testData/726 Psalm 047.sng'
                          ])
 
-    def test_broken_file_encoding_repaired(self):
+    def test_file_broken_encoding_repaired(self):
         """
         Checks that errrors are logged for sample file which is fixed in encoding
         :return:
@@ -239,7 +253,7 @@ class TestSNG(unittest.TestCase):
         song = SNG_File('./testData/726 Psalm 047_fixed.sng')
         self.assertEqual(song.filename, '726 Psalm 047_fixed.sng')
 
-    def test_short_file(self):
+    def test_file_short(self):
         """
         Checks a specific SNG file which contains a header only and no content
         :return:
@@ -248,21 +262,19 @@ class TestSNG(unittest.TestCase):
         song = SNG_File('./testData/Lizenz_Lied.sng')
         self.assertEqual(song.filename, 'Lizenz_Lied.sng')
 
-    def test_wrong_caps_churchsongid(self):
+    def test_header_EG_Psalm_special(self):
         """
-        Test that checks for incorrect capitalization in ChurchSongID and it's autocorrect
+        Test for debugging special Psalms which might not follow ChurchSongID conventions
+        e.g. 709 Herr, sei nicht ferne.sng
         :return:
         """
+        song = SNG_File('./testData/709 Herr, sei nicht ferne.sng', "EG")
+        self.assertEqual(song.header["Songbook"], "EG 709 - Psalm 22 I")
 
-        # Corrected Songbook 085 O Haupt voll Blut und Wunden.sng - used "ChurchSongId instead of ChurchSongID"
-        song = SNG_File('./testData/085 O Haupt voll Blut und Wunden.sng', "EG")
-        self.assertNotIn("ChurchSongID", song.header.keys())
-        song.fix_songbook()
-        # self.assertNotIn("ChurchSongId", song.header.keys()) #TODO cleaning function to remove unknown keys?
-        self.assertEqual(song.header["Songbook"], "EG 085")
-        self.assertEqual(song.header["ChurchSongID"], "EG 085")
+        songbook_regex = r"^(Wwdlp \d{3})|(FJ([1-5])\/\d{3})|(EG \d{3}(.\d{1,2})?(( - Psalm )\d{1,3})?( .{1,3})?)$"
+        self.assertTrue(re.fullmatch(songbook_regex, song.header["Songbook"]))
 
-    def test_EG_Psalm_quality_checks(self):
+    def test_header_EG_Psalm_quality_checks(self):
         """
         Test that checks for auto warning on correction of Psalms in EG
         :return:
@@ -277,28 +289,27 @@ class TestSNG(unittest.TestCase):
         self.assertEqual(cm.output,
                          ['WARNING:root:EG Psalm "726 Psalm 047.sng" can not be auto corrected - please adjust manually'
                           ])
-        #TODO continue HERE - #Songbook=EG 709 - Psalm 22 I -> is marked as autocorrect ...
+        # TODO continue HERE - #Songbook=EG 709 - Psalm 22 I -> is marked as autocorrect ...
 
+        # TODO add test for match Regex for EG Psalm in ChurchSongId?
 
-        #TODO add test for match Regex for EG Psalm in ChurchSongId?
+        # TODO Add test for language marker validation in EG psalms
 
-        #TODO Add test for language marker validation in EG psalms
+        # TODO Add test background image validation for EG Psalms
 
-        #TODO Add test background image validation for EG Psalms
+        # TODO Add test check for EG Psalms that #bible header is present
 
-        #TODO Add test check for EG Psalms that #bible header is present
-
-    def test_reformat_slide_4_lines(self):
+    def test_content_reformat_slide_4_lines(self):
         '079 Höher_reformat.sng'
-        raise NotImplemented()
+        raise NotImplemented()  # TODO implement test and required methods
 
-    def test_VerseOrder_complete(self):
+    def test_header_VerseOrder_complete(self):
         '079 Höher_reformat.sng'
-        raise NotImplemented()
+        raise NotImplemented()  # TODO implement test and required methods
 
-    def test_Intro_Slide(self):
+    def test_content_Intro_Slide(self):
         '079 Höher_reformat.sng'
-        raise NotImplemented()
+        raise NotImplemented()  # TODO implement test and required methods
 
     if __name__ == '__main__':
         unittest.main()

@@ -91,12 +91,8 @@ def validate_songbook(df_to_change, fix=False):
 
     # Check Syntax with Regex, either FJx/yyy, EG YYY, EG YYY.YY or or EG XXX - Psalm X or Wwdlp YYY
     # ^(Wwdlp \d{3})|(FJ([1-5])\/\d{3})|(EG \d{3}(( - Psalm )\d{1,3})?)$
-    songbook_regex = r"^(Wwdlp \d{3})|(FJ([1-5])\/\d{3})|(EG \d{3}(.\d{1,2})?(( - Psalm )\d{1,3})?)$"
+    songbook_regex = r"^(Wwdlp \d{3})|(FJ([1-5])\/\d{3})|(EG \d{3}(.\d{1,2})?(( - Psalm )\d{1,3})?( .{1,3})?)$"
     songbook_invalid |= ~df_to_change["Songbook"].str.fullmatch(songbook_regex, na=False)
-
-    #TODO check sample "EG 709 Psalm 22 I" and why it is corrected - add up to 3 letters at end of Psalm in regex
-    #TODO check why 2022-05-13 14:26:17,426 root       INFO     Corrected Songbook from (EG 085) to (EG 085) in 085 O Haupt voll Blut und Wunden.sng
-
 
     # Check for remaining that "&" should not be present in Songbook
     # songbook_invalid |= df_to_change["Songbook"].str.contains('&')
