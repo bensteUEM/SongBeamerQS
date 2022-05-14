@@ -41,6 +41,7 @@ class SNG_File:
         for content in temp_content:
             if len(content) == 0:
                 temp_content.remove(content)
+                self.update_editor_because_content_modified()
 
         logging.debug("Parsing content for: {}".format(self.filename))
         self.parse_content(temp_content)
@@ -55,7 +56,7 @@ class SNG_File:
         :return:
         """
         current_contentname = None  # Use Unknown if no content name is specified
-        for content in temp_content:
+        for content in temp_content:  # TODO check if not duplicate code compared to end of parsefile with empty block removal
             if len(content) == 0:  # Skip in case there is no content
                 continue
             elif is_verse_marker_line(content[0]):  # New named content
@@ -63,6 +64,7 @@ class SNG_File:
                 self.content[current_contentname] = [get_verse_marker_line(content[0])]
                 self.content[current_contentname].append(content[1:])
             elif current_contentname is None:  # New unnamed content
+                self.update_editor_because_content_modified()
                 current_contentname = "Unknown"
                 self.content["Unknown"] = [["Unknown"]]
                 self.content["Unknown"].append(content)
@@ -85,17 +87,21 @@ class SNG_File:
             value = line_split[1]
             self.header[key] = value
 
-    def write_file(self, suffix="_new", editor_change=True):
+    def update_editor_because_content_modified(self):
+        """
+        Method used to update editor to mark files that are updated compared to it's original
+        :return:
+        """
+        self.header["Editor"] = SngDefaultHeader["Editor"]
+
+    def write_file(self, suffix="_new"):
         """
         Function used to write a processed SNG_File to disk
         :param suffix: suffix to append to file name - default ist _new, test should use _test overwrite by ""
-        :param editor_change: True if Editor String should be overwritten
         :return:
         """
         filename = self.path + '/' + self.filename[:-4] + suffix + ".sng"
         new_file = open(filename, 'w', encoding='iso-8859-1')
-        if editor_change is True:
-            self.header["Editor"] = SngDefaultHeader["Editor"]
         for key, value in self.header.items():
             new_file.write("#" + key + "=" + value + "\n")
 
@@ -118,7 +124,7 @@ class SNG_File:
         """
         missing = []
         for key in SNG_DEFAULTS.SngRequiredHeader:
-            if not key in self.header.keys():
+            if key not in self.header.keys():
                 missing.append(key)
 
         if 'LangCount' in self.header:
@@ -134,6 +140,20 @@ class SNG_File:
 
         return result, missing
 
+    def fix_header_church_song_id_caps(self):
+        """
+        Function which replaces any caps of e.g. ChurchSongId to ChurchSongID in header keys
+        :return:
+        """
+        if "ChurchSongID" not in self.header.keys():
+            for i in self.header.keys():
+                if 'ChurchSongID'.upper() == i.upper():
+                    self.header['ChurchSongID'] = self.header[i]
+                    del self.header[i]
+                    logging.info("Changed Key from {} to ChurchSongID".format(i))
+                    self.update_editor_because_content_modified()
+                    return
+
     def remove_illegal_headers(self):
         """
         removes header params in the current file which should not be present
@@ -144,6 +164,7 @@ class SNG_File:
         for key in self.header.keys():
             if key in SngIllegalHeader:
                 self.header.pop(key)
+                self.update_editor_because_content_modified()
 
     def fix_title(self):
         """
@@ -159,6 +180,7 @@ class SNG_File:
             if all(digit.upper() in SNG_DEFAULTS.SngTitleNumberChars for digit in part) \
                     or any(filter_t in part.upper() for filter_t in SNG_DEFAULTS.SngSongBookPrefix):
                 title_as_list.remove(part)
+                self.update_editor_because_content_modified()
         self.header['Title'] = " ".join(title_as_list)
 
     def fix_songbook(self):
@@ -184,19 +206,21 @@ class SNG_File:
                 songbook = self.songbook_prefix + ' ' + number
             self.header["Songbook"] = songbook
             self.header["ChurchSongID"] = songbook
-
+            self.update_editor_because_content_modified()
         else:  # Filename does not start with number
             if self.songbook_prefix in SNG_DEFAULTS.KnownSongBookPrefix:
                 logging.warning('Invalid number format in Filename - can\'t fix songbook of ' + self.filename)
 
             elif not self.songbook_prefix == '':  # Not empty Prefix
-                logging.warning('Unknown Songbook Prefix - can\'t fix songbook of ' + self.filename)
+                logging.warning('Unknown Songbook Prefix - can\'t complete fix songbook of ' + self.filename)
                 if "Songbook" not in self.header.keys():
                     self.header["Songbook"] = self.songbook_prefix + ' ???'
                     self.header["ChurchSongID"] = self.songbook_prefix + ' ???'
+                    self.update_editor_because_content_modified()
             else:  # No Prefix or Number
                 self.header["Songbook"] = ' '
                 self.header["ChurchSongID"] = ' '
+                self.update_editor_because_content_modified()
 
 
 def is_verse_marker_line(line):

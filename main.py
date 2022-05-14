@@ -1,7 +1,8 @@
-import csv
 import logging
 import os.path
+
 import pandas as pd
+
 import SNG_DEFAULTS
 from SNG_File import SNG_File
 
@@ -55,6 +56,20 @@ def validate_titles(df_to_change, fix=False):
             df_to_change.loc[(current_index, "Title")] = current_value.header["Title"]
 
     return title_invalid
+
+
+def validate_headers(df_to_change, fix=False):
+    """
+    Method to validate start validation for all headers
+    :param df_to_change: Dataframe which should me used
+    :param fix: boolean if data should be fixed
+    :return: boolean Series with True for all entries that have issues
+    """
+
+    songbook_invalid = validate_songbook(df_to_change, fix)
+    # TODO add additional header validation steps in main method
+    #df_to_change.apply() ... song.contains_required_headers()
+    return songbook_invalid
 
 
 def validate_songbook(df_to_change, fix=False):
@@ -199,5 +214,6 @@ if __name__ == '__main__':
     # validate_songbook(df, True)
 
     # df.to_csv("Main_DF_Export.csv", quoting=csv.QUOTE_NONNUMERIC)
+    validate_headers(df, fix=True)
     validate_songbook(df, fix=True)
     logging.info('Main Method finished')

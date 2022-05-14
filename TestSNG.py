@@ -155,15 +155,14 @@ class TestSNG(unittest.TestCase):
     def test_header_church_song_id_caps(self):
         """
         Test that checks for incorrect capitalization in ChurchSongID and it's autocorrect
+        Corrected Songbook 085 O Haupt voll Blut und Wunden.sng - used "ChurchSongId instead of ChurchSongID"
         :return:
         """
 
-        # Corrected Songbook 085 O Haupt voll Blut und Wunden.sng - used "ChurchSongId instead of ChurchSongID"
         song = SNG_File('./testData/085 O Haupt voll Blut und Wunden.sng', "EG")
         self.assertNotIn("ChurchSongID", song.header.keys())
-        song.fix_songbook()
-        # self.assertNotIn("ChurchSongId", song.header.keys()) #TODO cleaning function to remove unknown keys?
-        self.assertEqual(song.header["Songbook"], "EG 085")
+        song.fix_header_church_song_id_caps()
+        self.assertNotIn("ChurchSongId", song.header.keys())
         self.assertEqual(song.header["ChurchSongID"], "EG 085")
 
     def test_content_empty_block(self):
@@ -180,7 +179,7 @@ class TestSNG(unittest.TestCase):
         :return:
         """
         song = SNG_File("./testData/022 Die Liebe des Retters.sng")
-        song.write_file("_test", False)
+        song.write_file("_test")
 
         original_file = open('./testData/022 Die Liebe des Retters.sng', 'r', encoding='iso-8859-1')
         new_file = open('./testData/022 Die Liebe des Retters_test.sng', 'r', encoding='iso-8859-1')
