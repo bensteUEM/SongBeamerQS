@@ -80,12 +80,17 @@ class SngFile:
         Function which is used to interpret the context of one specific line as a param
         Safes self.params dictionary with detected params and prints all unknown lines to console
 
+        Converts Verse Order to list of elements
+
         :param line: string of one line from a SNG file
         """
         if line.__contains__("="):
             line_split = line.split("=")
             key = line_split[0][1:]
-            value = line_split[1]
+            if key == "VerseOrder":
+                value = line_split[1].split(",")
+            else:
+                value = line_split[1]
             self.header[key] = value
 
     def update_editor_because_content_modified(self):
@@ -98,13 +103,17 @@ class SngFile:
     def write_file(self, suffix="_new"):
         """
         Function used to write a processed SngFile to disk
+        Converts Verse Order from list to string
         :param suffix: suffix to append to file name - default ist _new, test should use _test overwrite by ""
         :return:
         """
         filename = self.path + '/' + self.filename[:-4] + suffix + ".sng"
         new_file = open(filename, 'w', encoding='iso-8859-1')
         for key, value in self.header.items():
-            new_file.write("#" + key + "=" + value + "\n")
+            if key == "VerseOrder":
+                new_file.write("#" + key + "=" + ','.join(value) + "\n")
+            else:
+                new_file.write("#" + key + "=" + value + "\n")
 
         for key, block in self.content.items():
             result = ['---', key]
@@ -141,9 +150,28 @@ class SngFile:
         result = len(missing) == 0
 
         if not result:
-            logging.warning('Missing required headers in (' + self.filename + ') ' + str(missing))
+            logging.warning('Missing required headers in ({}) {}'.format(self.filename, missing))
 
         return result, missing
+
+    def contains_complete_verse_order(self):
+        """
+        Checks that all items of content are part of Verse Order
+        and all items of VerseOrder are available in content
+        :return: result of check
+        """
+
+        verse_order_covers_all_blocks = all([i in self.content.keys() for i in self.header["VerseOrder"]])
+        blocks_in_verse_order = all([i in self.header["VerseOrder"] for i in self.content.keys()])
+
+        result = blocks_in_verse_order & verse_order_covers_all_blocks
+
+        if not result:
+            logging.warning('Verse Order and Blocks don\'t match in {}'.format(self.filename))
+            logging.debug('\t  Order: {}'.format(str(self.header["VerseOrder"])))
+            logging.debug('\t Blocks: {}'.format(str(list(self.content.keys()))))
+
+        return result
 
     def fix_header_church_song_id_caps(self):
         """
@@ -257,6 +285,7 @@ class SngFile:
             else:
                 result = False
         return result
+
 
 def is_verse_marker_line(line):
     """
