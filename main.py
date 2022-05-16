@@ -128,16 +128,23 @@ def validate_songbook(df_to_change, fix=False):
     if fix:
         logging.info('Starting Songbook Fixing')
         for current_index, current_value in df_to_change[songbook_invalid]["SNG_File"].items():
-            if 'Songbook' in current_value.header.keys():
+            if current_value.fix_header_church_song_id_caps():  # Simple Fixing attempt with caps change
+                df_to_change.loc[(current_index, "ChurchSongID")] = current_value.header["ChurchSongID"]
+                continue
+            if 'Songbook' in current_value.header.keys():  # Prepare Logging text
                 text = 'Corrected Songbook from (' + current_value.header["Songbook"] + ')'
             else:
                 text = 'New Songbook'
-            current_value.fix_songbook()
+            fixed = current_value.fix_songbook()
 
-            if 'Songbook' not in current_value.header.keys():
+            if not fixed and 'Songbook' not in current_value.header.keys():
                 logging.error("Problem occured with Songbook Fixing of {} - check logs!".format(current_value.filename))
                 df_to_change.loc[(current_index, "Songbook")] = None
                 df_to_change.loc[(current_index, "ChurchSongID")] = None
+            elif not fixed:
+                logging.error(
+                    "Problem occured with Songbook Fixing of {} - kept original {}".format(
+                        current_value.filename, current_value.header["Songbook"]))
             else:
                 df_to_change.loc[(current_index, "Songbook")] = current_value.header["Songbook"]
                 df_to_change.loc[(current_index, "ChurchSongID")] = current_value.header["ChurchSongID"]
@@ -215,5 +222,5 @@ if __name__ == '__main__':
 
     # df.to_csv("Main_DF_Export.csv", quoting=csv.QUOTE_NONNUMERIC)
     validate_headers(df, fix=True)
-    validate_songbook(df, fix=True)
+
     logging.info('Main Method finished')

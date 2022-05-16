@@ -143,16 +143,17 @@ class SNG_File:
     def fix_header_church_song_id_caps(self):
         """
         Function which replaces any caps of e.g. ChurchSongId to ChurchSongID in header keys
-        :return:
+        :return: if updated
         """
         if "ChurchSongID" not in self.header.keys():
             for i in self.header.keys():
                 if 'ChurchSongID'.upper() == i.upper():
                     self.header['ChurchSongID'] = self.header[i]
                     del self.header[i]
-                    logging.info("Changed Key from {} to ChurchSongID".format(i))
+                    logging.info("Changed Key from {} to ChurchSongID in {}".format(i, self.filename))
                     self.update_editor_because_content_modified()
-                    return
+                    return True
+        return False
 
     def remove_illegal_headers(self):
         """
@@ -190,7 +191,7 @@ class SNG_File:
         checks if this part contains only numbers and applies prefix + number for new Songbook and ChurchSongID
         otherwise writes an empty Songbook and ChurchSongID if no prefix
         or loggs error for invalid format if prefix is given but no matching number found
-        :return: None
+        :return: if something was updated
         """
         number = self.filename.split(" ")[0]
 
@@ -201,12 +202,11 @@ class SNG_File:
                 # EG Psalms in EG Württemberg EG 701-758
                 logging.warning(
                     'EG Psalm "{}" can not be auto corrected - please adjust manually'.format(self.filename))
-                return
+                return False
             else:  # All other cases
                 songbook = self.songbook_prefix + ' ' + number
             self.header["Songbook"] = songbook
             self.header["ChurchSongID"] = songbook
-            self.update_editor_because_content_modified()
         else:  # Filename does not start with number
             if self.songbook_prefix in SNG_DEFAULTS.KnownSongBookPrefix:
                 logging.warning('Invalid number format in Filename - can\'t fix songbook of ' + self.filename)
@@ -216,11 +216,11 @@ class SNG_File:
                 if "Songbook" not in self.header.keys():
                     self.header["Songbook"] = self.songbook_prefix + ' ???'
                     self.header["ChurchSongID"] = self.songbook_prefix + ' ???'
-                    self.update_editor_because_content_modified()
             else:  # No Prefix or Number
                 self.header["Songbook"] = ' '
                 self.header["ChurchSongID"] = ' '
-                self.update_editor_because_content_modified()
+        self.update_editor_because_content_modified()
+        return True
 
 
 def is_verse_marker_line(line):
