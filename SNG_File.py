@@ -135,8 +135,12 @@ class SNG_File:
 
                     # TODO add TitleLang2 validation
 
+                    # TODO add exception for Psalms?
+
         result = len(missing) == 0
-        logging.info('Missing required headers in (' + self.filename + ') ' + str(missing))
+
+        if not result:
+            logging.warning('Missing required headers in (' + self.filename + ') ' + str(missing))
 
         return result, missing
 
@@ -150,20 +154,21 @@ class SNG_File:
                 if 'ChurchSongID'.upper() == i.upper():
                     self.header['ChurchSongID'] = self.header[i]
                     del self.header[i]
-                    logging.info("Changed Key from {} to ChurchSongID in {}".format(i, self.filename))
+                    logging.debug("Changed Key from {} to ChurchSongID in {}".format(i, self.filename))
                     self.update_editor_because_content_modified()
                     return True
         return False
 
-    def remove_illegal_headers(self):
+    def fix_remove_illegal_headers(self):
         """
         removes header params in the current file which should not be present
         Does not write to disk!
         :return:
         """
 
-        for key in self.header.keys():
+        for key in list(self.header.keys()):
             if key in SngIllegalHeader:
+                logging.debug('Removed {} from {} as illegal header'.format(key, self.filename))
                 self.header.pop(key)
                 self.update_editor_because_content_modified()
 

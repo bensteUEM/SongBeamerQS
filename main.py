@@ -60,16 +60,26 @@ def validate_titles(df_to_change, fix=False):
 
 def validate_headers(df_to_change, fix=False):
     """
-    Method to validate start validation for all headers
+    Method to start validation for all headers
+    1. Validate Songbook Entries
+    2. Remove all Illegal headers
+    3. Check that all required headers are present
+
     :param df_to_change: Dataframe which should me used
-    :param fix: boolean if data should be fixed
+    :param fix: boolean if data should be fixed - so far only applies for remove illegal headers and songbook fixing
     :return: boolean Series with True for all entries that have issues
     """
 
-    songbook_invalid = validate_songbook(df_to_change, fix)
-    # TODO add additional header validation steps in main method
-    #df_to_change.apply() ... song.contains_required_headers()
-    return songbook_invalid
+    headers_invalid = validate_songbook(df_to_change, fix)
+
+    if fix:
+        logging.info("Starting removal of illegal headers")
+        df_to_change["SNG_File"].apply(lambda x: x.fix_remove_illegal_headers())
+
+    logging.info("Starting to check for required headers")
+    df_to_change["SNG_File"].apply(lambda x: x.contains_required_headers())
+
+    return headers_invalid
 
 
 def validate_songbook(df_to_change, fix=False):
@@ -148,7 +158,7 @@ def validate_songbook(df_to_change, fix=False):
             else:
                 df_to_change.loc[(current_index, "Songbook")] = current_value.header["Songbook"]
                 df_to_change.loc[(current_index, "ChurchSongID")] = current_value.header["ChurchSongID"]
-                logging.info(text + ' to (' + current_value.header['Songbook'] + ') in ' + current_value.filename)
+                logging.debug(text + ' to (' + current_value.header['Songbook'] + ') in ' + current_value.filename)
 
     return songbook_invalid
 

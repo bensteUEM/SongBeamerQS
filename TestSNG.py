@@ -110,9 +110,9 @@ class TestSNG(unittest.TestCase):
         :return:
         """
         song = SNG_File('./testData/022 Die Liebe des Retters_missing_title.sng')
-        with self.assertLogs(level='INFO') as cm:
+        with self.assertLogs(level='WARNING') as cm:
             song.contains_required_headers()
-        self.assertEqual(cm.output, ['INFO:root:Missing required headers in (022 Die Liebe des '
+        self.assertEqual(cm.output, ['WARNING:root:Missing required headers in (022 Die Liebe des '
                                      "Retters_missing_title.sng) ['Title']"])
 
         song = SNG_File('./testData/022 Die Liebe des Retters.sng')
