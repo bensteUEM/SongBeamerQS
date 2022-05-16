@@ -228,6 +228,35 @@ class SngFile:
         self.update_editor_because_content_modified()
         return True
 
+    def fix_content_slides_number_of_lines(self, number_of_lines=4):
+        """
+        Method that rearranges slides to contain 4 lines except for last block which can have less than 4
+        :param number_of_lines max number of lines allowed per slide
+        :return: True if something was fixed
+        """
+
+        result = False
+
+        for key, value in self.content.items():  # Iterate all blocks
+            # any which is not last not 4 lines is wrong
+            has_issues = any([len(slide) != 4 for slide in value[1:-1]])
+            # any which is last > 4 is wrong
+            has_issues |= len(value[-1]) > 4
+
+            if has_issues:
+                logging.debug("Fixing block {} of {}".format(key, self.filename))
+
+                all_lines = []  # Merge list of all text lines
+                for slide in value[1:]:
+                    all_lines.extend(slide)
+
+                self.content[key] = [value[0]]  # Remove all old text lines except for Verse Marker
+                for i in range(0, len(all_lines), number_of_lines):
+                    self.content[key].append(all_lines[i:i + number_of_lines])
+                result = True
+            else:
+                result = False
+        return result
 
 def is_verse_marker_line(line):
     """

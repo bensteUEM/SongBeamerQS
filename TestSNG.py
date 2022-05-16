@@ -301,17 +301,36 @@ class TestSNG(unittest.TestCase):
         # TODO Add test check for EG Psalms that #bible header is present
 
     def test_content_reformat_slide_4_lines(self):
+        """
+        Tests specific test file to contain issues before fixing
+        Fixes file with fix content slides of 4
+        Tests result to contain known blocks, keep Pre Chorus with 2 lines, ans split Chorus to more slides
+        Tests that no single slide has more than 4 lines
+        :return:
+        """
         song = SngFile('./testData/079 Höher_reformat.sng')
-        self.assertEqual()
-        raise NotImplemented()  # TODO implement test and required methods
+
+        self.assertFalse(all([len(block[1][1]) <= 4 for block in song.content.items()]),
+                         'No slides contain more than 4 lines before fixing')
+
+        self.assertEqual(len(song.content["Pre-Chorus"][1]), 2, "Pre Chorus before fixing")
+        self.assertEqual(len(song.content["Chorus 1"][1]), 6, "Chorus before fixing")
+
+        song.fix_content_slides_number_of_lines()
+
+        self.assertTrue(all([len(block[1][1]) <= 4 for block in song.content.items()]),
+                        'Some slides contain more than 4 lines')
+        self.assertEqual(len(song.content["Pre-Chorus"][1]), 2, "Pre Chorus after fixing")
+        self.assertEqual(len(song.content["Chorus 1"][1]), 4, "# Slides for Chorus after fixing")
+        self.assertEqual(len(song.content["Chorus 1"]), 3, "# Slides for Chorus after fixing")
 
     def test_header_VerseOrder_complete(self):
         song = SngFile('./testData/079 Höher_reformat.sng')
-        raise NotImplemented()  # TODO implement test and required methods
+        raise NotImplementedError()  # TODO implement test and required methods
 
     def test_content_Intro_Slide(self):
         song = SngFile('./testData/079 Höher_reformat.sng')
-        raise NotImplemented()  # TODO implement test and required methods
+        raise NotImplementedError()  # TODO implement test and required methods
 
     if __name__ == '__main__':
         unittest.main()
