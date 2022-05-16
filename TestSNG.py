@@ -66,9 +66,19 @@ class TestSNG(unittest.TestCase):
     def test_header_all(self):
         """
         Checks if all params of the test file are correctly parsed
+        Because of datatype Verse Order is checked first
+        Rest of headers are compared to dict
         :return:
         """
         song = SngFile("./testData/022 Die Liebe des Retters.sng")
+
+        target_verse_order = 'Intro,Strophe 1,Strophe 2,Refrain 1,Refrain 1,Strophe 2,Refrain 1,Refrain 1,' + \
+                             'Bridge,Bridge,Bridge,Bridge,Intro,Refrain 1,Refrain 1,Refrain 1,Refrain 1,STOP'
+        target_verse_order = target_verse_order.split(",")
+
+        self.assertEqual(song.header["VerseOrder"], target_verse_order)
+
+        song.header.pop("VerseOrder")
         target = {
             'LangCount': '1',
             'Title': 'Die Liebe des Retters',
@@ -77,8 +87,6 @@ class TestSNG(unittest.TestCase):
             '(c)': '2010 Outbreakband Musik (Verwaltet von Gerth Medien)',
             'Editor': 'SongBeamer 5.15',
             'Version': '3',
-            'VerseOrder': 'Intro,Strophe 1,Strophe 2,Refrain 1,Refrain 1,Strophe 2,Refrain 1,Refrain 1' +
-                          ',Bridge,Bridge,Bridge,Bridge,Intro,Refrain 1,Refrain 1,Refrain 1,Refrain 1,STOP',
             'BackgroundImage': r'Menschen\himmel-und-erde.jpg',
             'Songbook': 'FJ5/022',
             'Comments': '77u/Rm9saWVucmVpaGVuZm9sZ2UgbmFjaCBvZmZpemllbGxlciBBdWZuYWhtZSwgaW4gQmFpZXJzYnJvb' +
@@ -325,12 +333,37 @@ class TestSNG(unittest.TestCase):
         self.assertEqual(len(song.content["Chorus 1"]), 3, "# Slides for Chorus after fixing")
 
     def test_header_VerseOrder_complete(self):
+        song = SngFile('./testData/022 Die Liebe des Retters_missing_block.sng')
+
+        verse_order_text = 'Intro,Strophe 1,Strophe 2,Refrain 1,Refrain 1,Strophe 2,Refrain 1,Refrain 1,Bridge,' + \
+                           'Bridge,Bridge,Bridge,Intro,Refrain 1,Refrain 1,Refrain 1,Refrain 1,STOP'
+        verse_order = verse_order_text.split(",")
+        verse_blocks = 'Unknown,$$M=Testnameblock,Refrain 1,Strophe 2,Bridge'.split(',')
+
+        # 1. Check initial test file state
+        self.assertEqual(song.header["VerseOrder"], verse_order)
+        self.assertEqual(list(song.content.keys()), verse_blocks)
+
+        # 2. Check that Verse Order shows as incomplete
+        with self.assertLogs(level='WARNING') as cm:
+            self.assertFalse(song.contains_complete_verse_order())
+
+        self.assertEqual(cm.output, ["WARNING:root:Verse Order and Blocks don't match in " +
+                                     "022 Die Liebe des Retters_missing_block.sng"
+                                     ])
+
+        # Failsafe with correct file
         song = SngFile('./testData/079 Höher_reformat.sng')
-        raise NotImplementedError()  # TODO implement test and required methods
+        self.assertTrue(song.contains_complete_verse_order())
 
     def test_content_Intro_Slide(self):
         song = SngFile('./testData/079 Höher_reformat.sng')
         raise NotImplementedError()  # TODO implement test and required methods
 
-    if __name__ == '__main__':
-        unittest.main()
+    def test_content_STOP_VerseOrder(self):
+        song = SngFile('./testData/079 Höher_reformat.sng')
+        raise NotImplementedError()  # TODO implement test and required methods
+
+
+if __name__ == '__main__':
+    unittest.main()
