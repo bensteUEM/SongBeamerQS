@@ -291,7 +291,7 @@ class TestSNG(unittest.TestCase):
         # Test Warning for Psalms
         song = SngFile('./testData/726 Psalm 047.sng', 'EG')
         self.assertNotIn("ChurchSongID", song.header.keys())
-
+        # TODO IMPORTANT - check why song is empty content and header object at this point
         with self.assertLogs(level='WARNING') as cm:
             song.fix_songbook()
 
@@ -357,8 +357,16 @@ class TestSNG(unittest.TestCase):
         self.assertTrue(song.contains_complete_verse_order())
 
     def test_content_Intro_Slide(self):
+        """
+        Checks that sample file is Intro in Verse Order and Blocks and repaired file contains both
+        :return:
+        """
         song = SngFile('./testData/079 Höher_reformat.sng')
-        raise NotImplementedError()  # TODO implement test and required methods
+        self.assertNotIn('Intro', song.header["VerseOrder"])
+        self.assertNotIn('Intro', song.content.keys())
+        song.fix_intro_slide()
+        self.assertIn('Intro', song.header["VerseOrder"])
+        self.assertIn('Intro', song.content.keys())
 
     def test_content_STOP_VerseOrder(self):
         song = SngFile('./testData/079 Höher_reformat.sng')

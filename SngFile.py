@@ -173,6 +173,23 @@ class SngFile:
 
         return result
 
+    def fix_intro_slide(self):
+        """
+        Checks if Intro Slide exists as content block and adds in case one is required
+        Also ensures that Intro is part of VerseOrder
+        :return:
+        """
+        if 'Intro' not in self.header["VerseOrder"]:
+            self.header["VerseOrder"].insert(0, 'Intro')
+            self.update_editor_because_content_modified()
+            logging.debug("Added Intro to VerseOrder of ({})".format(self.filename))
+
+        if 'Intro' not in self.content.keys():
+            intro = {'Intro':  [['Intro'], []]}
+            self.content = {**intro, **self.content}
+            self.update_editor_because_content_modified()
+            logging.debug("Added Intro Block to ({})".format(self.filename))
+
     def fix_header_church_song_id_caps(self):
         """
         Function which replaces any caps of e.g. ChurchSongId to ChurchSongID in header keys
