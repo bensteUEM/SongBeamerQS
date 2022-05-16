@@ -4,7 +4,7 @@ import os.path
 import pandas as pd
 
 import SNG_DEFAULTS
-from SNG_File import SNG_File
+from SngFile import SngFile
 
 
 def parse_sng_from_directory(directory, songbook_prefix=""):
@@ -12,18 +12,18 @@ def parse_sng_from_directory(directory, songbook_prefix=""):
     Method which reads all SNG Files from a directory and adds missing default values if missing
     :param directory: directory to read from
     :param songbook_prefix: which should be used for Songbook number - usually related to directory
-    :return: list of SNG_File items read from the directory
+    :return: list of SngFile items read from the directory
     """
     logging.info('Parsing: ' + directory)
     logging.info('With Prefix: ' + songbook_prefix)
 
     result = []
     directory_list = filter(lambda x: x.endswith((".sng", ".SNG", ".Sng")), os.listdir(directory))
-    for sng in directory_list:
-        current_song = SNG_File(directory + '/' + sng, songbook_prefix)
+    for sng_filename in directory_list:
+        current_song = SngFile(directory + '/' + sng_filename, songbook_prefix)
         if "Editor" not in current_song.header.keys():
             current_song.header["Editor"] = SNG_DEFAULTS.SngDefaultHeader["Editor"]
-            logging.info("Added missing Editor for:" + sng.filename)
+            logging.info("Added missing Editor for:" + sng_filename)
         result.append(current_song)
     return result
 
@@ -38,18 +38,19 @@ def validate_titles(df_to_change, fix=False):
     """
 
     # Generate Dataframe Column with Title
-    for current_index, current_value in df["SNG_File"].items():
+    for current_index, current_value in df["SngFile"].items():
         if "Title" in current_value.header.keys():
             df.loc[(current_index, "Title")] = current_value.header["Title"]
             df.loc[(current_index, "contains_number_in_title")] = any(
                 char.isdigit() for char in current_value.header["Title"])
         else:
             logging.info("Song without a Title in Header:" + current_value.filename)
+            df.loc[(current_index, "contains_number_in_title")] = False
 
-    title_invalid = df_to_change["Title"].isna() | df_to_change["contains_number_in_title"] == True
+    title_invalid = df_to_change["Title"].isna() | df_to_change["contains_number_in_title"]
 
     if fix:
-        for current_index, current_value in df_to_change[title_invalid]["SNG_File"].items():
+        for current_index, current_value in df_to_change[title_invalid]["SngFile"].items():
             logging.info(
                 "Invalid title (" + str(df_to_change.loc[(current_index, "Title")]) + ") in " + current_value.filename)
             current_value.fix_title()
@@ -71,13 +72,14 @@ def validate_headers(df_to_change, fix=False):
     """
 
     headers_invalid = validate_songbook(df_to_change, fix)
+    headers_invalid = headers_invalid | validate_titles(df_to_change, fix)
 
     if fix:
         logging.info("Starting removal of illegal headers")
-        df_to_change["SNG_File"].apply(lambda x: x.fix_remove_illegal_headers())
+        df_to_change["SngFile"].apply(lambda x: x.fix_remove_illegal_headers())
 
     logging.info("Starting to check for required headers")
-    df_to_change["SNG_File"].apply(lambda x: x.contains_required_headers())
+    df_to_change["SngFile"].apply(lambda x: x.contains_required_headers())
 
     return headers_invalid
 
@@ -92,7 +94,7 @@ def validate_songbook(df_to_change, fix=False):
     logging.info("Starting Songbook Validation with fix={}".format(fix))
 
     # Generate Required Columns
-    for current_index, current_value in df_to_change["SNG_File"].items():
+    for current_index, current_value in df_to_change["SngFile"].items():
         df_to_change.loc[(current_index, "songbook_prefix")] = current_value.songbook_prefix
         if "Songbook" in current_value.header.keys():
             df_to_change.loc[(current_index, "Songbook")] = current_value.header["Songbook"]
@@ -137,7 +139,7 @@ def validate_songbook(df_to_change, fix=False):
 
     if fix:
         logging.info('Starting Songbook Fixing')
-        for current_index, current_value in df_to_change[songbook_invalid]["SNG_File"].items():
+        for current_index, current_value in df_to_change[songbook_invalid]["SngFile"].items():
             if current_value.fix_header_church_song_id_caps():  # Simple Fixing attempt with caps change
                 df_to_change.loc[(current_index, "ChurchSongID")] = current_value.header["ChurchSongID"]
                 continue
@@ -182,11 +184,11 @@ def read_baiersbronn_songs_to_df():
         dirprefix = value
         songs.extend(parse_sng_from_directory(dirname, dirprefix))
 
-    df = pd.DataFrame(songs, columns=["SNG_File"])
-    for index, value in df['SNG_File'].items():
-        df.loc[(index, 'filename')] = value.filename
-        df.loc[(index, 'path')] = value.path
-    return df
+    result_df = pd.DataFrame(songs, columns=["SngFile"])
+    for index, value in result_df['SngFile'].items():
+        result_df.loc[(index, 'filename')] = value.filename
+        result_df.loc[(index, 'path')] = value.path
+    return result_df
 
 
 def generate_title_column(df_to_change):
@@ -196,7 +198,7 @@ def generate_title_column(df_to_change):
     :return:
     """
 
-    for index, value in df_to_change['SNG_File'].items():
+    for index, value in df_to_change['SngFile'].items():
         if 'Title' in value.header.keys():
             df_to_change.loc[(index, 'Title')] = value.header['Title']
 
@@ -208,7 +210,7 @@ def generate_background_image_column(df_to_change):
     :return:
     """
 
-    for index, value in df_to_change['SNG_File'].items():
+    for index, value in df_to_change['SngFile'].items():
         if 'BackgroundImage' in value.header.keys():
             df_to_change.loc[(index, 'BackgroundImage')] = value.header['BackgroundImage']
 

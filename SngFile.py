@@ -4,7 +4,7 @@ import SNG_DEFAULTS
 from SNG_DEFAULTS import SngDefaultHeader, SngIllegalHeader
 
 
-class SNG_File:
+class SngFile:
 
     def __init__(self, filename, songbook_prefix=''):
         """
@@ -56,7 +56,8 @@ class SNG_File:
         :return:
         """
         current_contentname = None  # Use Unknown if no content name is specified
-        for content in temp_content:  # TODO check if not duplicate code compared to end of parsefile with empty block removal
+        for content in temp_content:
+            # TODO check if not duplicate code compared to end of parsefile with empty block removal
             if len(content) == 0:  # Skip in case there is no content
                 continue
             elif is_verse_marker_line(content[0]):  # New named content
@@ -96,7 +97,7 @@ class SNG_File:
 
     def write_file(self, suffix="_new"):
         """
-        Function used to write a processed SNG_File to disk
+        Function used to write a processed SngFile to disk
         :param suffix: suffix to append to file name - default ist _new, test should use _test overwrite by ""
         :return:
         """

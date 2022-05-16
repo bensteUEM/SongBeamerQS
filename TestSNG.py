@@ -3,7 +3,7 @@ import os.path
 import re
 import unittest
 
-from SNG_File import SNG_File
+from SngFile import SngFile
 
 
 class TestSNG(unittest.TestCase):
@@ -31,11 +31,11 @@ class TestSNG(unittest.TestCase):
         """
         path = "./testData/"
         filename = "022 Die Liebe des Retters.sng"
-        song = SNG_File(path + filename)
+        song = SngFile(path + filename)
         self.assertEqual(song.filename, filename)
         self.assertEqual(song.path, os.path.dirname(path))
 
-    def test_header_title(self):
+    def test_header_title_parse(self):
         """
         Checks if param Title is correctly parsed
 
@@ -43,21 +43,32 @@ class TestSNG(unittest.TestCase):
         Will also fail if empty line handling does not exist
         :return:
         """
-        song = SNG_File("./testData/022 Die Liebe des Retters.sng")
+
+        song = SngFile("./testData/022 Die Liebe des Retters.sng")
         song.parse_param("#Title=Die Liebe des Retters")
 
         target = {'Title': 'Die Liebe des Retters'}
         self.assertEqual(song.header["Title"], target["Title"])
 
-        song2 = SNG_File('./testData/022 Die Liebe des Retters_missing_title.sng')
+        song2 = SngFile('./testData/022 Die Liebe des Retters_missing_title.sng')
         self.assertNotIn('Title', song2.header)
+
+    def test_header_title_fix(self):
+        """
+        Checks that header title is fixed for one sample file
+        :return:
+        """
+        song = SngFile('./testData/022 Die Liebe des Retters_missing_title.sng')
+        self.assertNotIn("Title", song.header)
+        song.fix_title()
+        self.assertEqual("Die Liebe des Retters_missing_title", song.header['Title'])
 
     def test_header_all(self):
         """
         Checks if all params of the test file are correctly parsed
         :return:
         """
-        song = SNG_File("./testData/022 Die Liebe des Retters.sng")
+        song = SngFile("./testData/022 Die Liebe des Retters.sng")
         target = {
             'LangCount': '1',
             'Title': 'Die Liebe des Retters',
@@ -82,22 +93,12 @@ class TestSNG(unittest.TestCase):
         while others still exists and might invalidate headers params
         :return:
         """
-        song = SNG_File('./testData/022 Die Liebe des Retters_space_header.sng')
+        song = SngFile('./testData/022 Die Liebe des Retters_space_header.sng')
         self.assertIn('LangCount', song.header)
         self.assertEqual('1', song.header['LangCount'])
         self.assertIn('Title', song.header)
         self.assertIn('Author', song.header)
         self.assertNotIn('CCLI', song.header)
-
-    def test_header_title(self):
-        """
-        Checks that header title is fixed for one sample file
-        :return:
-        """
-        song = SNG_File('./testData/022 Die Liebe des Retters_missing_title.sng')
-        self.assertNotIn("Title", song.header)
-        song.fix_title()
-        self.assertEqual("Die Liebe des Retters_missing_title", song.header['Title'])
 
     def test_header_complete(self):
         """
@@ -109,17 +110,17 @@ class TestSNG(unittest.TestCase):
         Info should be logged in case of missing headers
         :return:
         """
-        song = SNG_File('./testData/022 Die Liebe des Retters_missing_title.sng')
+        song = SngFile('./testData/022 Die Liebe des Retters_missing_title.sng')
         with self.assertLogs(level='WARNING') as cm:
             song.contains_required_headers()
         self.assertEqual(cm.output, ['WARNING:root:Missing required headers in (022 Die Liebe des '
                                      "Retters_missing_title.sng) ['Title']"])
 
-        song = SNG_File('./testData/022 Die Liebe des Retters.sng')
+        song = SngFile('./testData/022 Die Liebe des Retters.sng')
         check = song.contains_required_headers()
         self.assertEqual(True, check[0], song.filename + ' should contain ' + str(check[1]))
 
-        song = SNG_File('./testData/Holy Holy Holy.sng')
+        song = SngFile('./testData/Holy Holy Holy.sng')
         song.fix_songbook()
         check = song.contains_required_headers()  # TODO check that ChurchSong can be NULL in SNG without removal
         self.assertEqual(True, check[0], song.filename + ' should contain ' + str(check[1]))
@@ -133,21 +134,21 @@ class TestSNG(unittest.TestCase):
         4. testprefix without number should trigger warning
         :return:
         """
-        song = SNG_File('./testData/618 Wenn die Last der Welt.sng', songbook_prefix="test")
+        song = SngFile('./testData/618 Wenn die Last der Welt.sng', songbook_prefix="test")
         song.fix_songbook()
         self.assertEqual("test 618", song.header['Songbook'])
         self.assertEqual("test 618", song.header['ChurchSongID'])
 
-        song = SNG_File('./testData/571.1 Ubi caritas et amor - Wo die Liebe wohnt.sng', songbook_prefix="EG")
+        song = SngFile('./testData/571.1 Ubi caritas et amor - Wo die Liebe wohnt.sng', songbook_prefix="EG")
         song.fix_songbook()
         self.assertEqual("EG 571.1", song.header['Songbook'])
 
-        song = SNG_File('./testData/Holy Holy Holy.sng')
+        song = SngFile('./testData/Holy Holy Holy.sng')
         song.fix_songbook()
         self.assertEqual(" ", song.header['Songbook'])
 
         with self.assertLogs(level='WARNING') as cm:
-            song = SNG_File('./testData/Holy Holy Holy.sng', "test")
+            song = SngFile('./testData/Holy Holy Holy.sng', "test")
             song.fix_songbook()
         self.assertEqual(cm.output,
                          ['WARNING:root:Invalid number format in Filename - can\'t fix songbook of ' + song.filename])
@@ -159,7 +160,7 @@ class TestSNG(unittest.TestCase):
         :return:
         """
 
-        song = SNG_File('./testData/085 O Haupt voll Blut und Wunden.sng', "EG")
+        song = SngFile('./testData/085 O Haupt voll Blut und Wunden.sng', "EG")
         self.assertNotIn("ChurchSongID", song.header.keys())
         song.fix_header_church_song_id_caps()
         self.assertNotIn("ChurchSongId", song.header.keys())
@@ -170,7 +171,7 @@ class TestSNG(unittest.TestCase):
         Test case with a SNG file that contains and empty block because it ends with ---
         :return:
         """
-        song = SNG_File('./testData/618 Wenn die Last der Welt.sng')
+        song = SngFile('./testData/618 Wenn die Last der Welt.sng')
         self.assertEqual(len(song.content), 4)
 
     def test_file_write(self):
@@ -178,7 +179,7 @@ class TestSNG(unittest.TestCase):
         Functions which compares the original file to the one generated after parsing
         :return:
         """
-        song = SNG_File("./testData/022 Die Liebe des Retters.sng")
+        song = SngFile("./testData/022 Die Liebe des Retters.sng")
         song.write_file("_test")
 
         original_file = open('./testData/022 Die Liebe des Retters.sng', 'r', encoding='iso-8859-1')
@@ -198,7 +199,7 @@ class TestSNG(unittest.TestCase):
         Test to check if a content without proper label is replaced as unknown and custom content header is read
         :return:
         """
-        song = SNG_File("./testData/022 Die Liebe des Retters.sng")
+        song = SngFile("./testData/022 Die Liebe des Retters.sng")
         target = ['Intro', 'Strophe 1', 'Refrain 1', 'Strophe 2', 'Bridge']
         markers = song.content.keys()
 
@@ -206,7 +207,7 @@ class TestSNG(unittest.TestCase):
             self.assertIn(marker, target)
 
         # Special Exceptions
-        song2 = SNG_File('./testData/022 Die Liebe des Retters_missing_block.sng')
+        song2 = SngFile('./testData/022 Die Liebe des Retters_missing_block.sng')
         target = ['Unknown', '$$M=Testnameblock', 'Refrain 1', 'Strophe 2', 'Bridge']
         markers = song2.content.keys()
 
@@ -220,7 +221,7 @@ class TestSNG(unittest.TestCase):
         Checks that a file which does not have any section headers can be read without error
         :return:
         """
-        song = SNG_File('./testData/764 Test Ohne Versmarker.sng')
+        song = SngFile('./testData/764 Test Ohne Versmarker.sng')
 
         self.assertEqual(len(song.content.keys()), 1)
         self.assertEqual(len(song.content["Unknown"]), 1 + 5)
@@ -229,13 +230,14 @@ class TestSNG(unittest.TestCase):
 
     def test_file_file_encoding(self):
         """
-        Checks that errrors are logged for files with issues while parsing
+        Checks that errors are logged for files with issues while parsing
         test file uses wrong encoding therefore doesn't have a --- dividing header and content
         :return:
         """
 
         with self.assertLogs(level='ERROR') as cm:
-            song = SNG_File('./testData/726 Psalm 047.sng')
+            song = SngFile('./testData/726 Psalm 047.sng')
+            self.assertEqual(len(song.content), 0)
 
         self.assertEqual(cm.output,
                          [
@@ -249,7 +251,7 @@ class TestSNG(unittest.TestCase):
         :return:
         """
 
-        song = SNG_File('./testData/726 Psalm 047_fixed.sng')
+        song = SngFile('./testData/726 Psalm 047_fixed.sng')
         self.assertEqual(song.filename, '726 Psalm 047_fixed.sng')
 
     def test_file_short(self):
@@ -258,7 +260,7 @@ class TestSNG(unittest.TestCase):
         :return:
         """
 
-        song = SNG_File('./testData/Lizenz_Lied.sng')
+        song = SngFile('./testData/Lizenz_Lied.sng')
         self.assertEqual(song.filename, 'Lizenz_Lied.sng')
 
     def test_header_EG_Psalm_special(self):
@@ -267,7 +269,7 @@ class TestSNG(unittest.TestCase):
         e.g. 709 Herr, sei nicht ferne.sng
         :return:
         """
-        song = SNG_File('./testData/709 Herr, sei nicht ferne.sng', "EG")
+        song = SngFile('./testData/709 Herr, sei nicht ferne.sng', "EG")
         self.assertEqual(song.header["Songbook"], "EG 709 - Psalm 22 I")
 
         songbook_regex = r"^(Wwdlp \d{3})|(FJ([1-5])\/\d{3})|(EG \d{3}(.\d{1,2})?(( - Psalm )\d{1,3})?( .{1,3})?)$"
@@ -279,7 +281,7 @@ class TestSNG(unittest.TestCase):
         :return:
         """
         # Test Warning for Psalms
-        song = SNG_File('./testData/726 Psalm 047.sng', 'EG')
+        song = SngFile('./testData/726 Psalm 047.sng', 'EG')
         self.assertNotIn("ChurchSongID", song.header.keys())
 
         with self.assertLogs(level='WARNING') as cm:
@@ -299,15 +301,16 @@ class TestSNG(unittest.TestCase):
         # TODO Add test check for EG Psalms that #bible header is present
 
     def test_content_reformat_slide_4_lines(self):
-        '079 Höher_reformat.sng'
+        song = SngFile('./testData/079 Höher_reformat.sng')
+        self.assertEqual()
         raise NotImplemented()  # TODO implement test and required methods
 
     def test_header_VerseOrder_complete(self):
-        '079 Höher_reformat.sng'
+        song = SngFile('./testData/079 Höher_reformat.sng')
         raise NotImplemented()  # TODO implement test and required methods
 
     def test_content_Intro_Slide(self):
-        '079 Höher_reformat.sng'
+        song = SngFile('./testData/079 Höher_reformat.sng')
         raise NotImplemented()  # TODO implement test and required methods
 
     if __name__ == '__main__':
