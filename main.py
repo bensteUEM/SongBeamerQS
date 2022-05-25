@@ -38,14 +38,14 @@ def validate_titles(df_to_change, fix=False):
     """
 
     # Generate Dataframe Column with Title
-    for current_index, current_value in df["SngFile"].items():
+    for current_index, current_value in df_to_change["SngFile"].items():
         if "Title" in current_value.header.keys():
-            df.loc[(current_index, "Title")] = current_value.header["Title"]
-            df.loc[(current_index, "contains_number_in_title")] = any(
+            df_to_change.loc[(current_index, "Title")] = current_value.header["Title"]
+            df_to_change.loc[(current_index, "contains_number_in_title")] = any(
                 char.isdigit() for char in current_value.header["Title"])
         else:
             logging.info("Song without a Title in Header:" + current_value.filename)
-            df.loc[(current_index, "contains_number_in_title")] = False
+            df_to_change.loc[(current_index, "contains_number_in_title")] = False
 
     title_invalid = df_to_change["Title"].isna() | df_to_change["contains_number_in_title"]
 
@@ -171,7 +171,7 @@ def read_baiersbronn_songs_to_df():
     :return:
     """
 
-    songs = []
+    songs_temp = []
     """
     For Testing only!
     dirname = 'testData/'
@@ -182,9 +182,9 @@ def read_baiersbronn_songs_to_df():
     for key, value in SNG_DEFAULTS.KnownFolderWithPrefix.items():
         dirname = SNG_DEFAULTS.KnownDirectory + key
         dirprefix = value
-        songs.extend(parse_sng_from_directory(dirname, dirprefix))
+        songs_temp.extend(parse_sng_from_directory(dirname, dirprefix))
 
-    result_df = pd.DataFrame(songs, columns=["SngFile"])
+    result_df = pd.DataFrame(songs_temp, columns=["SngFile"])
     for index, value in result_df['SngFile'].items():
         result_df.loc[(index, 'filename')] = value.filename
         result_df.loc[(index, 'path')] = value.path
@@ -215,15 +215,27 @@ def generate_background_image_column(df_to_change):
             df_to_change.loc[(index, 'BackgroundImage')] = value.header['BackgroundImage']
 
 
+def check_ct_song_categories_exist_as_folder(ct_song_categories, path):
+    """
+    Method which check whether all Song Categories of ChurchTools exist in the specified folder
+    :param ct_song_categories: List of all ChurchTools Song categories
+    :param path: for local files
+    :return:
+    """
+    logging.debug("checking categories{} in {}".format(ct_song_categories, path))
+    local_directories = os.listdir(path)
+    return all([category in local_directories for category in ct_song_categories])
+
+
 if __name__ == '__main__':
-    logging.basicConfig(filename='logs/main.log', encoding='utf-8',
+    logging.basicConfig(filename='logs/main.py.log', encoding='utf-8',
                         format="%(asctime)s %(name)-10s %(levelname)-8s %(message)s",
                         level=logging.DEBUG)
     logging.info("Excecuting Main RUN")
 
-    df = read_baiersbronn_songs_to_df()
-    generate_title_column(df)
-    generate_background_image_column(df)
+    df_sng = read_baiersbronn_songs_to_df()
+    generate_title_column(df_sng)
+    generate_background_image_column(df_sng)
 
     # TODO Ideensammlung
     # - check max number of chars per line
@@ -233,6 +245,12 @@ if __name__ == '__main__':
     # validate_songbook(df, True)
 
     # df.to_csv("Main_DF_Export.csv", quoting=csv.QUOTE_NONNUMERIC)
-    validate_headers(df, fix=True)
+    validate_headers(df_sng, fix=True)
+
+    from ChurchToolsApi import ChurchToolsApi
+
+    api = ChurchToolsApi('https://elkw1610.krz.tools')
+    songs = api.get_songs()
+    df_ct = pd.json_normalize(songs)
 
     logging.info('Main Method finished')

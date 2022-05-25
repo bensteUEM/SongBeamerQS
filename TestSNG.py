@@ -22,7 +22,7 @@ class TestSNG(unittest.TestCase):
         logging.basicConfig(filename='logs/TestSNG.log', encoding='utf-8',
                             format="%(asctime)s %(name)-10s %(levelname)-8s %(message)s",
                             level=logging.DEBUG)
-        logging.info("Excecuting Tests RUN")
+        logging.info("Excecuting TestSNG RUN")
 
     def test_file_name(self):
         """

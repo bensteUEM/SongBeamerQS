@@ -40,16 +40,14 @@ SngSongBookPrefix = ['EG', 'FJ', "WWDLP"]
 KnownSongBookPrefix = {'EG', 'FJ1', 'FJ2', 'FJ3', 'FJ4', 'FJ5', 'Wwdlp', 'test'}
 KnownDirectory = '/home/benste/Documents/Kirchengemeinde Baiersbronn/Beamer/Songbeamer - Songs/'
 KnownFolderWithPrefix = {
-    'Bekenntnis': '',
     'EG Lieder': 'EG',
-    'EG Psalmen und Sonstiges': 'EG',
+    'EG Psalmen & Sonstiges': 'EG',
     'Feiert Jesus 1': 'FJ1',
     'Feiert Jesus 2': 'FJ2',
     'Feiert Jesus 3': 'FJ3',
     'Feiert Jesus 4': 'FJ4',
     'Feiert Jesus 5': 'FJ5',
-    'Gebete': '',
     'Sonstige Lieder': '',
     'Sonstige Texte': '',
-    'Wwdlp': 'Wwdlp'
+    'Wwdlp (Wo wir dich loben, wachsen neue Lieder plus)': 'Wwdlp'
 }
