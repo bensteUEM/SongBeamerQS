@@ -185,7 +185,7 @@ class SngFile:
             logging.debug("Added Intro to VerseOrder of ({})".format(self.filename))
 
         if 'Intro' not in self.content.keys():
-            intro = {'Intro':  [['Intro'], []]}
+            intro = {'Intro': [['Intro'], []]}
             self.content = {**intro, **self.content}
             self.update_editor_because_content_modified()
             logging.debug("Added Intro Block to ({})".format(self.filename))
@@ -301,7 +301,27 @@ class SngFile:
                 result = True
             else:
                 result = False
+        if result:
+            self.update_editor_because_content_modified()
         return result
+
+    def fix_stop_verseorder(self, move_to_end=False):
+        """
+        Method which checks that a STOP exists in VerseOrder headers and corrects it
+        :param move_to_end removes any 'STOP' and makes sure only one at end exists
+        :return: if anything was changed
+        """
+        if 'STOP' in self.header['VerseOrder'] and move_to_end:
+            logging.debug('Removing STOP from {}'.format(self.header['VerseOrder']))
+            self.header['VerseOrder'].remove('STOP')
+            logging.debug('Removed old stop from {} because not at end'.format(self.filename))
+        if 'STOP' not in self.header['VerseOrder']:
+            self.header['VerseOrder'].append('STOP')
+            logging.debug('Added STOP at end of VerseOrder of {}: {}'.format(self.filename, self.header['VerseOrder']))
+            self.update_editor_because_content_modified()
+            return True
+        else:
+            return False
 
 
 def is_verse_marker_line(line):
