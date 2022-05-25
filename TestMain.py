@@ -2,6 +2,7 @@ import logging
 import unittest
 
 import pandas
+import pandas as pd
 from ChurchToolsApi import ChurchToolsApi
 
 import SNG_DEFAULTS
@@ -39,28 +40,34 @@ class TestSNG(unittest.TestCase):
         songs_df = read_baiersbronn_songs_to_df()
         filter = songs_df["path"] \
                  == '/home/benste/Documents/Kirchengemeinde Baiersbronn/Beamer/Songbeamer - Songs/EG Lieder'
-        eg_songs_df = songs_df[filter].copy() #TODO check if copy can be removed
+        eg_songs_df = songs_df[filter].copy()  # TODO check if copy can be removed
         result = validate_all_songbook(eg_songs_df, fix=True)
         generate_songbook_column(eg_songs_df)
         self.assertEqual(len(eg_songs_df['Songbook']), eg_songs_df['Songbook'].str.startswith('EG').sum())
-
-        # TODO songbook fixing fails with (76, 'Wwdlp 170 & EG 548') from Baiersbronn dir -> see special cases
-        # Troubleshooting - EG 548 not detected as problematic in log ...
-
 
     def test_validate_songbook_special_cases(self):
         """
         Checks the application of the validate_header_songbook method in main.py with specific problematic examples
         :return:
         """
+
         special_files = ['709 Herr, sei nicht ferne.sng']
         song = parse_sng_from_directory('./testData', 'EG', special_files)[0]
         self.assertEqual(special_files[0], song.filename)
 
+        #Special Case for Regex Testing
+        special_files = ['548 Kreuz auf das ich schaue.sng']
+        song = parse_sng_from_directory('./testData', 'EG', special_files)[0]
+        song_df = pd.DataFrame([song], columns=["SngFile"])
+        self.assertEqual('Wwdlp 170 & EG 548', song_df['SngFile'].iloc[0].header['Songbook'])
+        validate_all_songbook(song_df, fix=True)
+        generate_songbook_column(song_df)
+        self.assertEqual('EG 548', song_df['SngFile'].iloc[0].header['Songbook'])
+        self.assertEqual(len(song_df['Songbook']), song_df['Songbook'].str.startswith('EG').sum())
+
+
         # TODO songbook fixing fails with (76, 'Wwdlp 170 & EG 548') from Baiersbronn dir
 
         # TODO Songbook=EG 709 - Psalm 22 I -> is marked as autocorrect ...
-        song
 
-        raise NotImplementedError()
         # TODO add test for match Regex for EG Psalm in ChurchSongId?

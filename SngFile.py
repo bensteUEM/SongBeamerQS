@@ -197,8 +197,8 @@ class SngFile:
             # Check Syntax with Regex, either FJx/yyy, EG YYY, EG YYY.YY or or EG XXX - Psalm X or Wwdlp YYY
             # ^(Wwdlp \d{3})|(FJ([1-5])\/\d{3})|(EG \d{3}(( - Psalm )\d{1,3})?)$
             import re
-            songbook_regex = r"^(Wwdlp \d{3})|(FJ([1-5])\/\d{3})|(EG \d{3}(.\d{1,2})?(( - Psalm )\d{1,3})?( .{1,3})?)$"
-            songbook_valid |= re.match(songbook_regex, self.header["Songbook"]) is not None
+            songbook_regex = r"^(Wwdlp \d{3})$|(^FJ([1-5])\/\d{3})$|^(EG \d{3}(\.\d{1,2})?)( - Psalm \d{1,3}( .{1,3})?)?$"
+            songbook_valid &= re.match(songbook_regex, self.header["Songbook"]) is not None
 
             # Check for remaining that "&" should not be present in Songbook
             # songbook_invalid |= self.header["Songbook"].contains('&')
