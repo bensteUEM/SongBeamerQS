@@ -126,11 +126,11 @@ class SngFile:
             new_file.writelines("%s\n" % line for line in result)
         new_file.close()
 
-    def contains_required_headers(self):
+    def validate_headers(self):
         """
         Checks if all required headers are present
         Logs info in case something is missing and returns respective list of keys
-        :return: bool, list of missing keys
+        :return: bool indicating if anything is missing
         """
         missing = []
         for key in SNG_DEFAULTS.SngRequiredHeader:
@@ -152,9 +152,91 @@ class SngFile:
         if not result:
             logging.warning('Missing required headers in ({}) {}'.format(self.filename, missing))
 
-        return result, missing
+        return result
 
-    def contains_complete_verse_order(self):
+    def validate_header_title(self, fix=False):
+        """
+        Validation method for Title header checks for existance and numbers
+        :param fix: bool if it should be attempt to fix itself
+        :return: bool if Title is valid at end of method
+        """
+
+        if "Title" not in self.header.keys():
+            logging.info("Song without a Title in Header:" + self.filename)
+            self.header["Title"] = ''
+            title_valid = False
+        else:
+            title_valid = not any(char.isdigit() for char in self.header["Title"])
+
+        if fix and not title_valid:
+            "Invalid title ({}) in {}".format(self.filename, self.filename)
+            self.fix_title()
+            title_valid = self.validate_header_title(fix=False)
+            self.update_editor_because_content_modified()
+
+        return title_valid
+
+    def validate_header_songbook(self, fix=False):
+        """
+        Validation method for Songbook and ChurchSongID headers
+        :param fix: bool if it should be attempt to fix itself
+        :return: if songbook is valid at end of method
+        """
+
+        # Validate Headers
+        if 'ChurchSongID' not in self.header.keys() or 'Songbook' not in self.header.keys():
+            # Hint - ChurchSongID ' '  or '' is automatically removed from SongBeamer on Editing in Songbeamer itself
+            songbook_valid = False
+
+        else:
+            songbook_valid = self.header['ChurchSongID'] == self.header['Songbook']
+
+            # Check that songbook_prefix is part of songbook
+            songbook_valid &= self.songbook_prefix in self.header['Songbook']
+
+            # Check Syntax with Regex, either FJx/yyy, EG YYY, EG YYY.YY or or EG XXX - Psalm X or Wwdlp YYY
+            # ^(Wwdlp \d{3})|(FJ([1-5])\/\d{3})|(EG \d{3}(( - Psalm )\d{1,3})?)$
+            import re
+            songbook_regex = r"^(Wwdlp \d{3})|(FJ([1-5])\/\d{3})|(EG \d{3}(.\d{1,2})?(( - Psalm )\d{1,3})?( .{1,3})?)$"
+            songbook_valid |= re.match(songbook_regex, self.header["Songbook"]) is not None
+
+            # Check for remaining that "&" should not be present in Songbook
+            # songbook_invalid |= self.header["Songbook"].contains('&')
+            # sample is EG 548 & WWDLP 170 = loc 77
+            # -> no longer needed because of regex check
+
+            # TODO low Prio - check numeric range of songbooks
+            # EG 1 - 851 incl.non numeric e.g. 178.14
+            # EG Psalms in EG Württemberg EG 701-758
+            # Syntax should be EG xxx - Psalm Y
+
+        if fix:
+            self.fix_header_church_song_id_caps()
+            if 'Songbook' in self.header.keys():  # Prepare Logging text
+                text = 'Corrected Songbook from ({})'.format(self.header["Songbook"])
+            else:
+                text = 'New Songbook'
+            fixed = self.fix_songbook()
+
+            if not fixed and 'Songbook' not in self.header.keys():
+                logging.error("Problem occured with Songbook Fixing of {} - check logs!".format(self.filename))
+                self.header["Songbook"] = None
+            if not fixed and 'ChurchSongID' not in self.header.keys():
+                logging.error("Problem occured with ChurchSongID Fixing of {} - check logs!".format(self.filename))
+                self.header["ChurchSongID"] = None
+            elif not fixed:
+                logging.error(
+                    "Problem occurred with Songbook Fixing of {} - kept original {},{}".format(
+                        self.filename, self.header["Songbook"], self.header["ChurchSongID"]))
+            else:
+                logging.debug(text + ' to (' + self.header['Songbook'] + ') in ' + self.filename)
+
+            self.update_editor_because_content_modified()
+            songbook_valid = self.validate_header_songbook(fix=False)
+
+        return songbook_valid
+
+    def validate_verse_order(self):
         """
         Checks that all items of content are part of Verse Order
         and all items of VerseOrder are available in content
@@ -220,10 +302,11 @@ class SngFile:
 
     def fix_title(self):
         """
-        Helper function which checks the current title and removes and space separated block which contains
+        Helper function which tries to fix current title based on filename
+        and removes and space separated block which contains
         * only SngTitleNumberChars
         * any SngSongBookPrefix
-        :return: None - item itself is fixed
+        :return: if item was fixed
         """
 
         title_as_list = self.filename[:-4].split(" ")
@@ -234,6 +317,7 @@ class SngFile:
                 title_as_list.remove(part)
                 self.update_editor_because_content_modified()
         self.header['Title'] = " ".join(title_as_list)
+        self.update_editor_because_content_modified()
 
     def fix_songbook(self):
         """

@@ -120,18 +120,18 @@ class TestSNG(unittest.TestCase):
         """
         song = SngFile('./testData/022 Die Liebe des Retters_missing_title.sng')
         with self.assertLogs(level='WARNING') as cm:
-            song.contains_required_headers()
+            song.validate_headers()
         self.assertEqual(cm.output, ['WARNING:root:Missing required headers in (022 Die Liebe des '
                                      "Retters_missing_title.sng) ['Title']"])
 
         song = SngFile('./testData/022 Die Liebe des Retters.sng')
-        check = song.contains_required_headers()
-        self.assertEqual(True, check[0], song.filename + ' should contain ' + str(check[1]))
+        check = song.validate_headers()
+        self.assertEqual(True, check, song.filename + ' should contain other headers - check log')
 
         song = SngFile('./testData/Holy Holy Holy.sng')
         song.fix_songbook()
-        check = song.contains_required_headers()  # TODO check that ChurchSong can be NULL in SNG without removal
-        self.assertEqual(True, check[0], song.filename + ' should contain ' + str(check[1]))
+        check = song.validate_headers()  # TODO check that ChurchSong can be NULL in SNG without removal
+        self.assertEqual(True, check, song.filename + ' should contain other headers - check log')
 
     def test_header_songbook(self):
         """
@@ -297,9 +297,9 @@ class TestSNG(unittest.TestCase):
         self.assertEqual(cm.output,
                          ['WARNING:root:EG Psalm "726 Psalm 047_iso-8859-1.sng" can not be auto corrected - please adjust manually'
                           ])
-        # TODO continue HERE - #Songbook=EG 709 - Psalm 22 I -> is marked as autocorrect ...
 
-        # TODO add test for match Regex for EG Psalm in ChurchSongId?
+        song = SngFile('testData/726 Psalm 047_iso-8859-1.sng', 'EG')
+        self.assertNotIn("ChurchSongID", song.header.keys())
 
         # TODO Add test for language marker validation in EG psalms
 
@@ -345,7 +345,7 @@ class TestSNG(unittest.TestCase):
 
         # 2. Check that Verse Order shows as incomplete
         with self.assertLogs(level='WARNING') as cm:
-            self.assertFalse(song.contains_complete_verse_order())
+            self.assertFalse(song.validate_verse_order())
 
         self.assertEqual(cm.output, ["WARNING:root:Verse Order and Blocks don't match in " +
                                      "022 Die Liebe des Retters_missing_block.sng"
@@ -353,7 +353,7 @@ class TestSNG(unittest.TestCase):
 
         # Failsafe with correct file
         song = SngFile('./testData/079 Höher_reformat.sng')
-        self.assertTrue(song.contains_complete_verse_order())
+        self.assertTrue(song.validate_verse_order())
 
     def test_content_Intro_Slide(self):
         """
