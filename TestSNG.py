@@ -244,13 +244,13 @@ class TestSNG(unittest.TestCase):
         """
 
         with self.assertLogs(level='ERROR') as cm:
-            song = SngFile('./testData/726 Psalm 047.sng')
+            song = SngFile('./testData/726 Psalm 047_utf8.sng')
             self.assertEqual(len(song.content), 0)
 
         self.assertEqual(cm.output,
                          [
                              'ERROR:root:Something is wrong with the line ï»¿#LangCount=2' +
-                             ' of file ./testData/726 Psalm 047.sng'
+                             ' of file ./testData/726 Psalm 047_utf8.sng'
                          ])
 
     def test_file_broken_encoding_repaired(self):
@@ -259,8 +259,8 @@ class TestSNG(unittest.TestCase):
         :return:
         """
 
-        song = SngFile('./testData/726 Psalm 047_fixed.sng')
-        self.assertEqual(song.filename, '726 Psalm 047_fixed.sng')
+        song = SngFile('testData/726 Psalm 047_utf8.sng')
+        self.assertEqual(song.filename, '726 Psalm 047_utf8.sng')
 
     def test_file_short(self):
         """
@@ -289,14 +289,13 @@ class TestSNG(unittest.TestCase):
         :return:
         """
         # Test Warning for Psalms
-        song = SngFile('./testData/726 Psalm 047.sng', 'EG')
+        song = SngFile('testData/726 Psalm 047_iso-8859-1.sng', 'EG')
         self.assertNotIn("ChurchSongID", song.header.keys())
-        # TODO IMPORTANT - check why song is empty content and header object at this point
         with self.assertLogs(level='WARNING') as cm:
             song.fix_songbook()
 
         self.assertEqual(cm.output,
-                         ['WARNING:root:EG Psalm "726 Psalm 047.sng" can not be auto corrected - please adjust manually'
+                         ['WARNING:root:EG Psalm "726 Psalm 047_iso-8859-1.sng" can not be auto corrected - please adjust manually'
                           ])
         # TODO continue HERE - #Songbook=EG 709 - Psalm 22 I -> is marked as autocorrect ...
 
