@@ -37,12 +37,6 @@ class SngFile:
                     break
                 temp_content[-1].append(line)
         file.close()
-        # Remove empty blocks e.g. EG 618 ends with ---
-        for content in temp_content:
-            if len(content) == 0:
-                temp_content.remove(content)
-                self.update_editor_because_content_modified()
-
         logging.debug("Parsing content for: {}".format(self.filename))
         self.parse_content(temp_content)
 
@@ -57,8 +51,8 @@ class SngFile:
         """
         current_contentname = None  # Use Unknown if no content name is specified
         for content in temp_content:
-            # TODO check if not duplicate code compared to end of parsefile with empty block removal
             if len(content) == 0:  # Skip in case there is no content
+                self.update_editor_because_content_modified()
                 continue
             elif is_verse_marker_line(content[0]):  # New named content
                 current_contentname = content[0]
@@ -72,8 +66,6 @@ class SngFile:
 
             else:  # regular line for existing content
                 self.content[current_contentname].append(content)
-
-        # TODO need to check that "Unknown" exists in Verse Order or no Verse Order
 
     def parse_param(self, line):
         """
