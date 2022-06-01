@@ -130,7 +130,7 @@ class TestSNG(unittest.TestCase):
 
         song = SngFile('./testData/Holy Holy Holy.sng')
         song.fix_songbook()
-        check = song.validate_headers()  # TODO check that ChurchSong can be NULL in SNG without removal
+        check = song.validate_headers()
         self.assertEqual(True, check, song.filename + ' should contain other headers - check log')
 
     def test_header_songbook(self):
@@ -234,7 +234,6 @@ class TestSNG(unittest.TestCase):
         self.assertEqual(len(song.content.keys()), 1)
         self.assertEqual(len(song.content["Unknown"]), 1 + 5)
         self.assertEqual(len(song.content["Unknown"][5]), 2)
-        # TODO complete test case for missing block check
 
     def test_file_file_encoding(self):
         """

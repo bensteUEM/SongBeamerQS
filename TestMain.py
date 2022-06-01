@@ -55,19 +55,23 @@ class TestSNG(unittest.TestCase):
         song = parse_sng_from_directory('./testData', 'EG', special_files)[0]
         self.assertEqual(special_files[0], song.filename)
 
-        #Special Case for Regex Testing
+        # Special Case for Regex Testing
         special_files = ['548 Kreuz auf das ich schaue.sng']
         song = parse_sng_from_directory('./testData', 'EG', special_files)[0]
         song_df = pd.DataFrame([song], columns=["SngFile"])
         self.assertEqual('Wwdlp 170 & EG 548', song_df['SngFile'].iloc[0].header['Songbook'])
-        validate_all_songbook(song_df, fix=True)
-        generate_songbook_column(song_df)
+        result = validate_all_songbook(song_df, fix=False)
+        self.assertEqual(result.sum(), 0, 'Should have no valid entries')
+        result = validate_all_songbook(song_df, fix=True)
+        self.assertEqual(result.sum(), 1, 'Should have one valid entry')
+        result = generate_songbook_column(song_df)
         self.assertEqual('EG 548', song_df['SngFile'].iloc[0].header['Songbook'])
         self.assertEqual(len(song_df['Songbook']), song_df['Songbook'].str.startswith('EG').sum())
 
-
-        # TODO songbook fixing fails with (76, 'Wwdlp 170 & EG 548') from Baiersbronn dir
-
-        # TODO Songbook=EG 709 - Psalm 22 I -> is marked as autocorrect ...
-
-        # TODO add test for match Regex for EG Psalm in ChurchSongId?
+        # Special Case for Regex Testing - Songbook=EG 709 - Psalm 22 I -> is marked as autocorrect ...
+        special_files = ['709 Herr, sei nicht ferne.sng']
+        song = parse_sng_from_directory('./testData', 'EG', special_files)[0]
+        song_df = pd.DataFrame([song], columns=["SngFile"])
+        self.assertEqual('EG 709 - Psalm 22 I', song_df['SngFile'].iloc[0].header['Songbook'])
+        result = validate_all_songbook(song_df, fix=False)
+        self.assertEqual(result.sum(), 1, 'Should have one valid entry')

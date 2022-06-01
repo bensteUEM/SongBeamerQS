@@ -179,7 +179,6 @@ class SngFile:
         if 'ChurchSongID' not in self.header.keys() or 'Songbook' not in self.header.keys():
             # Hint - ChurchSongID ' '  or '' is automatically removed from SongBeamer on Editing in Songbeamer itself
             songbook_valid = False
-
         else:
             songbook_valid = self.header['ChurchSongID'] == self.header['Songbook']
 
