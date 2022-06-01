@@ -40,7 +40,7 @@ class TestSNG(unittest.TestCase):
         songs_df = read_baiersbronn_songs_to_df()
         filter = songs_df["path"] \
                  == '/home/benste/Documents/Kirchengemeinde Baiersbronn/Beamer/Songbeamer - Songs/EG Lieder'
-        eg_songs_df = songs_df[filter].copy()  # TODO check if copy can be removed
+        eg_songs_df = songs_df[filter]
         result = validate_all_songbook(eg_songs_df, fix=True)
         generate_songbook_column(eg_songs_df)
         self.assertEqual(len(eg_songs_df['Songbook']), eg_songs_df['Songbook'].str.startswith('EG').sum())
