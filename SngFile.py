@@ -92,7 +92,17 @@ class SngFile:
         """
         self.header["Editor"] = SngDefaultHeader["Editor"]
 
-    def write_file(self, suffix="_new"):
+    def write_path_change(self, dirname='/home/benste/Desktop'):
+        """
+        Method to change the path entry to a different directory keeping the file collection specific last level folder
+        :param: dirname: default path to insert before folder name
+        :return:
+        """
+        new_path = "/".join([dirname, self.path.split("/")[-1]])
+        logging.debug("Changing path from {} to {}".format(self.path, new_path))
+        self.path = new_path
+
+    def write_file(self, suffix=""):
         """
         Function used to write a processed SngFile to disk
         Converts Verse Order from list to string
@@ -227,22 +237,36 @@ class SngFile:
 
         return songbook_valid
 
-    def validate_verse_order(self):
+    def validate_verse_order(self, fix=False):
         """
         Checks that all items of content are part of Verse Order
         and all items of VerseOrder are available in content
+        :param fix: bool if it should be attempt to fix itself
         :return: result of check
         """
 
-        verse_order_covers_all_blocks = all([i in self.content.keys() for i in self.header["VerseOrder"]])
-        blocks_in_verse_order = all([i in self.header["VerseOrder"] for i in self.content.keys()])
+        if 'VerseOrder' not in self.header.keys():
+            result = False
+            logging.debug('Missing VerseOrder in {}'.format(self.filename))
+        else:
+            verse_order_covers_all_blocks = all([i in self.content.keys() for i in self.header["VerseOrder"]])
+            blocks_in_verse_order = all([i in self.header["VerseOrder"] for i in self.content.keys()])
+            result = blocks_in_verse_order & verse_order_covers_all_blocks
+            if not result:
+                logging.warning('Verse Order and Blocks don\'t match in {}'.format(self.filename))
+                logging.debug('\t  Order: {}'.format(str(self.header["VerseOrder"])))
+                logging.debug('\t Blocks: {}'.format(str(list(self.content.keys()))))
 
-        result = blocks_in_verse_order & verse_order_covers_all_blocks
-
-        if not result:
-            logging.warning('Verse Order and Blocks don\'t match in {}'.format(self.filename))
-            logging.debug('\t  Order: {}'.format(str(self.header["VerseOrder"])))
-            logging.debug('\t Blocks: {}'.format(str(list(self.content.keys()))))
+        if fix:
+            if 'VerseOrder' not in self.header.keys():
+                self.header['VerseOrder'] = []
+            for content_block in self.content.keys():
+                if content_block not in self.header["VerseOrder"]:
+                    self.header["VerseOrder"].append(content_block)
+            self.header["VerseOrder"][:] = \
+                [v for v in self.header["VerseOrder"] if (v in self.content.keys() or v == 'STOP')]
+            self.update_editor_because_content_modified()
+            result = self.validate_verse_order(fix=False)
 
         return result
 
@@ -380,23 +404,34 @@ class SngFile:
             self.update_editor_because_content_modified()
         return result
 
-    def fix_stop_verseorder(self, move_to_end=False):
+    def validate_stop_verseorder(self, fix=False, should_be_at_end=False):
         """
         Method which checks that a STOP exists in VerseOrder headers and corrects it
-        :param move_to_end removes any 'STOP' and makes sure only one at end exists
-        :return: if anything was changed
+        :param should_be_at_end removes any 'STOP' and makes sure only one at end exists
+        :param fix: bool if it should be attempt to fix itself
+        :return: if something is wrong after applying method
         """
-        if 'STOP' in self.header['VerseOrder'] and move_to_end:
-            logging.debug('Removing STOP from {}'.format(self.header['VerseOrder']))
-            self.header['VerseOrder'].remove('STOP')
-            logging.debug('Removed old stop from {} because not at end'.format(self.filename))
+        result = True
+        if 'STOP' in self.header['VerseOrder'] and should_be_at_end:
+            if fix:
+                logging.debug('Removing STOP from {}'.format(self.header['VerseOrder']))
+                self.header['VerseOrder'].remove('STOP')
+                self.update_editor_because_content_modified()
+                logging.debug('Removed old stop from {} because not at end'.format(self.filename))
+                result = True
+            else:
+                result = False
+
         if 'STOP' not in self.header['VerseOrder']:
-            self.header['VerseOrder'].append('STOP')
-            logging.debug('Added STOP at end of VerseOrder of {}: {}'.format(self.filename, self.header['VerseOrder']))
-            self.update_editor_because_content_modified()
-            return True
-        else:
-            return False
+            if fix:
+                self.header['VerseOrder'].append('STOP')
+                logging.debug(
+                    'Added STOP at end of VerseOrder of {}: {}'.format(self.filename, self.header['VerseOrder']))
+                self.update_editor_because_content_modified()
+                result = True
+            else:
+                result = False
+        return result
 
 
 def is_verse_marker_line(line):

@@ -179,11 +179,28 @@ if __name__ == '__main__':
     generate_title_column(df_sng)
     generate_songbook_column(df_sng)
 
+    """
     from ChurchToolsApi import ChurchToolsApi
 
     api = ChurchToolsApi('https://elkw1610.krz.tools')
     songs = api.get_songs()
     df_ct = pd.json_normalize(songs)
+    """
+
+    # current_path = df_sng["SngFile"].iloc[0].path
+    # output_path = '/'.join(current_path.split('/')[:-1])+'/test'
+    output_path = './output'
+    df_sng['SngFile'].apply(lambda x: x.write_path_change(output_path))
+
+    df_sng['SngFile'].apply(lambda x: x.validate_header_title(fix=True))
+    df_sng['SngFile'].apply(lambda x: x.validate_header_songbook(fix=True))
+
+    df_sng['SngFile'].apply(lambda x: x.validate_verse_order(fix=True))
+    df_sng['SngFile'].apply(lambda x: x.fix_intro_slide())
+    df_sng['SngFile'].apply(lambda x: x.validate_stop_verseorder(fix=True, should_be_at_end=True))
+
+    df_sng['SngFile'].apply(lambda x: x.fix_content_slides_number_of_lines())
+    df_sng['SngFile'].apply(lambda x: x.write_file())
 
     logging.info('Main Method finished')
 

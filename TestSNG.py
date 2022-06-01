@@ -91,7 +91,8 @@ class TestSNG(unittest.TestCase):
             'Songbook': 'FJ5/022',
             'Comments': '77u/Rm9saWVucmVpaGVuZm9sZ2UgbmFjaCBvZmZpemllbGxlciBBdWZuYWhtZSwgaW4gQmFpZXJzYnJvb' +
                         'm4gZ2dmLiBrw7xyemVyIHVuZCBtaXQgTXVzaWt0ZWFtIGFienVzdGltbWVu',
-            'ChurchSongID': 'FJ5/022'
+            'ChurchSongID': 'FJ5/022',
+            'ID': '149'
         }
         self.assertDictEqual(song.header, target)
 
@@ -331,12 +332,19 @@ class TestSNG(unittest.TestCase):
         self.assertEqual(len(song.content["Chorus 1"]), 3, "# Slides for Chorus after fixing")
 
     def test_header_VerseOrder_complete(self):
+        """
+        Method that checks various cases in regards to VerseOrder existance and fixing
+        :return:
+        """
         song = SngFile('./testData/022 Die Liebe des Retters_missing_block.sng')
 
         verse_order_text = 'Intro,Strophe 1,Strophe 2,Refrain 1,Refrain 1,Strophe 2,Refrain 1,Refrain 1,Bridge,' + \
                            'Bridge,Bridge,Bridge,Intro,Refrain 1,Refrain 1,Refrain 1,Refrain 1,STOP'
         verse_order = verse_order_text.split(",")
         verse_blocks = 'Unknown,$$M=Testnameblock,Refrain 1,Strophe 2,Bridge'.split(',')
+        verse_order_text_fixed = 'Strophe 2,Refrain 1,Refrain 1,Strophe 2,Refrain 1,Refrain 1,Bridge,Bridge,Bridge,' + \
+                                 'Bridge,Refrain 1,Refrain 1,Refrain 1,Refrain 1,STOP,Unknown,$$M=Testnameblock'
+        verse_order_fixed = verse_order_text_fixed.split(",")
 
         # 1. Check initial test file state
         self.assertEqual(song.header["VerseOrder"], verse_order)
@@ -349,6 +357,12 @@ class TestSNG(unittest.TestCase):
         self.assertEqual(cm.output, ["WARNING:root:Verse Order and Blocks don't match in " +
                                      "022 Die Liebe des Retters_missing_block.sng"
                                      ])
+
+        # 3. Check that Verse Order is completed
+        song = SngFile('./testData/022 Die Liebe des Retters_missing_block.sng')
+        self.assertEqual(song.header["VerseOrder"], verse_order)
+        song.validate_verse_order(fix=True)
+        self.assertEqual(song.header["VerseOrder"], verse_order_fixed)
 
         # Failsafe with correct file
         song = SngFile('./testData/079 Höher_reformat.sng')
@@ -378,13 +392,13 @@ class TestSNG(unittest.TestCase):
         # 1. File does not have STOP
         song = SngFile('./testData/079 Höher_reformat.sng')
         self.assertNotIn('STOP', song.header['VerseOrder'])
-        self.assertTrue(song.fix_stop_verseorder())
+        self.assertTrue(song.validate_stop_verseorder(fix=True))
         self.assertIn('STOP', song.header['VerseOrder'])
 
         # 2. File does already have STOP
         song = SngFile('./testData/022 Die Liebe des Retters.sng')
         self.assertIn('STOP', song.header['VerseOrder'])
-        self.assertFalse(song.fix_stop_verseorder())
+        self.assertTrue(song.validate_stop_verseorder())
         self.assertIn('STOP', song.header['VerseOrder'])
 
         # 3. File does have STOP but not at end and should stay this way
@@ -392,7 +406,7 @@ class TestSNG(unittest.TestCase):
         self.assertEqual('STOP', song.header['VerseOrder'][5])
         self.assertNotEqual('STOP', song.header['VerseOrder'][11])
         self.assertNotEqual('STOP', song.header['VerseOrder'][-1])
-        self.assertFalse(song.fix_stop_verseorder(move_to_end=False))
+        self.assertTrue(song.validate_stop_verseorder(should_be_at_end=False))
         self.assertEqual('STOP', song.header['VerseOrder'][5])
         self.assertNotEqual('STOP', song.header['VerseOrder'][-1])
         self.assertNotEqual('STOP', song.header['VerseOrder'][11])
@@ -401,7 +415,7 @@ class TestSNG(unittest.TestCase):
         song = SngFile('./testData/085 O Haupt voll Blut und Wunden.sng')
         self.assertEqual('STOP', song.header['VerseOrder'][5])
         self.assertNotEqual('STOP', song.header['VerseOrder'][-1])
-        self.assertTrue(song.fix_stop_verseorder(move_to_end=True))
+        self.assertTrue(song.validate_stop_verseorder(fix=True, should_be_at_end=True))
         self.assertNotEqual('STOP', song.header['VerseOrder'][5])
         self.assertEqual('STOP', song.header['VerseOrder'][-1])
 
