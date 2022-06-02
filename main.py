@@ -199,7 +199,7 @@ if __name__ == '__main__':
     df_sng['SngFile'].apply(lambda x: x.fix_intro_slide())
     df_sng['SngFile'].apply(lambda x: x.validate_stop_verseorder(fix=True, should_be_at_end=True))
 
-    df_sng['SngFile'].apply(lambda x: x.fix_content_slides_number_of_lines())
+    df_sng['SngFile'].apply(lambda x: x.validate_content_slides_number_of_lines(fix=True))
     df_sng['SngFile'].apply(lambda x: x.write_file())
 
     logging.info('Main Method finished')

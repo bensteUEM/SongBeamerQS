@@ -323,7 +323,8 @@ class TestSNG(unittest.TestCase):
         self.assertEqual(len(song.content["Pre-Chorus"][1]), 2, "Pre Chorus before fixing")
         self.assertEqual(len(song.content["Chorus 1"][1]), 6, "Chorus before fixing")
 
-        song.fix_content_slides_number_of_lines()
+        self.assertFalse(song.validate_content_slides_number_of_lines(fix=False))
+        self.assertTrue(song.validate_content_slides_number_of_lines(fix=True))
 
         self.assertTrue(all([len(block[1][1]) <= 4 for block in song.content.items()]),
                         'Some slides contain more than 4 lines')

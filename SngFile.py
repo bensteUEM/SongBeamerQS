@@ -372,22 +372,22 @@ class SngFile:
         self.update_editor_because_content_modified()
         return True
 
-    def fix_content_slides_number_of_lines(self, number_of_lines=4):
+    ##TODO convert validate_content_slides_number_of_lines to validate method
+    def validate_content_slides_number_of_lines(self, number_of_lines=4, fix=False):
         """
-        Method that rearranges slides to contain 4 lines except for last block which can have less than 4
+        Method that checks if slides need to contain # (default 4) lines except for last block which can have less
+        and optionally fixes it
         :param number_of_lines max number of lines allowed per slide
+        :param fix: bool if it should be attempt to fix itself
         :return: True if something was fixed
         """
-
-        result = False
-
         for key, value in self.content.items():  # Iterate all blocks
             # any which is not last not 4 lines is wrong
             has_issues = any([len(slide) != 4 for slide in value[1:-1]])
             # any which is last > 4 is wrong
             has_issues |= len(value[-1]) > 4
 
-            if has_issues:
+            if has_issues and fix:
                 logging.debug("Fixing block {} of {}".format(key, self.filename))
 
                 all_lines = []  # Merge list of all text lines
@@ -397,12 +397,10 @@ class SngFile:
                 self.content[key] = [value[0]]  # Remove all old text lines except for Verse Marker
                 for i in range(0, len(all_lines), number_of_lines):
                     self.content[key].append(all_lines[i:i + number_of_lines])
-                result = True
-            else:
-                result = False
-        if result:
-            self.update_editor_because_content_modified()
-        return result
+                self.update_editor_because_content_modified()
+            elif has_issues:
+                return False
+        return True
 
     def validate_stop_verseorder(self, fix=False, should_be_at_end=False):
         """
