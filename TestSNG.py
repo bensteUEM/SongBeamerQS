@@ -295,8 +295,8 @@ class TestSNG(unittest.TestCase):
             song.fix_songbook()
 
         self.assertEqual(cm.output,
-                         ['WARNING:root:EG Psalm "726 Psalm 047_iso-8859-1.sng" can not be auto corrected - please adjust manually'
-                          ])
+                         ['WARNING:root:EG Psalm "726 Psalm 047_iso-8859-1.sng"'+
+                          ' can not be auto corrected - please adjust manually'])
 
         song = SngFile('testData/726 Psalm 047_iso-8859-1.sng', 'EG')
         self.assertNotIn("ChurchSongID", song.header.keys())
