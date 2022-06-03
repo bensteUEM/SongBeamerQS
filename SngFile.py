@@ -168,10 +168,25 @@ class SngFile:
             title_valid = False
         else:
             title_as_list = self.header['Title'].split(" ")
-            title_valid = all([not any(digit.upper() in SNG_DEFAULTS.SngTitleNumberChars for digit in part)
-                               and any(filter_t not in part.upper() for filter_t in SNG_DEFAULTS.SngSongBookPrefix)
-                               for part in title_as_list]
-                              )
+
+            contains_number = False
+            contains_songbook_prefix = False
+            for part in title_as_list:
+                contains_number |= \
+                    any(digit.upper() in SNG_DEFAULTS.SngTitleNumberChars for digit in part)
+                contains_songbook_prefix |= \
+                    any(filter_t in part.upper() for filter_t in SNG_DEFAULTS.SngSongBookPrefix)
+            # Exception - Songs without prefix may contain numbers e.g. Psalm 21 ...
+            if len(self.songbook_prefix) == 0:
+                title_valid = True
+            else:
+                title_valid = not (contains_number or contains_songbook_prefix)
+
+            # Log Errors
+            if not title_valid and contains_number:
+                logging.debug('Song with Number in Title "{}" ({})'.format(title_as_list, self.filename))
+            elif not title_valid and contains_songbook_prefix:
+                logging.debug('Song with Songbook in Title "{}" ({})'.format(title_as_list, self.filename))
 
         if fix and not title_valid:
             title_as_list = self.filename[:-4].split(" ")
@@ -253,23 +268,19 @@ class SngFile:
         Checks that all items of content are part of Verse Order
         and all items of VerseOrder are available in content
         :param fix: bool if it should be attempt to fix itself
-        :return: result of check
+        :return: bool if verses_in_order
         """
 
         if 'VerseOrder' not in self.header.keys():
-            result = False
-            logging.debug('Missing VerseOrder in {}'.format(self.filename))
+            verses_in_order = False
         else:
             verse_order_covers_all_blocks = \
                 all([i in self.content.keys() or i == 'STOP' for i in self.header["VerseOrder"]])
             blocks_in_verse_order = all([i in self.header["VerseOrder"] for i in self.content.keys()])
-            result = blocks_in_verse_order & verse_order_covers_all_blocks
-            if not result:
-                logging.warning('Verse Order and Blocks don\'t match in {}'.format(self.filename))
-                logging.debug('\t  Order: {}'.format(str(self.header["VerseOrder"])))
-                logging.debug('\t Blocks: {}'.format(str(list(self.content.keys()))))
+            verses_in_order = blocks_in_verse_order & verse_order_covers_all_blocks
 
-        if fix:
+        if fix and not verses_in_order:
+
             if 'VerseOrder' not in self.header.keys():
                 self.header['VerseOrder'] = []
             for content_block in self.content.keys():
@@ -277,10 +288,19 @@ class SngFile:
                     self.header["VerseOrder"].append(content_block)
             self.header["VerseOrder"][:] = \
                 [v for v in self.header["VerseOrder"] if (v in self.content.keys() or v == 'STOP')]
+            logging.debug('Fixed VerseOrder to {} in ({})'.format(self.header["VerseOrder"], self.filename))
             self.update_editor_because_content_modified()
-            result = self.validate_verse_order(fix=False)
+            verses_in_order = True
 
-        return result
+        elif not fix and not verses_in_order:
+            logging.warning('Verse Order and Blocks don\'t match in {}'.format(self.filename))
+            if "VerseOrder" not in self.header.keys():
+                logging.debug('Missing VerseOrder in ({})'.format(self.filename))
+            else:
+                logging.debug('\t Not fixed: Order: {}'.format(str(self.header["VerseOrder"])))
+                logging.debug('\t Not fixed: Blocks: {}'.format(str(list(self.content.keys()))))
+
+        return verses_in_order
 
     def fix_intro_slide(self):
         """
@@ -380,7 +400,7 @@ class SngFile:
             has_issues |= len(value[-1]) > 4
 
             if has_issues and fix:
-                logging.debug("Fixing block {} of {} to {} lines".format(key, self.filename, number_of_lines))
+                logging.debug("Fixing block length {} in ({}) to {} lines".format(key, self.filename, number_of_lines))
 
                 all_lines = []  # Merge list of all text lines
                 for slide in value[1:]:
@@ -402,12 +422,12 @@ class SngFile:
         :return: if something is wrong after applying method
         """
         result = True
-        if 'STOP' in self.header['VerseOrder'] and should_be_at_end:
+        if should_be_at_end and 'STOP' in self.header['VerseOrder'] and not 'STOP' == self.header['VerseOrder'][-1]:
             if fix:
                 logging.debug('Removing STOP from {}'.format(self.header['VerseOrder']))
                 self.header['VerseOrder'].remove('STOP')
                 self.update_editor_because_content_modified()
-                logging.debug('Removed old stop from {} because not at end'.format(self.filename))
+                logging.debug('Removed old stop from ({}) because not at end'.format(self.filename))
                 result = True
             else:
                 result = False

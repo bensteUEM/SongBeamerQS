@@ -65,6 +65,38 @@ class TestSNG(unittest.TestCase):
         song.validate_header_title(fix=True)
         self.assertEqual("Die Liebe des Retters_missing_title", song.header['Title'])
 
+    def test_header_title_special(self):
+        """
+        Checks that header title is not fixed for sample file
+        which had issues on log
+        :return:
+        """
+
+        song = SngFile('./testData/751 Psalm 130.sng')
+        self.assertIn("Title", song.header)
+        self.assertEqual("Ich harre des Herrn, denn bei ihm ist die Gnade", song.header['Title'])
+        song.validate_header_title(fix=True)
+        self.assertEqual("Ich harre des Herrn, denn bei ihm ist die Gnade", song.header['Title'])
+
+    def test_header_title_special2(self):
+        """
+        Checks that header title is not fixed for sample file which had issues in log
+        which had issues on log
+        :return:
+        """
+
+        # 2022-06-03 10:56:20,370 root       DEBUG    Fixed title to (Psalm NGÜ) in Psalm 23 NGÜ.sng
+        # -> Number should not be ignored if no SongPrefix
+        song = SngFile('./testData/Psalm 23 NGÜ.sng')
+        self.assertIn("Title", song.header)
+        self.assertEqual("Psalm 23 NGÜ", song.header["Title"])
+        song.validate_header_title(fix=True)
+        self.assertEqual("Psalm 23 NGÜ", song.header["Title"])
+
+        # 2022-06-03 10:56:20,370 root       DEBUG    Song without a Title in Header:Gesegneten Sonntag.sng
+        # 2022-06-03 10:56:20,370 root       DEBUG    Fixed title to (Sonntag) in Gesegneten Sonntag.sng
+        # TODO check why gesegneter Sonntag is cut to sonntag
+
     def test_header_all(self):
         """
         Checks if all params of the test file are correctly parsed
@@ -292,7 +324,7 @@ class TestSNG(unittest.TestCase):
         song = SngFile('./testData/Lizenz_Lied.sng')
         self.assertEqual(song.filename, 'Lizenz_Lied.sng')
 
-    def test_header_EG_Psalm_special(self):
+    def test_header_songbook_EG_Psalm_special(self):
         """
         Test for debugging special Psalms which might not follow ChurchSongID conventions
         e.g. 709 Herr, sei nicht ferne.sng
@@ -316,7 +348,7 @@ class TestSNG(unittest.TestCase):
             song.fix_songbook()
 
         self.assertEqual(cm.output,
-                         ['WARNING:root:EG Psalm "726 Psalm 047_iso-8859-1.sng"'+
+                         ['WARNING:root:EG Psalm "726 Psalm 047_iso-8859-1.sng"' +
                           ' can not be auto corrected - please adjust manually'])
 
         song = SngFile('testData/726 Psalm 047_iso-8859-1.sng', 'EG')
@@ -383,12 +415,15 @@ class TestSNG(unittest.TestCase):
         # 3. Check that Verse Order is completed
         song = SngFile('./testData/022 Die Liebe des Retters_missing_block.sng')
         self.assertEqual(song.header["VerseOrder"], verse_order)
-        song.validate_verse_order(fix=True)
+        with self.assertNoLogs(level='WARNING') as cm:
+            song.validate_verse_order(fix=True)
+
         self.assertEqual(song.header["VerseOrder"], verse_order_fixed)
 
         # Failsafe with correct file
         song = SngFile('./testData/079 Höher_reformat.sng')
-        self.assertTrue(song.validate_verse_order())
+        with self.assertNoLogs(level='WARNING') as cm:
+            self.assertTrue(song.validate_verse_order())
 
     def test_header_verse_order_special(self):
         """
@@ -399,6 +434,26 @@ class TestSNG(unittest.TestCase):
         song = SngFile('./testData/375 Dass Jesus siegt bleibt ewig ausgemacht.sng', 'EG')
         with self.assertNoLogs(level='WARNING') as cm:
             self.assertTrue(song.validate_verse_order())
+
+    def test_header_verse_order_special2(self):
+        """
+        Test case for special cases occured while running on sample files
+        e.g. 098 Korn das in die Erde in den Tod versinkt.sng
+        DEBUG    Missing VerseOrder in (098 Korn das in die Erde in den Tod versinkt.sng)
+        :return:
+        """
+        song = SngFile('./testData/098 Korn das in die Erde in den Tod versinkt.sng', 'EG')
+        with self.assertLogs(level='WARNING') as cm:
+            self.assertFalse(song.validate_verse_order(fix=False))
+        messages = [
+            "WARNING:root:Verse Order and Blocks don't match in 098 Korn das in die Erde in den Tod versinkt.sng"]
+        self.assertEqual(messages, cm.output)
+
+        with self.assertLogs(level='DEBUG') as cm:
+            self.assertTrue(song.validate_verse_order(fix=True))
+        messages = [
+            "DEBUG:root:Fixed VerseOrder to ['Strophe 1a', 'Strophe 1b', 'Strophe 2a', 'Strophe 2b', 'Strophe 3a', 'Strophe 3b'] in (098 Korn das in die Erde in den Tod versinkt.sng)"]
+        self.assertEqual(messages, cm.output)
 
     def test_content_Intro_Slide(self):
         """
