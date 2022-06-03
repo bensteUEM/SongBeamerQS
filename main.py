@@ -174,10 +174,10 @@ if __name__ == '__main__':
 
     df_sng = read_baiersbronn_songs_to_df()
 
-    generate_background_image_column(df_sng)
-    validate_all_headers(df_sng, fix=True)
-    generate_title_column(df_sng)
-    generate_songbook_column(df_sng)
+    # generate_background_image_column(df_sng)
+    # validate_all_headers(df_sng, fix=True)
+    # generate_title_column(df_sng)
+    # generate_songbook_column(df_sng)
 
     """
     from ChurchToolsApi import ChurchToolsApi
@@ -187,28 +187,42 @@ if __name__ == '__main__':
     df_ct = pd.json_normalize(songs)
     """
 
-    # current_path = df_sng["SngFile"].iloc[0].path
-    # output_path = '/'.join(current_path.split('/')[:-1])+'/test'
-    output_path = './output'
-    df_sng['SngFile'].apply(lambda x: x.write_path_change(output_path))
-
+    logging.info('starting validate_header_title()')
     df_sng['SngFile'].apply(lambda x: x.validate_header_title(fix=True))
+    logging.info('starting validate_header_songbook()')
     df_sng['SngFile'].apply(lambda x: x.validate_header_songbook(fix=True))
 
+    logging.info('starting validate_verse_order() with fix')
     df_sng['SngFile'].apply(lambda x: x.validate_verse_order(fix=True))
+    #TODO
+    # Check why reported in log even though fix is enabled
+    # 2022-06-03 10:56:20,506 root       DEBUG    Missing VerseOrder in 644 Jesus hat die Kinder lieb.sng
+
+    logging.info('starting fix_intro_slide()')
     df_sng['SngFile'].apply(lambda x: x.fix_intro_slide())
+    logging.info('starting validate_stop_verseorder(fix=True, should_be_at_end=True)')
     df_sng['SngFile'].apply(lambda x: x.validate_stop_verseorder(fix=True, should_be_at_end=True))
 
+    logging.info('starting validate_content_slides_number_of_lines() with fix')
     df_sng['SngFile'].apply(lambda x: x.validate_content_slides_number_of_lines(fix=True))
+
+    # current_path = df_sng["SngFile"].iloc[0].path
+    # output_path = '/'.join(current_path.split('/')[:-1])+'/test'
+
+    output_path = './output'
+    logging.info('starting write_path_change({})'.format(output_path))
+    df_sng['SngFile'].apply(lambda x: x.write_path_change(output_path))
+
+    logging.info('starting write_file()')
     df_sng['SngFile'].apply(lambda x: x.write_file())
 
     logging.info('Main Method finished')
 
     # TODO Ideensammlung
-    # - check max number of chars per line
-    # - make blocks of 4 lines only
+    # Check for leere Folie mit Strophe 0 - bsp. EG 449
+    # Psalm Auto Language Marking if space idented
+    # EG Bild hinter alle Psalmen ...#BackgroundImage=Evangelisches Gesangbuch.jpg
+    # Check for verse or strophe with number followed by letter and correct it?
 
-    # validate_titles(df, True)
     # validate_header_songbook(df, True)
-
     # df.to_csv("Main_DF_Export.csv", quoting=csv.QUOTE_NONNUMERIC)

@@ -167,9 +167,9 @@ class SngFile:
             logging.debug("Song without a Title in Header:" + self.filename)
             title_valid = False
         else:
-            title_as_list = self.filename[:-4].split(" ")
-            title_valid = all([all(digit.upper() in SNG_DEFAULTS.SngTitleNumberChars for digit in part)
-                               and all(filter_t in part.upper() for filter_t in SNG_DEFAULTS.SngSongBookPrefix)
+            title_as_list = self.header['Title'].split(" ")
+            title_valid = all([not any(digit.upper() in SNG_DEFAULTS.SngTitleNumberChars for digit in part)
+                               and any(filter_t not in part.upper() for filter_t in SNG_DEFAULTS.SngSongBookPrefix)
                                for part in title_as_list]
                               )
 
@@ -183,6 +183,9 @@ class SngFile:
             self.header['Title'] = " ".join(title_as_list)
             logging.debug("Fixed title to ({}) in {}".format(self.header['Title'], self.filename))
             title_valid = self.validate_header_title(fix=False)
+
+            if self.header['Title'] == 'Psalm':
+                logging.warning('Can\'t fix title is Psalm {} without complete heading'.format(self.filename))
 
         return title_valid
 
@@ -219,7 +222,7 @@ class SngFile:
             # EG Psalms in EG Württemberg EG 701-758
             # Syntax should be EG xxx - Psalm Y
 
-        if fix:
+        if fix and not songbook_valid:
             self.fix_header_church_song_id_caps()
             if 'Songbook' in self.header.keys():  # Prepare Logging text
                 text = 'Corrected Songbook from ({})'.format(self.header["Songbook"])
@@ -257,7 +260,8 @@ class SngFile:
             result = False
             logging.debug('Missing VerseOrder in {}'.format(self.filename))
         else:
-            verse_order_covers_all_blocks = all([i in self.content.keys() for i in self.header["VerseOrder"]])
+            verse_order_covers_all_blocks = \
+                all([i in self.content.keys() or i == 'STOP' for i in self.header["VerseOrder"]])
             blocks_in_verse_order = all([i in self.header["VerseOrder"] for i in self.content.keys()])
             result = blocks_in_verse_order & verse_order_covers_all_blocks
             if not result:
@@ -361,7 +365,6 @@ class SngFile:
         self.update_editor_because_content_modified()
         return True
 
-    ##TODO convert validate_content_slides_number_of_lines to validate method
     def validate_content_slides_number_of_lines(self, number_of_lines=4, fix=False):
         """
         Method that checks if slides need to contain # (default 4) lines except for last block which can have less
@@ -377,7 +380,7 @@ class SngFile:
             has_issues |= len(value[-1]) > 4
 
             if has_issues and fix:
-                logging.debug("Fixing block {} of {}".format(key, self.filename))
+                logging.debug("Fixing block {} of {} to {} lines".format(key, self.filename, number_of_lines))
 
                 all_lines = []  # Merge list of all text lines
                 for slide in value[1:]:

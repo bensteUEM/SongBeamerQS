@@ -164,6 +164,25 @@ class TestSNG(unittest.TestCase):
         self.assertEqual(cm.output,
                          ['WARNING:root:Invalid number format in Filename - can\'t fix songbook of ' + song.filename])
 
+    def test_header_songbook_special(self):
+        """
+        Test checking special cases discovered in logging while programming
+
+        :return:
+        """
+
+        # The file should already have correct ChurchSongID but did raise an error on logging
+        song = SngFile('./testData/752 Psalm 134.sng', "EG")
+        self.assertEqual('EG 752 - Psalm 134', song.header["ChurchSongID"])
+        self.assertEqual('EG 752 - Psalm 134', song.header["Songbook"])
+
+        with self.assertNoLogs(level='WARNING') as cm:
+            song.validate_header_songbook(fix=False)
+            song.validate_header_songbook(fix=True)
+
+        self.assertEqual('EG 752 - Psalm 134', song.header["ChurchSongID"])
+        self.assertEqual('EG 752 - Psalm 134', song.header["Songbook"])
+
     def test_header_church_song_id_caps(self):
         """
         Test that checks for incorrect capitalization in ChurchSongID and it's autocorrect
@@ -370,6 +389,16 @@ class TestSNG(unittest.TestCase):
         # Failsafe with correct file
         song = SngFile('./testData/079 Höher_reformat.sng')
         self.assertTrue(song.validate_verse_order())
+
+    def test_header_verse_order_special(self):
+        """
+        Test case for special cases occured while running on sample files
+        e.g. 375 Dass Jesus siegt bleibt ewig ausgemacht.sng - Warning Verse Order and Blocks don't match
+        :return:
+        """
+        song = SngFile('./testData/375 Dass Jesus siegt bleibt ewig ausgemacht.sng', 'EG')
+        with self.assertNoLogs(level='WARNING') as cm:
+            self.assertTrue(song.validate_verse_order())
 
     def test_content_Intro_Slide(self):
         """
