@@ -75,3 +75,13 @@ class TestSNG(unittest.TestCase):
         self.assertEqual('EG 709 - Psalm 22 I', song_df['SngFile'].iloc[0].header['Songbook'])
         result = validate_all_songbook(song_df, fix=False)
         self.assertEqual(result.sum(), 1, 'Should have one valid entry')
+
+    def test_validate_comment_special_case(self):
+        """
+        Test method which validates one specific file which had differences while parsing
+        :return:
+        """
+        special_files = ['Psalm 104_Stierlen.sng']
+        song = parse_sng_from_directory('./testData', '', special_files)[0]
+        expected = '77u/RW50c3ByaWNodCBuaWNodCBkZXIgVmVyc2lvbiBhdXMgZGVtIEVHIQ=='
+        self.assertEqual(expected, song.header['Comments'])

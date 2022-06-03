@@ -77,7 +77,7 @@ class SngFile:
         :param line: string of one line from a SNG file
         """
         if line.__contains__("="):
-            line_split = line.split("=")
+            line_split = line.split("=", 1)
             key = line_split[0][1:]
             if key == "VerseOrder":
                 value = line_split[1].split(",")
@@ -143,7 +143,7 @@ class SngFile:
             if int(self.header['LangCount']) > 1:
                 if 'Translation' not in self.header.keys():
                     missing.append('Translation')
-                    # TODO add test case
+                    # TODO add test case for language validation
 
                     # TODO add TitleLang2 validation
 
