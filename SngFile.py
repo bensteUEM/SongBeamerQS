@@ -164,17 +164,25 @@ class SngFile:
         """
 
         if "Title" not in self.header.keys():
-            logging.info("Song without a Title in Header:" + self.filename)
-            self.header["Title"] = ''
+            logging.debug("Song without a Title in Header:" + self.filename)
             title_valid = False
         else:
-            title_valid = not any(char.isdigit() for char in self.header["Title"])
+            title_as_list = self.filename[:-4].split(" ")
+            title_valid = all([all(digit.upper() in SNG_DEFAULTS.SngTitleNumberChars for digit in part)
+                               and all(filter_t in part.upper() for filter_t in SNG_DEFAULTS.SngSongBookPrefix)
+                               for part in title_as_list]
+                              )
 
         if fix and not title_valid:
-            "Invalid title ({}) in {}".format(self.filename, self.filename)
-            self.fix_title()
+            title_as_list = self.filename[:-4].split(" ")
+            for part in title_as_list:
+                if all(digit.upper() in SNG_DEFAULTS.SngTitleNumberChars for digit in part) \
+                        or any(filter_t in part.upper() for filter_t in SNG_DEFAULTS.SngSongBookPrefix):
+                    title_as_list.remove(part)
+                    self.update_editor_because_content_modified()
+            self.header['Title'] = " ".join(title_as_list)
+            logging.debug("Fixed title to ({}) in {}".format(self.header['Title'], self.filename))
             title_valid = self.validate_header_title(fix=False)
-            self.update_editor_because_content_modified()
 
         return title_valid
 
@@ -314,25 +322,6 @@ class SngFile:
                 logging.debug('Removed {} from {} as illegal header'.format(key, self.filename))
                 self.header.pop(key)
                 self.update_editor_because_content_modified()
-
-    def fix_title(self):
-        """
-        Helper function which tries to fix current title based on filename
-        and removes and space separated block which contains
-        * only SngTitleNumberChars
-        * any SngSongBookPrefix
-        :return: if item was fixed
-        """
-
-        title_as_list = self.filename[:-4].split(" ")
-
-        for part in title_as_list:
-            if all(digit.upper() in SNG_DEFAULTS.SngTitleNumberChars for digit in part) \
-                    or any(filter_t in part.upper() for filter_t in SNG_DEFAULTS.SngSongBookPrefix):
-                title_as_list.remove(part)
-                self.update_editor_because_content_modified()
-        self.header['Title'] = " ".join(title_as_list)
-        self.update_editor_because_content_modified()
 
     def fix_songbook(self):
         """

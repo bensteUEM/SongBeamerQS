@@ -60,7 +60,9 @@ class TestSNG(unittest.TestCase):
         """
         song = SngFile('./testData/022 Die Liebe des Retters_missing_title.sng')
         self.assertNotIn("Title", song.header)
-        song.fix_title()
+        song.validate_header_title(fix=False)
+        self.assertNotIn("Title", song.header)
+        song.validate_header_title(fix=True)
         self.assertEqual("Die Liebe des Retters_missing_title", song.header['Title'])
 
     def test_header_all(self):
