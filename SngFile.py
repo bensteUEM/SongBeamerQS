@@ -261,6 +261,42 @@ class SngFile:
 
         return songbook_valid
 
+    def validate_header_background(self, fix=False):
+        """
+        Checks that background matches certain criteria
+        :param fix: bool if it should be attempt to fix itself
+        :return: bool if backgrounds are ok
+        """
+        result = False  # default is not fixed or validated ...
+
+        #TODO IMPORTANT - validate against EG prefix and respective numeric range for psalms instead of "Psalm" text in path !
+        #Otherwise apo Glaubensbekenntnis trifft auch zu
+
+        if "BackgroundImage" not in self.header.keys():
+            if not fix:
+                logging.debug("No Background in ({})".format(self.filename))
+            result = False
+        else:
+            if "Psalm" in self.path and self.header["BackgroundImage"] != 'Evangelisches Gesangbuch.jpg':
+                if not fix:
+                    logging.debug("Incorrect background for Psalm in ({}) not fixed".format(self.filename))
+                result = False
+            else:
+                result = True
+
+        if fix and not result:
+            if "Psalm" in self.path:
+                self.header["BackgroundImage"] = 'Evangelisches Gesangbuch.jpg'
+                logging.debug("Fixing background for Psalm in ({})".format(self.filename))
+                self.update_editor_because_content_modified()
+                result = True
+            else:
+                logging.warning("Can't fix background for ({})".format(self.filename))
+
+        return result
+        # TODO validate background against resolution list
+        # TODO validate background against copyright available
+
     def validate_verse_order(self, fix=False):
         """
         Checks that all items of content are part of Verse Order

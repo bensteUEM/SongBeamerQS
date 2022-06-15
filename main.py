@@ -206,8 +206,8 @@ if __name__ == '__main__':
     logging.info('starting validate_content_slides_number_of_lines() with fix')
     df_sng['SngFile'].apply(lambda x: x.validate_content_slides_number_of_lines(fix=True))
 
-    # current_path = df_sng["SngFile"].iloc[0].path
-    # output_path = '/'.join(current_path.split('/')[:-1])+'/test'
+    # Set Background for all Psalm entries
+    df_sng[df_sng["path"].str.contains("Psalm")]["SngFile"].apply(lambda x: x.validate_header_background(fix=True))
 
     output_path = './output'
     logging.info('starting write_path_change({})'.format(output_path))
