@@ -3,7 +3,7 @@ import os.path
 import re
 import unittest
 
-from SngFile import SngFile
+from SngFile import SngFile, contains_songbook_prefix
 
 
 class TestSNG(unittest.TestCase):
@@ -95,7 +95,11 @@ class TestSNG(unittest.TestCase):
 
         # 2022-06-03 10:56:20,370 root       DEBUG    Song without a Title in Header:Gesegneten Sonntag.sng
         # 2022-06-03 10:56:20,370 root       DEBUG    Fixed title to (Sonntag) in Gesegneten Sonntag.sng
-        # TODO check why gesegneter Sonntag is cut to sonntag
+        # Fixed by correcting contains_songbook_prefix() method
+        song = SngFile('./testData/Gesegneten Sonntag.sng')
+        self.assertNotIn("Title", song.header)
+        song.validate_header_title(fix=True)
+        self.assertEqual("Gesegneten Sonntag", song.header["Title"])
 
     def test_header_all(self):
         """
@@ -505,6 +509,38 @@ class TestSNG(unittest.TestCase):
         self.assertTrue(song.validate_stop_verseorder(fix=True, should_be_at_end=True))
         self.assertNotEqual('STOP', song.header['VerseOrder'][5])
         self.assertEqual('STOP', song.header['VerseOrder'][-1])
+
+    def test_helper_contains_songbook_prefix(self):
+        """
+        Test that runs various variations of songbook parts which should be detected by improved helper method
+        :return:
+        """
+        # negative samples
+        self.assertFalse(contains_songbook_prefix("gesegnet"))
+
+        # positive samples
+        self.assertTrue(contains_songbook_prefix("EG"))
+        self.assertTrue(contains_songbook_prefix("EG999"))
+        self.assertTrue(contains_songbook_prefix("EG999Psalm"))
+        self.assertTrue(contains_songbook_prefix("EG999"))
+        self.assertTrue(contains_songbook_prefix("EG999Psalm"))
+        self.assertTrue(contains_songbook_prefix("EG999-Psalm"))
+        self.assertTrue(contains_songbook_prefix("EG-999"))
+        self.assertTrue(contains_songbook_prefix("999EG"))
+        self.assertTrue(contains_songbook_prefix("999-EG"))
+
+        self.assertTrue(contains_songbook_prefix("FJ"))
+        self.assertTrue(contains_songbook_prefix("FJ999"))
+        self.assertTrue(contains_songbook_prefix("FJ999Text"))
+        self.assertTrue(contains_songbook_prefix("FJ999"))
+        self.assertTrue(contains_songbook_prefix("FJ999Text"))
+        self.assertTrue(contains_songbook_prefix("FJ999-Text"))
+        self.assertTrue(contains_songbook_prefix("FJ-999"))
+        self.assertTrue(contains_songbook_prefix("FJ5-999"))
+        self.assertTrue(contains_songbook_prefix("FJ5/999"))
+        self.assertTrue(contains_songbook_prefix("999/FJ5"))
+        self.assertTrue(contains_songbook_prefix("999-FJ5"))
+        self.assertTrue(contains_songbook_prefix("999.FJ5"))
 
 
 if __name__ == '__main__':

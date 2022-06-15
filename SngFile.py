@@ -1,4 +1,5 @@
 import logging
+import re
 
 import SNG_DEFAULTS
 from SNG_DEFAULTS import SngDefaultHeader, SngIllegalHeader
@@ -170,29 +171,27 @@ class SngFile:
             title_as_list = self.header['Title'].split(" ")
 
             contains_number = False
-            contains_songbook_prefix = False
+            does_contain_songbook_prefix = False
             for part in title_as_list:
                 contains_number |= \
                     any(digit.upper() in SNG_DEFAULTS.SngTitleNumberChars for digit in part)
-                contains_songbook_prefix |= \
-                    any(filter_t in part.upper() for filter_t in SNG_DEFAULTS.SngSongBookPrefix)
+                does_contain_songbook_prefix |= contains_songbook_prefix(part)
             # Exception - Songs without prefix may contain numbers e.g. Psalm 21 ...
             if len(self.songbook_prefix) == 0:
                 title_valid = True
             else:
-                title_valid = not (contains_number or contains_songbook_prefix)
-
+                title_valid = not (contains_number or does_contain_songbook_prefix)
             # Log Errors
             if not title_valid and contains_number:
                 logging.debug('Song with Number in Title "{}" ({})'.format(title_as_list, self.filename))
-            elif not title_valid and contains_songbook_prefix:
+            elif not title_valid and does_contain_songbook_prefix:
                 logging.debug('Song with Songbook in Title "{}" ({})'.format(title_as_list, self.filename))
 
         if fix and not title_valid:
             title_as_list = self.filename[:-4].split(" ")
             for part in title_as_list:
                 if all(digit.upper() in SNG_DEFAULTS.SngTitleNumberChars for digit in part) \
-                        or any(filter_t in part.upper() for filter_t in SNG_DEFAULTS.SngSongBookPrefix):
+                        or contains_songbook_prefix(part):
                     title_as_list.remove(part)
                     self.update_editor_because_content_modified()
             self.header['Title'] = " ".join(title_as_list)
@@ -223,7 +222,6 @@ class SngFile:
 
             # Check Syntax with Regex, either FJx/yyy, EG YYY, EG YYY.YY or or EG XXX - Psalm X or Wwdlp YYY
             # ^(Wwdlp \d{3})|(FJ([1-5])\/\d{3})|(EG \d{3}(( - Psalm )\d{1,3})?)$
-            import re
             songbook_regex = r"^(Wwdlp \d{3})$|(^FJ([1-5])\/\d{3})$|^(EG \d{3}(\.\d{1,2})?)( - Psalm \d{1,3}( .{1,3})?)?$"
             songbook_valid &= re.match(songbook_regex, self.header["Songbook"]) is not None
 
@@ -478,3 +476,18 @@ def get_verse_marker_line(text):
             return ['$$M=', text[4:]]
         else:
             return text.split(" ")
+
+
+def contains_songbook_prefix(text):
+    """
+    Helper function to determine whether text contains a songbook prefix
+    :param text:
+    :return: result of check
+    """
+    result = False
+    for prefix in SNG_DEFAULTS.SngSongBookPrefix:
+        songbook_regex = r"({}\W+.*)|(.*\W+{})|({}\d+.*)|(.*\d+{})|(^{})|({}$)" \
+            .format(prefix, prefix, prefix, prefix, prefix, prefix)
+        result |= re.match(songbook_regex, text.upper()) is not None
+
+    return result
