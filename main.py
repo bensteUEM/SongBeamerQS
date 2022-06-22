@@ -194,9 +194,6 @@ if __name__ == '__main__':
 
     logging.info('starting validate_verse_order() with fix')
     df_sng['SngFile'].apply(lambda x: x.validate_verse_order(fix=True))
-    #TODO
-    # Check why reported in log even though fix is enabled
-    # 2022-06-03 10:56:20,506 root       DEBUG    Missing VerseOrder in 644 Jesus hat die Kinder lieb.sng
 
     logging.info('starting fix_intro_slide()')
     df_sng['SngFile'].apply(lambda x: x.fix_intro_slide())

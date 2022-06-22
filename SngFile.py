@@ -336,6 +336,53 @@ class SngFile:
 
         return verses_in_order
 
+    def generate_verses_from_unknown(self):
+        """
+        Method used to split any "Unknown" Block into Auto detected segments of numeric verses or Refrain
+        :return:
+        """
+        logging.info("Started generate_verses_from_unknown()")
+
+        if 'Unknown' in self.content.keys():
+            current_block_name = 'Unknown'
+            old_block = self.content[current_block_name]
+            new_blocks = {'Unknown': []}
+            for block in old_block:
+                if re.match(r'^(\d+\.).+|(R:).+', block[0]) is not None:  # is new verse
+                    current_block_name = re.match(r'^(\d+)|(R:)', block[0])[0]
+                    if current_block_name == 'R:':
+                        current_block_name = 'Refrain'
+                    else:
+                        current_block_name = 'Verse {}'.format(current_block_name)
+                    logging.debug(
+                        ("Detected new '{}' in 'Unknown' block of ({})".format(current_block_name, self.filename)))
+                    new_text = [re.sub(r'^(\d\.) +|(R:) +', '', block[0])]
+                    new_text.extend(block[1:])
+                    new_blocks[current_block_name] = [current_block_name, new_text]
+                else:  # not new verse add to last block of new block
+                    new_blocks[current_block_name].append(block)
+
+            # Cleanup Legacy if not used
+            if len(new_blocks['Unknown']) == 1:
+                del new_blocks['Unknown']
+            new_block_keys = list(new_blocks.keys())
+
+            for i in range(len(self.header["VerseOrder"])):
+                if self.header["VerseOrder"][i] == 'Unknown':
+                    del self.header["VerseOrder"][i]
+                    for key in new_block_keys:
+                        if key not in self.header["VerseOrder"]:
+                            self.header["VerseOrder"].insert(i, key)
+                            i += 1
+                            logging.debug("Added new '{}' in Verse Order of ({})".format(key, self.filename))
+                        else:
+                            logging.warning(
+                                "Not adding duplicate '{}' in Verse Order of ({})".format(key, self.filename))
+                    break
+
+            self.update_editor_because_content_modified()
+            return new_blocks
+
     def fix_intro_slide(self):
         """
         Checks if Intro Slide exists as content block and adds in case one is required

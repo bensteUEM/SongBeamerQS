@@ -496,6 +496,21 @@ class TestSNG(unittest.TestCase):
         with self.assertNoLogs(level='WARNING') as cm:
             self.assertTrue(song.validate_verse_order())
 
+    def test_generate_verses_from_unknown(self):
+        """
+        Checks that the song is changed from Intro,Unknown,STOP to Intro,Verse ...
+        based on auto detecting 1.2.3. or other numerics or R: at beginning of block
+        Also changes respective verse order
+        :return:
+        """
+        song = SngFile('./testData/644 Jesus hat die Kinder lieb.sng', 'EG')
+        self.assertEqual(['Intro', 'Unknown', 'Verse 99', 'STOP'], song.header["VerseOrder"])
+        song.generate_verses_from_unknown()
+        self.assertEqual(['Intro', 'Verse 1', 'Verse 2', 'Refrain', 'Verse 10', 'Verse 99', 'STOP'],
+                         song.header["VerseOrder"])
+
+        #TODO optionally add test case for logged warning when new verse already exists in VerseOrder
+
     def test_header_verse_order_special2(self):
         """
         Test case for special cases occured while running on sample files
