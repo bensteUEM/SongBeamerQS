@@ -36,57 +36,39 @@ def parse_sng_from_directory(directory, songbook_prefix="", filenames=[]):
 def validate_all_headers(df_to_change, fix=False):
     """
     Method to start validation for all headers
-    1. Validate Title and Songbook Entries
-    2. Remove all Illegal headers
-    3. Check that all required headers are present
+    1. Validate Title
+    2. Validate all Songbook Entries
+    3. Remove all Illegal headers
+    4. Psalm Backgrounds
+    5. Check that all required headers are present
 
     :param df_to_change: Dataframe which should me used
     :param fix: boolean if data should be fixed - so far only applies for remove illegal headers and songbook fixing
     :return: boolean Series with True for all entries that have no issues
     """
 
-    # 1. Validate Title and Songbook Entries
-    headers_valid = validate_all_songbook(df_to_change, fix)
-    headers_valid &= df_to_change["SngFile"].apply(lambda x: x.validate_header_title(fix))
+    # 1. Validate Title
+    logging.info('starting validate_header_title()')
+    headers_valid = df_to_change['SngFile'].apply(lambda x: x.validate_header_title(fix))
 
-    # 2. Remove all Illegal headers
-    if fix:
-        logging.info("Starting removal of illegal headers")
-        df_to_change["SngFile"].apply(lambda x: x.fix_remove_illegal_headers())
+    # 2. Validate Songbook Entries
+    logging.info("Starting Songbook Validation with fix={}".format(fix))
+    headers_valid &= df_to_change["SngFile"].apply(lambda x: x.validate_header_songbook(fix))
 
-    # 3. Check that all required headers are present
+    # 3. Remove all Illegal headers
+    logging.info("Starting removal of illegal headers")
+    headers_valid &= df_to_change["SngFile"].apply(lambda x: x.validate_headers_illegal_removed(fix))
+
+    # Set Background for all Psalm entries
+    psalms_select = df_to_change["SngFile"].apply(lambda x: x.is_eg_psalm())
+    headers_valid &= df_to_change[psalms_select]["SngFile"] \
+        .apply(lambda x: x.validate_header_background(fix=True))
+
+    # 6. Check that all required headers are present
     logging.info("Starting to check for required headers")
     df_to_change["SngFile"].apply(lambda x: x.validate_headers())
 
     return headers_valid
-
-
-def validate_all_songbook(df_to_change, fix=False):
-    """
-    Method which starts validation of songbook for whole dataframe
-    optionally attempts to fix them while logging the cases
-
-    :param df_to_change: Dataframe which should me used
-    :param fix: boolean if data should be fixed
-    :return: boolean Series with True for all entries that have no issues
-    """
-    logging.info("Starting Songbook Validation with fix={}".format(fix))
-
-    songbook_valid = df_to_change["SngFile"].apply(lambda x: x.validate_header_songbook(fix=False))
-
-    number_of_invalid_songbook = len(df_to_change[~songbook_valid])
-    if number_of_invalid_songbook > 0:
-        logging.info('{} of {} entries with invalid Songbook or ChurchSongID'
-                     .format(number_of_invalid_songbook, len(df_to_change))
-                     )
-
-    if fix:
-        logging.info('Starting Songbook Fixing')
-        songbook_valid_fix = df_to_change["SngFile"][~songbook_valid].apply(
-            lambda x: x.validate_header_songbook(fix=True))
-        songbook_valid |= songbook_valid_fix
-
-    return songbook_valid
 
 
 def read_baiersbronn_songs_to_df():
@@ -187,10 +169,7 @@ if __name__ == '__main__':
     df_ct = pd.json_normalize(songs)
     """
 
-    logging.info('starting validate_header_title()')
-    df_sng['SngFile'].apply(lambda x: x.validate_header_title(fix=True))
-    logging.info('starting validate_header_songbook()')
-    df_sng['SngFile'].apply(lambda x: x.validate_header_songbook(fix=True))
+    validate_all_headers(df_sng, True)
 
     logging.info('starting validate_verse_order() with fix')
     df_sng['SngFile'].apply(lambda x: x.validate_verse_order(fix=True))
@@ -203,9 +182,7 @@ if __name__ == '__main__':
     logging.info('starting validate_content_slides_number_of_lines() with fix')
     df_sng['SngFile'].apply(lambda x: x.validate_content_slides_number_of_lines(fix=True))
 
-    # Set Background for all Psalm entries
-    df_sng[df_sng["path"].str.contains("Psalm")]["SngFile"].apply(lambda x: x.validate_header_background(fix=True))
-
+    # Writing Output
     output_path = './output'
     logging.info('starting write_path_change({})'.format(output_path))
     df_sng['SngFile'].apply(lambda x: x.write_path_change(output_path))

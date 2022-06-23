@@ -174,17 +174,29 @@ class TestSNG(unittest.TestCase):
 
         song = SngFile('./testData/Psalm/709 Herr, sei nicht ferne.sng', 'EG')
         with self.assertLogs(level='WARNING') as cm:
-            check = song.validate_headers()
+            song.validate_headers()
         self.assertEqual(cm.output,
                          ["WARNING:root:Missing required headers in (709 Herr, sei nicht ferne.sng) "
                           "['Author', 'CCLI', 'Translation']"])
 
         song = SngFile('./testData/Psalm/751 Psalm 130.sng', 'EG')
         with self.assertLogs(level='WARNING') as cm:
-            check = song.validate_headers()
+            song.validate_headers()
         self.assertEqual(cm.output,
                          ["WARNING:root:Missing required headers in (751 Psalm 130.sng) "
                           "['Author', '(c)', 'CCLI', 'VerseOrder', 'Bible']"])
+
+    def test_header_illegal_removed(self):
+        """
+        Tests that all illegal headers are removed
+        :return:
+        """
+        song = SngFile('./testData/Psalm/709 Herr, sei nicht ferne.sng', 'EG')
+        self.assertIn('FontSize', song.header.keys())
+        song.validate_headers_illegal_removed(fix=False)
+        self.assertIn('FontSize', song.header.keys())
+        song.validate_headers_illegal_removed(fix=True)
+        self.assertNotIn('FontSize', song.header.keys())
 
     def test_header_songbook(self):
         """
@@ -226,7 +238,7 @@ class TestSNG(unittest.TestCase):
         self.assertEqual('EG 752 - Psalm 134', song.header["ChurchSongID"])
         self.assertEqual('EG 752 - Psalm 134', song.header["Songbook"])
 
-        with self.assertNoLogs(level='WARNING') as cm:
+        with self.assertNoLogs(level='WARNING'):
             song.validate_header_songbook(fix=False)
             song.validate_header_songbook(fix=True)
 
@@ -296,11 +308,11 @@ class TestSNG(unittest.TestCase):
 
         # Case 5. Psalm with correct picture
         song = SngFile('./testData/Psalm/764 Test Ohne Versmarker.sng', "EG")
-        with self.assertNoLogs(level='DEBUG') as cm:
+        with self.assertNoLogs(level='DEBUG'):
             self.assertTrue(song.validate_header_background(fix=False))
 
         song = SngFile('./testData/Psalm/764 Test Ohne Versmarker.sng', "EG")
-        with self.assertNoLogs(level='DEBUG') as cm:
+        with self.assertNoLogs(level='DEBUG'):
             self.assertTrue(song.validate_header_background(fix=True))
 
     def test_content_empty_block(self):
@@ -490,14 +502,14 @@ class TestSNG(unittest.TestCase):
         # 3. Check that Verse Order is completed
         song = SngFile('./testData/022 Die Liebe des Retters_missing_block.sng')
         self.assertEqual(song.header["VerseOrder"], verse_order)
-        with self.assertNoLogs(level='WARNING') as cm:
+        with self.assertNoLogs(level='WARNING'):
             song.validate_verse_order(fix=True)
 
         self.assertEqual(song.header["VerseOrder"], verse_order_fixed)
 
         # Failsafe with correct file
         song = SngFile('./testData/079 Höher_reformat.sng')
-        with self.assertNoLogs(level='WARNING') as cm:
+        with self.assertNoLogs(level='WARNING'):
             self.assertTrue(song.validate_verse_order())
 
     def test_header_verse_order_special(self):
@@ -507,7 +519,7 @@ class TestSNG(unittest.TestCase):
         :return:
         """
         song = SngFile('./testData/375 Dass Jesus siegt bleibt ewig ausgemacht.sng', 'EG')
-        with self.assertNoLogs(level='WARNING') as cm:
+        with self.assertNoLogs(level='WARNING'):
             self.assertTrue(song.validate_verse_order())
 
     def test_generate_verses_from_unknown(self):
@@ -542,7 +554,8 @@ class TestSNG(unittest.TestCase):
         with self.assertLogs(level='DEBUG') as cm:
             self.assertTrue(song.validate_verse_order(fix=True))
         messages = [
-            "DEBUG:root:Fixed VerseOrder to ['Strophe 1a', 'Strophe 1b', 'Strophe 2a', 'Strophe 2b', 'Strophe 3a', 'Strophe 3b'] in (098 Korn das in die Erde in den Tod versinkt.sng)"]
+            "DEBUG:root:Fixed VerseOrder to ['Strophe 1a', 'Strophe 1b', 'Strophe 2a', 'Strophe 2b', 'Strophe 3a',"
+            " 'Strophe 3b'] in (098 Korn das in die Erde in den Tod versinkt.sng)"]
         self.assertEqual(messages, cm.output)
 
     def test_content_Intro_Slide(self):

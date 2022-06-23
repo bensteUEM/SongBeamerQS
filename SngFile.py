@@ -417,18 +417,30 @@ class SngFile:
                     return True
         return False
 
-    def fix_remove_illegal_headers(self):
+    def validate_headers_illegal_removed(self, fix=False):
         """
-        removes header params in the current file which should not be present
-        Does not write to disk!
-        :return:
+        Checks if all illegeal headers are removed and optionally fixes it by removing illegal ones
+        :param fix: bool whether should be fixed
+        :return: if all illegal headers are removed
         """
-
+        result = True
+        removed = []
         for key in list(self.header.keys()):
             if key in SngIllegalHeader:
-                logging.debug('Removed {} from {} as illegal header'.format(key, self.filename))
-                self.header.pop(key)
-                self.update_editor_because_content_modified()
+                if fix:
+                    removed.append(key)
+                    self.header.pop(key)
+                    self.update_editor_because_content_modified()
+                    result &= True
+                else:
+                    result &= False
+
+        if fix and len(removed) > 0:
+            logging.debug('Removed {} from ({}) as illegal header'.format(removed, self.filename))
+        elif not fix and len(removed) > 0:
+            logging.debug('Not fixing illegal header {} in ({})'.format(removed, self.filename))
+
+        return result
 
     def fix_songbook(self):
         """
