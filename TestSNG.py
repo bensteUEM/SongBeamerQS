@@ -581,6 +581,37 @@ class TestSNG(unittest.TestCase):
         self.assertIn('Intro', song.header["VerseOrder"])
         self.assertIn('Intro', song.content.keys())
 
+    def test_validate_verse_numbers(self):
+        """
+        Checks whether verse numbers are regular
+        :param fix: bool if it should be attempt to fix itself
+        """
+        song = SngFile('./testData/123 Du bist der Schöpfer des Universums.sng')
+        self.assertIn('Refrain 1a', song.header["VerseOrder"])
+        self.assertIn('Refrain 1b', song.header["VerseOrder"])
+
+        self.assertFalse(song.validate_verse_numbers())
+        self.assertIn('Refrain 1a', song.header["VerseOrder"])
+        self.assertIn('Refrain 1b', song.header["VerseOrder"])
+
+        self.assertTrue(song.validate_verse_numbers(fix=True))
+        self.assertNotIn('Refrain 1a', song.header["VerseOrder"])
+        self.assertNotIn('Refrain 1b', song.header["VerseOrder"])
+        self.assertIn('Refrain 1', song.header["VerseOrder"])
+
+    def test_validate_verse_numbers2(self):
+        """More complicated file with more issues and problems with None in VerseOrder"""
+        song = SngFile('./testData/375 Dass Jesus siegt bleibt ewig ausgemacht.sng')
+        text = 'Strophe 1a,Strophe 1b,Strophe 1c,Strophe 4a,Strophe 4b,Strophe 4c,STOP,' \
+               'Strophe 2a,Strophe 2b,Strophe 2c,Strophe 3a,Strophe 3b,Strophe 3c'
+
+        expected_order = text.split(',')
+        self.assertEqual(song.header['VerseOrder'], expected_order)
+
+        song.validate_verse_numbers(fix=True)
+        expected_order = ['Strophe 1', 'Strophe 4', 'STOP', 'Strophe 2', 'Strophe 3']
+        self.assertEqual(expected_order, song.header['VerseOrder'])
+
     def test_content_STOP_VerseOrder(self):
         """
         Checks and corrects existance of STOP in Verse Order

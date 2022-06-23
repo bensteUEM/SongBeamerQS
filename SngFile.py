@@ -224,7 +224,8 @@ class SngFile:
 
             # Check Syntax with Regex, either FJx/yyy, EG YYY, EG YYY.YY or or EG XXX - Psalm X or Wwdlp YYY
             # ^(Wwdlp \d{3})|(FJ([1-5])\/\d{3})|(EG \d{3}(( - Psalm )\d{1,3})?)$
-            songbook_regex = r"^(Wwdlp \d{3})$|(^FJ([1-5])\/\d{3})$|^(EG \d{3}(\.\d{1,2})?)( - Psalm \d{1,3}( .{1,3})?)?$"
+            songbook_regex = r"^(Wwdlp \d{3})$|(^FJ([1-5])\/\d{3})$|" \
+                             r"^(EG \d{3}(\.\d{1,2})?)( - Psalm \d{1,3}( .{1,3})?)?$"
             songbook_valid &= re.match(songbook_regex, self.header["Songbook"]) is not None
 
             # Check for remaining that "&" should not be present in Songbook
@@ -269,7 +270,6 @@ class SngFile:
         :param fix: bool if it should be attempt to fix itself
         :return: bool if backgrounds are ok
         """
-        result = False  # default is not fixed or validated ...
 
         if "BackgroundImage" not in self.header.keys():
             if not fix:
@@ -526,6 +526,53 @@ class SngFile:
                 return False
         return True
 
+    def validate_verse_numbers(self, fix=False):
+        """
+        Method which checks Verse Numbers for numeric parts that are non-standard - e.g. 1b
+        and tries to mergen consecutive similar parts
+        :return:
+        """
+        all_verses_valid = True
+        new_content = {}
+        for key, block in self.content.items():
+            # if block starts with a Versemarker and some additional information
+            if block[0][0] in SNG_DEFAULTS.VerseMarker and len(block[0]) > 1:
+                if not fix:
+                    all_verses_valid &= block[0][1].isdigit()
+                    new_content[key] = block
+                    if not all_verses_valid:
+                        logging.debug("Invalid verse label {} not fixed in ({})".
+                                      format(block[0], self.filename))
+                elif fix and not block[0][1].isdigit():
+                    # change block label
+                    old_key = " ".join(block[0])
+                    new_number = re.sub(r'\D+', '', block[0][1])
+                    new_label = [block[0][0], new_number]
+                    new_key = " ".join(new_label)
+
+                    # check if new block name already exists
+                    if new_key in new_content.keys():
+                        logging.debug("\t Appending {} to existing Verse label {})".
+                                      format(old_key, new_key))
+                        # if yes, append content and remove old label from verse order
+                        new_content[new_key].append(block[1:])
+                        self.header["VerseOrder"] = [item for item in self.header["VerseOrder"] if item != old_key]
+                    else:
+                        logging.debug("New Verse label from {} to {} in ({})".
+                                      format(old_key, new_key, self.filename))
+                        # if no, rename block in verse order and dict
+                        self.header["VerseOrder"] = \
+                            [new_key if item == old_key else item for item in self.header["VerseOrder"]]
+                        new_content[new_key] = [new_label] + block[1:]
+                    all_verses_valid &= True
+                    self.update_editor_because_content_modified()
+
+            else:  # In Case block is something different than regular verse with number
+                new_content[key] = block
+
+        self.content = new_content
+        return all_verses_valid
+
     def validate_stop_verseorder(self, fix=False, should_be_at_end=False):
         """
         Method which checks that a STOP exists in VerseOrder headers and corrects it
@@ -534,25 +581,31 @@ class SngFile:
         :return: if something is wrong after applying method
         """
         result = True
+        # STOP exists but not at end
         if should_be_at_end and 'STOP' in self.header['VerseOrder'] and not 'STOP' == self.header['VerseOrder'][-1]:
             if fix:
                 logging.debug('Removing STOP from {}'.format(self.header['VerseOrder']))
                 self.header['VerseOrder'].remove('STOP')
                 self.update_editor_because_content_modified()
-                logging.debug('Removed old stop from ({}) because not at end'.format(self.filename))
+                logging.debug('STOP removed at old position in ({}) because not at end'.format(self.filename))
                 result = True
             else:
+                logging.warning('STOP from ({}) not at end but not fixed in {}'.
+                                format(self.filename, self.header["VerseOrder"]))
                 result = False
 
+        # STOP missing overall
         if 'STOP' not in self.header['VerseOrder']:
             if fix:
                 self.header['VerseOrder'].append('STOP')
                 logging.debug(
-                    'Added STOP at end of VerseOrder of {}: {}'.format(self.filename, self.header['VerseOrder']))
+                    'STOP added at end of VerseOrder of {}: {}'.format(self.filename, self.header['VerseOrder']))
                 self.update_editor_because_content_modified()
                 result = True
             else:
                 result = False
+                logging.warning('STOP missing in ({}) but not fixed in {}'.
+                                format(self.filename, self.header["VerseOrder"]))
         return result
 
     def is_eg_psalm(self):

@@ -176,11 +176,21 @@ if __name__ == '__main__':
 
     logging.info('starting fix_intro_slide()')
     df_sng['SngFile'].apply(lambda x: x.fix_intro_slide())
-    logging.info('starting validate_stop_verseorder(fix=True, should_be_at_end=True)')
-    df_sng['SngFile'].apply(lambda x: x.validate_stop_verseorder(fix=True, should_be_at_end=True))
+
+    #Fixing without auto moving to end because sometimes on purpose, and cases might be
+    logging.info('starting validate_stop_verseorder(fix=True, should_be_at_end=False)')
+    df_sng['SngFile'].apply(lambda x: x.validate_stop_verseorder(fix=True, should_be_at_end=False))
+    # Logging cases that are not at end ...
+    logging.info('starting validate_stop_verseorder(fix=False, should_be_at_end=True)')
+    df_sng['SngFile'].apply(lambda x: x.validate_stop_verseorder(fix=False, should_be_at_end=True))
+
 
     logging.info('starting validate_content_slides_number_of_lines() with fix')
     df_sng['SngFile'].apply(lambda x: x.validate_content_slides_number_of_lines(fix=True))
+
+    logging.info('starting validate_verse_numbers() with fix')
+    df_sng['SngFile'].apply(lambda x: x.validate_verse_numbers(fix=True))
+
 
     # Writing Output
     output_path = './output'
@@ -195,8 +205,9 @@ if __name__ == '__main__':
     # TODO Ideensammlung
     # Check for leere Folie mit Strophe 0 - bsp. EG 449
     # Psalm Auto Language Marking if space idented
-    # EG Bild hinter alle Psalmen ...#BackgroundImage=Evangelisches Gesangbuch.jpg
-    # Check for verse or strophe with number followed by letter and correct it?
+
+    #Check Verses in numerical order
+    #Replace Vers and Strophe by Verse and Chorus by Refrain
 
     # validate_header_songbook(df, True)
     # df.to_csv("Main_DF_Export.csv", quoting=csv.QUOTE_NONNUMERIC)
