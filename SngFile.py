@@ -269,23 +269,23 @@ class SngFile:
         """
         result = False  # default is not fixed or validated ...
 
-        #TODO IMPORTANT - validate against EG prefix and respective numeric range for psalms instead of "Psalm" text in path !
-        #Otherwise apo Glaubensbekenntnis trifft auch zu
-
         if "BackgroundImage" not in self.header.keys():
             if not fix:
                 logging.debug("No Background in ({})".format(self.filename))
             result = False
         else:
-            if "Psalm" in self.path and self.header["BackgroundImage"] != 'Evangelisches Gesangbuch.jpg':
-                if not fix:
-                    logging.debug("Incorrect background for Psalm in ({}) not fixed".format(self.filename))
-                result = False
+            if self.is_eg_psalm():
+                if self.header["BackgroundImage"] != 'Evangelisches Gesangbuch.jpg':
+                    if not fix:
+                        logging.debug("Incorrect background for Psalm in ({}) not fixed".format(self.filename))
+                    result = False
+                else:
+                    result = True
             else:
                 result = True
 
         if fix and not result:
-            if "Psalm" in self.path:
+            if self.is_eg_psalm():
                 self.header["BackgroundImage"] = 'Evangelisches Gesangbuch.jpg'
                 logging.debug("Fixing background for Psalm in ({})".format(self.filename))
                 self.update_editor_because_content_modified()
@@ -442,8 +442,7 @@ class SngFile:
         if all(digit in SNG_DEFAULTS.SngTitleNumberChars for digit in number):  # Filename starts with number
             if "FJ" in self.songbook_prefix:
                 songbook = self.songbook_prefix + '/' + number
-            elif "EG" in self.songbook_prefix and 701 <= float(number) <= 758:
-                # EG Psalms in EG Württemberg EG 701-758
+            elif self.is_eg_psalm():
                 logging.warning(
                     'EG Psalm "{}" can not be auto corrected - please adjust manually'.format(self.filename))
                 return False
@@ -523,6 +522,16 @@ class SngFile:
             else:
                 result = False
         return result
+
+    def is_eg_psalm(self):
+        """ Helper function to determine if the song is an EG Psalm
+        Conditions are
+        1. must have EG in Songbook Prefix
+        2. filename must start with number in correct range
+            EG Psalms in EG Württemberg EG 701-758
+        @:return bool
+        """
+        return "EG" in self.songbook_prefix and 701 <= float(self.filename.split(" ")[0]) <= 758
 
 
 def is_verse_marker_line(line):

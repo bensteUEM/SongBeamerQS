@@ -417,7 +417,9 @@ class TestSNG(unittest.TestCase):
 
         # TODO Add test for language marker validation in EG psalms
 
-        # TODO Add test background image validation for EG Psalms
+        # Test background image validation for EG Psalms
+        self.assertFalse(song.validate_header_background(fix=False))
+        self.assertTrue(song.validate_header_background(fix=True))
 
         # TODO Add test check for EG Psalms that #bible header is present
 
