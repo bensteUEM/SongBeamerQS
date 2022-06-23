@@ -19,12 +19,12 @@ SngRequiredHeader = [
 ]
 
 SngOptionalHeader = [
-    'ID', #ChurchTools ID
+    'ID',  # ChurchTools ID
     'MUSIK',  # TODO left out in many cases when identical to Author ...
     'OTitle',  # TODO Title parts slides - e.g. FJ5/073
     'TitleLang2',  # TODO Title parts slides - e.g. FJ5/073
     'Translation',
-    'BIBLE',  # TODO check spelling
+    'Bible',  # Checked with Psalms only
     'RECHTE'  # TODO check spelling
 ]
 

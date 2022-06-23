@@ -157,20 +157,34 @@ class TestSNG(unittest.TestCase):
         Info should be logged in case of missing headers
         :return:
         """
-        song = SngFile('./testData/022 Die Liebe des Retters_missing_title.sng')
+        song = SngFile('./testData/022 Die Liebe des Retters_missing_title.sng', 'FJ/5')
         with self.assertLogs(level='WARNING') as cm:
             song.validate_headers()
         self.assertEqual(cm.output, ['WARNING:root:Missing required headers in (022 Die Liebe des '
                                      "Retters_missing_title.sng) ['Title']"])
 
-        song = SngFile('./testData/022 Die Liebe des Retters.sng')
+        song = SngFile('./testData/022 Die Liebe des Retters.sng', 'FJ/5')
         check = song.validate_headers()
-        self.assertEqual(True, check, song.filename + ' should contain other headers - check log')
+        self.assertTrue(check, song.filename + ' should contain other headers - check log')
 
         song = SngFile('./testData/Holy Holy Holy.sng')
         song.fix_songbook()
         check = song.validate_headers()
-        self.assertEqual(True, check, song.filename + ' should contain other headers - check log')
+        self.assertTrue(check, song.filename + ' should contain other headers - check log')
+
+        song = SngFile('./testData/Psalm/709 Herr, sei nicht ferne.sng', 'EG')
+        with self.assertLogs(level='WARNING') as cm:
+            check = song.validate_headers()
+        self.assertEqual(cm.output,
+                         ["WARNING:root:Missing required headers in (709 Herr, sei nicht ferne.sng) "
+                          "['Author', 'CCLI', 'Translation']"])
+
+        song = SngFile('./testData/Psalm/751 Psalm 130.sng', 'EG')
+        with self.assertLogs(level='WARNING') as cm:
+            check = song.validate_headers()
+        self.assertEqual(cm.output,
+                         ["WARNING:root:Missing required headers in (751 Psalm 130.sng) "
+                          "['Author', '(c)', 'CCLI', 'VerseOrder', 'Bible']"])
 
     def test_header_songbook(self):
         """
@@ -391,7 +405,7 @@ class TestSNG(unittest.TestCase):
         e.g. 709 Herr, sei nicht ferne.sng
         :return:
         """
-        song = SngFile('./testData/709 Herr, sei nicht ferne.sng', "EG")
+        song = SngFile('./testData/Psalm/709 Herr, sei nicht ferne.sng', "EG")
         self.assertEqual(song.header["Songbook"], "EG 709 - Psalm 22 I")
 
         songbook_regex = r"^(Wwdlp \d{3})|(FJ([1-5])\/\d{3})|(EG \d{3}(.\d{1,2})?(( - Psalm )\d{1,3})?( .{1,3})?)$"
@@ -420,8 +434,6 @@ class TestSNG(unittest.TestCase):
         # Test background image validation for EG Psalms
         self.assertFalse(song.validate_header_background(fix=False))
         self.assertTrue(song.validate_header_background(fix=True))
-
-        # TODO Add test check for EG Psalms that #bible header is present
 
     def test_content_reformat_slide_4_lines(self):
         """
@@ -511,7 +523,7 @@ class TestSNG(unittest.TestCase):
         self.assertEqual(['Intro', 'Verse 1', 'Verse 2', 'Refrain', 'Verse 10', 'Verse 99', 'STOP'],
                          song.header["VerseOrder"])
 
-        #TODO optionally add test case for logged warning when new verse already exists in VerseOrder
+        # TODO optionally add test case for logged warning when new verse already exists in VerseOrder
 
     def test_header_verse_order_special2(self):
         """

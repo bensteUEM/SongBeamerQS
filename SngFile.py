@@ -140,6 +140,10 @@ class SngFile:
             if key not in self.header.keys():
                 missing.append(key)
 
+        if self.is_eg_psalm():
+            if "Bible" not in self.header.keys():
+                missing.append('Bible')
+
         if 'LangCount' in self.header:
             if int(self.header['LangCount']) > 1:
                 if 'Translation' not in self.header.keys():
@@ -147,8 +151,6 @@ class SngFile:
                     # TODO add test case for language validation
 
                     # TODO add TitleLang2 validation
-
-                    # TODO add exception for Psalms?
 
         result = len(missing) == 0
 
