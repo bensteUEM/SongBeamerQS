@@ -53,3 +53,8 @@ KnownFolderWithPrefix = {
     'Sonstige Texte': '',
     'Wwdlp (Wo wir dich loben, wachsen neue Lieder plus)': 'Wwdlp'
 }
+
+VerseMarker = ['Unbekannt', 'Unbenannt', 'Unknown', 'Intro', 'Vers', 'Verse', 'Strophe', 'Pre - Bridge', 'Bridge',
+               'Misc', 'Pre-Refrain', 'Refrain', 'Pre-Chorus', 'Chorus', 'Pre-Coda',
+               'Zwischenspiel', 'Instrumental', 'Interlude', 'Coda', 'Ending', 'Outro', 'Teil', 'Part', 'Chor', 'Solo'
+               ]

@@ -484,7 +484,7 @@ class TestSNG(unittest.TestCase):
         verse_order = verse_order_text.split(",")
         verse_blocks = 'Unknown,$$M=Testnameblock,Refrain 1,Strophe 2,Bridge'.split(',')
         verse_order_text_fixed = 'Strophe 2,Refrain 1,Refrain 1,Strophe 2,Refrain 1,Refrain 1,Bridge,Bridge,Bridge,' + \
-                                 'Bridge,Refrain 1,Refrain 1,Refrain 1,Refrain 1,STOP,Unknown,$$M=Testnameblock'
+                                 'Bridge,Refrain 1,Refrain 1,Refrain 1,Refrain 1,STOP,Unknown,Testnameblock'
         verse_order_fixed = verse_order_text_fixed.split(",")
 
         # 1. Check initial test file state
@@ -557,6 +557,17 @@ class TestSNG(unittest.TestCase):
             "DEBUG:root:Fixed VerseOrder to ['Strophe 1a', 'Strophe 1b', 'Strophe 2a', 'Strophe 2b', 'Strophe 3a',"
             " 'Strophe 3b'] in (098 Korn das in die Erde in den Tod versinkt.sng)"]
         self.assertEqual(messages, cm.output)
+
+    def test_header_verse_order_special3(self):
+        """
+        Special Case welcome slide with custom verse headers
+        :return:
+        """
+
+        song = SngFile('./testData/Herzlich Willkommen.sng', 'EG')
+        self.assertEqual(['Intro', 'Variante 1', 'Variante 2', 'Intro', 'STOP'], song.header["VerseOrder"], )
+        song.validate_verse_order(fix=True)
+        self.assertEqual(['Intro', 'Variante 1', 'Variante 2', 'Intro', 'STOP'], song.header["VerseOrder"], )
 
     def test_content_Intro_Slide(self):
         """

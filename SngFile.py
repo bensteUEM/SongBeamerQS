@@ -55,7 +55,7 @@ class SngFile:
             if len(content) == 0:  # Skip in case there is no content
                 self.update_editor_because_content_modified()
                 continue
-            elif is_verse_marker_line(content[0]):  # New named content
+            elif get_verse_marker_line(content[0]) is not None:  # New named content
                 current_contentname = content[0]
                 self.content[current_contentname] = [get_verse_marker_line(content[0])]
                 self.content[current_contentname].append(content[1:])
@@ -310,20 +310,38 @@ class SngFile:
         if 'VerseOrder' not in self.header.keys():
             verses_in_order = False
         else:
-            verse_order_covers_all_blocks = \
-                all([i in self.content.keys() or i == 'STOP' for i in self.header["VerseOrder"]])
-            blocks_in_verse_order = all([i in self.header["VerseOrder"] for i in self.content.keys()])
-            verses_in_order = blocks_in_verse_order & verse_order_covers_all_blocks
+            verse_order_covers_all_blocks = all(
+                [i in self.content.keys()
+                 or '$$M=' + i in self.content.keys()
+                 or i == 'STOP'
+                 for i in self.header["VerseOrder"]]
+            )
+
+            all_blocks_in_verse_order = all(
+                [i[4:] if i[:4] == '$$M=' else i in self.header["VerseOrder"]
+                 for i in self.content.keys()]
+            )
+            verses_in_order = all_blocks_in_verse_order & verse_order_covers_all_blocks
 
         if fix and not verses_in_order:
-
             if 'VerseOrder' not in self.header.keys():
                 self.header['VerseOrder'] = []
+
+            # Add blocks to Verse Order if they are missing
             for content_block in self.content.keys():
-                if content_block not in self.header["VerseOrder"]:
-                    self.header["VerseOrder"].append(content_block)
-            self.header["VerseOrder"][:] = \
-                [v for v in self.header["VerseOrder"] if (v in self.content.keys() or v == 'STOP')]
+                if not (content_block[:4] == '$$M=' and content_block[4:] in self.header["VerseOrder"]
+                        or content_block in self.header["VerseOrder"]):
+                    if content_block[:4] == '$$M=':
+                        self.header["VerseOrder"].append(content_block[4:])
+                    else:
+                        self.header["VerseOrder"].append(content_block)
+
+            # Remove blocks from verse order that don't exist
+            self.header["VerseOrder"][:] = [v for v in self.header["VerseOrder"]
+                                            if v in self.content.keys()
+                                            or '$$M=' + v in self.content.keys()
+                                            or v == 'STOP']
+
             logging.debug('Fixed VerseOrder to {} in ({})'.format(self.header["VerseOrder"], self.filename))
             self.update_editor_because_content_modified()
             verses_in_order = True
@@ -548,40 +566,30 @@ class SngFile:
         return "EG" in self.songbook_prefix and 701 <= float(self.filename.split(" ")[0]) <= 758
 
 
-def is_verse_marker_line(line):
+def get_verse_marker_line(line):
     """
-    Function used to check if a line begins with a verse marker
-    Needs to begin with Verse Marker and either have no extra content or another block split by space
+    Function used to convert a verse marker to a list of marker and number
+    Line needs to begin with Verse Marker and either have no extra content or another block split by space
     In case of $$= equal sign is used as separator
+    :param line:
+    :return: list of marker and optional detail in case matches, otherwise None
+    """
+
+    """
+    Function used to check if a line begins with a verse marker and return respective
+    Needs to begin with Verse Marker and either have no extra content or another block split by space
     :param line:
     :return: True in case matches, otherwise False
     """
-    marker = ['Unbekannt', 'Unbenannt', 'Unknown', 'Intro', 'Vers', 'Verse', 'Strophe', 'Pre - Bridge', 'Bridge',
-              'Misc', 'Pre-Refrain', 'Refrain', 'Pre-Chorus', 'Chorus', 'Pre-Coda',
-              'Zwischenspiel', 'Instrumental', 'Interlude', 'Coda', 'Ending', 'Outro', 'Teil', 'Part', 'Chor', 'Solo'
-              ]
+    from SNG_DEFAULTS import VerseMarker
+
     if line.startswith('$$M='):
-        return True
+        return ['$$M=', line[4:]]
     else:
         line = line.split(" ")
-        if line[0] in marker:
-            return True
-    return False
-
-
-def get_verse_marker_line(text):
-    """
-    Function used to convert a verse marker to a list of marker and number
-    Needs to begin with Verse Marker and either have no extra content or another block split by space
-    In case of $$= equal sign is used as separator
-    :param text:
-    :return: list of marker and optional detail in case matches, otherwise false
-    """
-    if is_verse_marker_line(text):
-        if text.startswith('$$M='):
-            return ['$$M=', text[4:]]
-        else:
-            return text.split(" ")
+        if line[0] in VerseMarker:
+            return line
+    return None
 
 
 def contains_songbook_prefix(text):
