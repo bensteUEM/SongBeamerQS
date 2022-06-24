@@ -62,7 +62,7 @@ def validate_all_headers(df_to_change, fix=False):
     # Set Background for all Psalm entries
     psalms_select = df_to_change["SngFile"].apply(lambda x: x.is_eg_psalm())
     headers_valid &= df_to_change[psalms_select]["SngFile"] \
-        .apply(lambda x: x.validate_header_background(fix=True))
+        .apply(lambda x: x.validate_header_background(fix))
 
     # 6. Check that all required headers are present
     logging.info("Starting to check for required headers")
