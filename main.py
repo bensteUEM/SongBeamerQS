@@ -171,8 +171,8 @@ if __name__ == '__main__':
 
     validate_all_headers(df_sng, True)
 
-    logging.info('starting validate_verse_order() with fix')
-    df_sng['SngFile'].apply(lambda x: x.validate_verse_order(fix=True))
+    logging.info('starting validate_verse_order_coverage() with fix')
+    df_sng['SngFile'].apply(lambda x: x.validate_verse_order_coverage(fix=True))
 
     logging.info('starting fix_intro_slide()')
     df_sng['SngFile'].apply(lambda x: x.fix_intro_slide())

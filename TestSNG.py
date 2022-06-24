@@ -119,6 +119,7 @@ class TestSNG(unittest.TestCase):
         song.header.pop("VerseOrder")
         target = {
             'LangCount': '1',
+            'Melody': 'TESTDATA',
             'Title': 'Die Liebe des Retters',
             'Author': 'Mia Friesen, Stefan Schöpfle',
             'CCLI': '6020110',
@@ -177,14 +178,14 @@ class TestSNG(unittest.TestCase):
             song.validate_headers()
         self.assertEqual(cm.output,
                          ["WARNING:root:Missing required headers in (709 Herr, sei nicht ferne.sng) "
-                          "['Author', 'CCLI', 'Translation']"])
+                          "['Author', 'Melody', 'CCLI', 'Translation']"])
 
         song = SngFile('./testData/Psalm/751 Psalm 130.sng', 'EG')
         with self.assertLogs(level='WARNING') as cm:
             song.validate_headers()
         self.assertEqual(cm.output,
                          ["WARNING:root:Missing required headers in (751 Psalm 130.sng) "
-                          "['Author', '(c)', 'CCLI', 'VerseOrder', 'Bible']"])
+                          "['Author', 'Melody', '(c)', 'CCLI', 'VerseOrder', 'Bible']"])
 
     def test_header_illegal_removed(self):
         """
@@ -493,7 +494,7 @@ class TestSNG(unittest.TestCase):
 
         # 2. Check that Verse Order shows as incomplete
         with self.assertLogs(level='WARNING') as cm:
-            self.assertFalse(song.validate_verse_order())
+            self.assertFalse(song.validate_verse_order_coverage())
 
         self.assertEqual(cm.output, ["WARNING:root:Verse Order and Blocks don't match in " +
                                      "022 Die Liebe des Retters_missing_block.sng"
@@ -503,14 +504,14 @@ class TestSNG(unittest.TestCase):
         song = SngFile('./testData/022 Die Liebe des Retters_missing_block.sng')
         self.assertEqual(song.header["VerseOrder"], verse_order)
         with self.assertNoLogs(level='WARNING'):
-            song.validate_verse_order(fix=True)
+            song.validate_verse_order_coverage(fix=True)
 
         self.assertEqual(song.header["VerseOrder"], verse_order_fixed)
 
         # Failsafe with correct file
         song = SngFile('./testData/079 Höher_reformat.sng')
         with self.assertNoLogs(level='WARNING'):
-            self.assertTrue(song.validate_verse_order())
+            self.assertTrue(song.validate_verse_order_coverage())
 
     def test_header_verse_order_special(self):
         """
@@ -520,7 +521,7 @@ class TestSNG(unittest.TestCase):
         """
         song = SngFile('./testData/375 Dass Jesus siegt bleibt ewig ausgemacht.sng', 'EG')
         with self.assertNoLogs(level='WARNING'):
-            self.assertTrue(song.validate_verse_order())
+            self.assertTrue(song.validate_verse_order_coverage())
 
     def test_generate_verses_from_unknown(self):
         """
@@ -546,13 +547,13 @@ class TestSNG(unittest.TestCase):
         """
         song = SngFile('./testData/098 Korn das in die Erde in den Tod versinkt.sng', 'EG')
         with self.assertLogs(level='WARNING') as cm:
-            self.assertFalse(song.validate_verse_order(fix=False))
+            self.assertFalse(song.validate_verse_order_coverage(fix=False))
         messages = [
             "WARNING:root:Verse Order and Blocks don't match in 098 Korn das in die Erde in den Tod versinkt.sng"]
         self.assertEqual(messages, cm.output)
 
         with self.assertLogs(level='DEBUG') as cm:
-            self.assertTrue(song.validate_verse_order(fix=True))
+            self.assertTrue(song.validate_verse_order_coverage(fix=True))
         messages = [
             "DEBUG:root:Fixed VerseOrder to ['Strophe 1a', 'Strophe 1b', 'Strophe 2a', 'Strophe 2b', 'Strophe 3a',"
             " 'Strophe 3b'] in (098 Korn das in die Erde in den Tod versinkt.sng)"]
@@ -566,7 +567,7 @@ class TestSNG(unittest.TestCase):
 
         song = SngFile('./testData/Herzlich Willkommen.sng', 'EG')
         self.assertEqual(['Intro', 'Variante 1', 'Variante 2', 'Intro', 'STOP'], song.header["VerseOrder"], )
-        song.validate_verse_order(fix=True)
+        song.validate_verse_order_coverage(fix=True)
         self.assertEqual(['Intro', 'Variante 1', 'Variante 2', 'Intro', 'STOP'], song.header["VerseOrder"], )
 
     def test_content_Intro_Slide(self):
@@ -584,7 +585,6 @@ class TestSNG(unittest.TestCase):
     def test_validate_verse_numbers(self):
         """
         Checks whether verse numbers are regular
-        :param fix: bool if it should be attempt to fix itself
         """
         song = SngFile('./testData/123 Du bist der Schöpfer des Universums.sng')
         self.assertIn('Refrain 1a', song.header["VerseOrder"])
@@ -598,6 +598,8 @@ class TestSNG(unittest.TestCase):
         self.assertNotIn('Refrain 1a', song.header["VerseOrder"])
         self.assertNotIn('Refrain 1b', song.header["VerseOrder"])
         self.assertIn('Refrain 1', song.header["VerseOrder"])
+        expected = ['Intro', 'Strophe 1', 'Strophe 2', 'Refrain 1', 'Bridge', 'Strophe 3']
+        self.assertEqual(expected, list(song.content.keys()))
 
     def test_validate_verse_numbers2(self):
         """More complicated file with more issues and problems with None in VerseOrder"""
@@ -611,6 +613,23 @@ class TestSNG(unittest.TestCase):
         song.validate_verse_numbers(fix=True)
         expected_order = ['Strophe 1', 'Strophe 4', 'STOP', 'Strophe 2', 'Strophe 3']
         self.assertEqual(expected_order, song.header['VerseOrder'])
+        expected_order = ['Strophe 1', 'Strophe 2', 'Strophe 3', 'Strophe 4']
+        self.assertEqual(expected_order, list(song.content.keys()))
+
+    def test_validate_verse_numbers3(self):
+        """
+        Test with a file that has other verses than verse order
+        fixes verse order based on content
+        and verse number validation should not have any impact
+        :return:
+        """
+        song = SngFile('./testData/289 Nun lob mein Seel den Herren.sng')
+        song.validate_verse_order_coverage(True)
+        song.validate_verse_numbers(True)
+
+        self.assertIn("Verse 1", song.header["VerseOrder"])
+        self.assertIn("STOP", song.header["VerseOrder"])
+        self.assertIn("Verse 1", song.content.keys())
 
     def test_content_STOP_VerseOrder(self):
         """

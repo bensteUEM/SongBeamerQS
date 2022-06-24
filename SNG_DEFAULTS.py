@@ -9,6 +9,7 @@ SngDefaultHeader = {
 SngRequiredHeader = [
     'Title',
     'Author',
+    'Melody',
     '(c)',
     'CCLI',
     'Songbook',
@@ -20,7 +21,6 @@ SngRequiredHeader = [
 
 SngOptionalHeader = [
     'ID',  # ChurchTools ID
-    'MUSIK',  # TODO left out in many cases when identical to Author ...
     'OTitle',  # TODO Title parts slides - e.g. FJ5/073
     'TitleLang2',  # TODO Title parts slides - e.g. FJ5/073
     'Translation',

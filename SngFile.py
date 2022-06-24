@@ -299,7 +299,7 @@ class SngFile:
         # TODO validate background against resolution list
         # TODO validate background against copyright available
 
-    def validate_verse_order(self, fix=False):
+    def validate_verse_order_coverage(self, fix=False):
         """
         Checks that all items of content are part of Verse Order
         and all items of VerseOrder are available in content
@@ -529,7 +529,7 @@ class SngFile:
     def validate_verse_numbers(self, fix=False):
         """
         Method which checks Verse Numbers for numeric parts that are non-standard - e.g. 1b
-        and tries to mergen consecutive similar parts
+        and tries to merge consecutive similar parts
         :return:
         """
         all_verses_valid = True
@@ -566,7 +566,8 @@ class SngFile:
                         new_content[new_key] = [new_label] + block[1:]
                     all_verses_valid &= True
                     self.update_editor_because_content_modified()
-
+                else:  # In Case block is something different than regular verse with number
+                    new_content[key] = block
             else:  # In Case block is something different than regular verse with number
                 new_content[key] = block
 
