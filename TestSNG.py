@@ -631,6 +631,17 @@ class TestSNG(unittest.TestCase):
         self.assertIn("STOP", song.header["VerseOrder"])
         self.assertIn("Verse 1", song.content.keys())
 
+    def test_header_validate_verse_numbers4(self):
+        """
+        Special Case 375 Dass Jesus siegt bleibt ewig ausgemacht.sng with merging verse blocks
+        did show up as list instead of lines for slide 2 and 3 for verse 1
+        :return:
+        """
+        song = SngFile('./testData/375 Dass Jesus siegt bleibt ewig ausgemacht.sng', 'EG')
+        self.assertEqual(song.content['Strophe 1b'][1][0],'denn alles ist')
+        song.validate_verse_numbers(fix=True)
+        self.assertEqual(song.content['Strophe 1'][2][0], 'denn alles ist')
+
     def test_content_STOP_VerseOrder(self):
         """
         Checks and corrects existance of STOP in Verse Order

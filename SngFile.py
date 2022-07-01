@@ -552,10 +552,10 @@ class SngFile:
 
                     # check if new block name already exists
                     if new_key in new_content.keys():
-                        logging.debug("\t Appending {} to existing Verse label {})".
+                        logging.debug("\t Appending {} to existing Verse label {}".
                                       format(old_key, new_key))
                         # if yes, append content and remove old label from verse order
-                        new_content[new_key].append(block[1:])
+                        new_content[new_key].append(block[1])
                         self.header["VerseOrder"] = [item for item in self.header["VerseOrder"] if item != old_key]
                     else:
                         logging.debug("New Verse label from {} to {} in ({})".
