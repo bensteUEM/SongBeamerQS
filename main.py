@@ -171,8 +171,6 @@ if __name__ == '__main__':
     df_ct = pd.json_normalize(songs)
     """
 
-    validate_all_headers(df_sng, True)
-
     logging.info('starting validate_verse_order_coverage() with fix')
     df_sng['SngFile'].apply(lambda x: x.validate_verse_order_coverage(fix=True))
 
@@ -183,14 +181,16 @@ if __name__ == '__main__':
     logging.info('starting validate_stop_verseorder(fix=True, should_be_at_end=False)')
     df_sng['SngFile'].apply(lambda x: x.validate_stop_verseorder(fix=True, should_be_at_end=False))
     # Logging cases that are not at end ...
-    logging.info('starting validate_stop_verseorder(fix=False, should_be_at_end=True)')
-    df_sng['SngFile'].apply(lambda x: x.validate_stop_verseorder(fix=False, should_be_at_end=True))
+    # logging.info('starting validate_stop_verseorder(fix=False, should_be_at_end=True)')
+    # df_sng['SngFile'].apply(lambda x: x.validate_stop_verseorder(fix=False, should_be_at_end=True))
+
+    logging.info('starting validate_verse_numbers() with fix')
+    df_sng['SngFile'].apply(lambda x: x.validate_verse_numbers(fix=True))
 
     logging.info('starting validate_content_slides_number_of_lines() with fix')
     df_sng['SngFile'].apply(lambda x: x.validate_content_slides_number_of_lines(fix=True))
 
-    logging.info('starting validate_verse_numbers() with fix')
-    df_sng['SngFile'].apply(lambda x: x.validate_verse_numbers(fix=True))
+    validate_all_headers(df_sng, True)
 
     # Writing Output
     output_path = './output'
