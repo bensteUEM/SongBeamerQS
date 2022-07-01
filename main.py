@@ -46,26 +46,28 @@ def validate_all_headers(df_to_change, fix=False):
     :param fix: boolean if data should be fixed - so far only applies for remove illegal headers and songbook fixing
     :return: boolean Series with True for all entries that have no issues
     """
+    logging.info("Starting validate_all_headers({})".format(fix))
 
     # 1. Validate Title
-    logging.info('starting validate_header_title()')
+    logging.info('Starting validate_header_title({})'.format(fix))
     headers_valid = df_to_change['SngFile'].apply(lambda x: x.validate_header_title(fix))
 
     # 2. Validate Songbook Entries
-    logging.info("Starting Songbook Validation with fix={}".format(fix))
+    logging.info("Starting validate_header_songbook({})".format(fix))
     headers_valid &= df_to_change["SngFile"].apply(lambda x: x.validate_header_songbook(fix))
 
     # 3. Remove all Illegal headers
-    logging.info("Starting removal of illegal headers")
+    logging.info("Starting validate_headers_illegal_removed({})".format(fix))
     headers_valid &= df_to_change["SngFile"].apply(lambda x: x.validate_headers_illegal_removed(fix))
 
     # Set Background for all Psalm entries
     psalms_select = df_to_change["SngFile"].apply(lambda x: x.is_eg_psalm())
+    logging.info("Starting validate_header_background({}) for {} psalms".format(fix, sum(psalms_select)))
     headers_valid &= df_to_change[psalms_select]["SngFile"] \
         .apply(lambda x: x.validate_header_background(fix))
 
     # 6. Check that all required headers are present
-    logging.info("Starting to check for required headers")
+    logging.info("Starting validate_headers()")
     df_to_change["SngFile"].apply(lambda x: x.validate_headers())
 
     return headers_valid
@@ -177,20 +179,18 @@ if __name__ == '__main__':
     logging.info('starting fix_intro_slide()')
     df_sng['SngFile'].apply(lambda x: x.fix_intro_slide())
 
-    #Fixing without auto moving to end because sometimes on purpose, and cases might be
+    # Fixing without auto moving to end because sometimes on purpose, and cases might be
     logging.info('starting validate_stop_verseorder(fix=True, should_be_at_end=False)')
     df_sng['SngFile'].apply(lambda x: x.validate_stop_verseorder(fix=True, should_be_at_end=False))
     # Logging cases that are not at end ...
     logging.info('starting validate_stop_verseorder(fix=False, should_be_at_end=True)')
     df_sng['SngFile'].apply(lambda x: x.validate_stop_verseorder(fix=False, should_be_at_end=True))
 
-
     logging.info('starting validate_content_slides_number_of_lines() with fix')
     df_sng['SngFile'].apply(lambda x: x.validate_content_slides_number_of_lines(fix=True))
 
     logging.info('starting validate_verse_numbers() with fix')
     df_sng['SngFile'].apply(lambda x: x.validate_verse_numbers(fix=True))
-
 
     # Writing Output
     output_path = './output'
@@ -206,8 +206,8 @@ if __name__ == '__main__':
     # Check for leere Folie mit Strophe 0 - bsp. EG 449
     # Psalm Auto Language Marking if space idented
 
-    #Check Verses in numerical order
-    #Replace Vers and Strophe by Verse and Chorus by Refrain
+    # Check Verses in numerical order
+    # Replace Vers and Strophe by Verse and Chorus by Refrain
 
     # validate_header_songbook(df, True)
     # df.to_csv("Main_DF_Export.csv", quoting=csv.QUOTE_NONNUMERIC)
