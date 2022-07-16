@@ -116,7 +116,7 @@ def generate_title_column(df_to_change):
 
 def generate_songbook_column(df_to_change):
     """
-    method used to generate the 'Songbook' and 'ChurchSongID' columns for all items in a df based on the headers
+    method used to generate the 'Songbook' and 'ChurchSongID' columns on all items in a df based on the headers
     :param df_to_change: Dataframe which should me used
     :return:
     """
