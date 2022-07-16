@@ -7,7 +7,7 @@ from ChurchToolsApi import ChurchToolsApi
 
 import SNG_DEFAULTS
 from main import check_ct_song_categories_exist_as_folder, parse_sng_from_directory, read_baiersbronn_songs_to_df, \
-    validate_all_songbook, generate_songbook_column
+    generate_songbook_column
 
 
 class TestSNG(unittest.TestCase):
@@ -37,13 +37,20 @@ class TestSNG(unittest.TestCase):
                                                                  SNG_DEFAULTS.KnownDirectory))
 
     def test_eg_with_songbook_prefix(self):
+        """
+        Check that all songs in EG Lieder does have EG Songbook prefix
+        :return:
+        """
         songs_df = read_baiersbronn_songs_to_df()
-        filter = songs_df["path"] \
-                 == '/home/benste/Documents/Kirchengemeinde Baiersbronn/Beamer/Songbeamer - Songs/EG Lieder'
-        eg_songs_df = songs_df[filter]
-        result = validate_all_songbook(eg_songs_df, fix=True)
-        generate_songbook_column(eg_songs_df)
-        self.assertEqual(len(eg_songs_df['Songbook']), eg_songs_df['Songbook'].str.startswith('EG').sum())
+        filter1 = songs_df["path"] \
+                  == '/home/benste/Documents/Kirchengemeinde Baiersbronn/Beamer/Songbeamer - Songs/EG Lieder'
+        filter2 = songs_df["path"] \
+                  == '/home/benste/Documents/Kirchengemeinde Baiersbronn/Beamer/Songbeamer - Songs/EG Psalmen & Sonstiges'
+
+        songs_df['SngFile'].apply(lambda x: x.validate_header_songbook(True))
+        eg_songs_df = songs_df[filter1 | filter2]
+        generate_songbook_column(songs_df)
+        self.assertEqual(len(eg_songs_df['SngFile']), songs_df['Songbook'].str.startswith('EG').sum())
 
     def test_validate_songbook_special_cases(self):
         """
@@ -52,7 +59,7 @@ class TestSNG(unittest.TestCase):
         """
 
         special_files = ['709 Herr, sei nicht ferne.sng']
-        song = parse_sng_from_directory('./testData', 'EG', special_files)[0]
+        song = parse_sng_from_directory('./testData/Psalm', 'EG', special_files)[0]
         self.assertEqual(special_files[0], song.filename)
 
         # Special Case for Regex Testing
@@ -60,9 +67,9 @@ class TestSNG(unittest.TestCase):
         song = parse_sng_from_directory('./testData', 'EG', special_files)[0]
         song_df = pd.DataFrame([song], columns=["SngFile"])
         self.assertEqual('Wwdlp 170 & EG 548', song_df['SngFile'].iloc[0].header['Songbook'])
-        result = validate_all_songbook(song_df, fix=False)
+        result = song_df['SngFile'].apply(lambda x: x.validate_header_songbook(False))
         self.assertEqual(result.sum(), 0, 'Should have no valid entries')
-        result = validate_all_songbook(song_df, fix=True)
+        result = song_df['SngFile'].apply(lambda x: x.validate_header_songbook(True))
         self.assertEqual(result.sum(), 1, 'Should have one valid entry')
         result = generate_songbook_column(song_df)
         self.assertEqual('EG 548', song_df['SngFile'].iloc[0].header['Songbook'])
@@ -70,10 +77,10 @@ class TestSNG(unittest.TestCase):
 
         # Special Case for Regex Testing - Songbook=EG 709 - Psalm 22 I -> is marked as autocorrect ...
         special_files = ['709 Herr, sei nicht ferne.sng']
-        song = parse_sng_from_directory('./testData', 'EG', special_files)[0]
+        song = parse_sng_from_directory('./testData/Psalm', 'EG', special_files)[0]
         song_df = pd.DataFrame([song], columns=["SngFile"])
         self.assertEqual('EG 709 - Psalm 22 I', song_df['SngFile'].iloc[0].header['Songbook'])
-        result = validate_all_songbook(song_df, fix=False)
+        result = song_df['SngFile'].apply(lambda x: x.validate_header_songbook(False))
         self.assertEqual(result.sum(), 1, 'Should have one valid entry')
 
     def test_validate_comment_special_case(self):
