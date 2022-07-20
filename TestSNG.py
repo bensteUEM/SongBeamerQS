@@ -130,8 +130,7 @@ class TestSNG(unittest.TestCase):
             'Songbook': 'FJ5/022',
             'Comments': '77u/Rm9saWVucmVpaGVuZm9sZ2UgbmFjaCBvZmZpemllbGxlciBBdWZuYWhtZSwgaW4gQmFpZXJzYnJvb' +
                         'm4gZ2dmLiBrw7xyemVyIHVuZCBtaXQgTXVzaWt0ZWFtIGFienVzdGltbWVu',
-            'ChurchSongID': 'FJ5/022',
-            'ID': '149'
+            'ChurchSongID': 'FJ5/022'
         }
         self.assertDictEqual(song.header, target)
 
@@ -638,7 +637,7 @@ class TestSNG(unittest.TestCase):
         :return:
         """
         song = SngFile('./testData/375 Dass Jesus siegt bleibt ewig ausgemacht.sng', 'EG')
-        self.assertEqual(song.content['Strophe 1b'][1][0],'denn alles ist')
+        self.assertEqual(song.content['Strophe 1b'][1][0], 'denn alles ist')
         song.validate_verse_numbers(fix=True)
         self.assertEqual(song.content['Strophe 1'][2][0], 'denn alles ist')
 
@@ -712,6 +711,19 @@ class TestSNG(unittest.TestCase):
         self.assertTrue(contains_songbook_prefix("999/FJ5"))
         self.assertTrue(contains_songbook_prefix("999-FJ5"))
         self.assertTrue(contains_songbook_prefix("999.FJ5"))
+
+    def test_getset_id(self):
+        """
+        Test that runs various variations of songbook parts which should be detected by improved helper method
+        :return:
+        """
+        path = "./testData/"
+        filename = "001 Macht Hoch die Tuer.sng"
+        song = SngFile(path + filename)
+
+        self.assertEqual(song.get_id(), -1)
+        song.set_id(-2)
+        self.assertEqual(song.get_id(), -2)
 
 
 if __name__ == '__main__':

@@ -609,6 +609,26 @@ class SngFile:
                                 format(self.filename, self.header["VerseOrder"]))
         return result
 
+    def get_id(self):
+        """
+        Helper function accessing ID in header mapping not existant to -1
+        :return: id
+        :rtype: int or None
+        """
+        if 'id' in self.header.keys():
+            return int(self.header['id'])
+        else:
+            return -1
+
+    def set_id(self, id: int):
+        """
+        Helper function for easy access to write header ID
+        :param id: ID (ideally ChurchTools) which should be set for the specific song
+        :type int
+        :return:
+        """
+        self.header['id'] = str(id)
+
     def is_eg_psalm(self):
         """ Helper function to determine if the song is an EG Psalm
         Conditions are
