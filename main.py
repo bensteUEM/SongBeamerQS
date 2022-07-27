@@ -99,6 +99,19 @@ def read_baiersbronn_songs_to_df():
     return result_df
 
 
+def read_baiersbronn_ct_songs():
+    """
+    Helper function reading all songs into a df
+    :return:
+    """
+    from ChurchToolsApi import ChurchToolsApi
+
+    api = ChurchToolsApi('https://elkw1610.krz.tools')
+    songs = api.get_songs()
+    df_ct = pd.json_normalize(songs)
+    return df_ct
+
+
 def generate_title_column(df_to_change):
     """
     method used to generate the 'Title' column for all items in a df based on the headers
@@ -138,39 +151,23 @@ def generate_background_image_column(df_to_change):
             df_to_change.loc[(index, 'BackgroundImage')] = value.header['BackgroundImage']
 
 
-def check_ct_song_categories_exist_as_folder(ct_song_categories, path):
+def generate_ct_compare_columns(df_sng):
     """
-    Method which check whether all Song Categories of ChurchTools exist in the specified folder
-    :param ct_song_categories: List of all ChurchTools Song categories
-    :param path: for local files
-    :return:
+    method used to generate the "id", 'name', 'category.name' for a local SNG Dataframe
+    in order to match columns used in ChurchTools Dataframe
+    :param df_sng: Dataframe generated from SNG Files which which should me used
+    :type df_sng: pd.DataFrame
+    :return: None because applied directly onto df
     """
-    logging.debug("checking categories{} in {}".format(ct_song_categories, path))
-    local_directories = os.listdir(path)
-    return all([category in local_directories for category in ct_song_categories])
+    df_sng["id"] = df_sng["SngFile"].apply(
+        lambda x: x.get_id())
+    df_sng["name"] = df_sng["filename"].apply(
+        lambda x: x[:-4])
+    df_sng["category.name"] = df_sng["SngFile"].apply(
+        lambda x: x.path.split("/")[-1])
 
 
-if __name__ == '__main__':
-    logging.basicConfig(filename='logs/main.py.log', encoding='utf-8',
-                        format="%(asctime)s %(name)-10s %(levelname)-8s %(message)s",
-                        level=logging.DEBUG)
-    logging.info("Excecuting Main RUN")
-
-    df_sng = read_baiersbronn_songs_to_df()
-
-    # generate_background_image_column(df_sng)
-    # validate_all_headers(df_sng, fix=True)
-    # generate_title_column(df_sng)
-    # generate_songbook_column(df_sng)
-
-    """
-    from ChurchToolsApi import ChurchToolsApi
-
-    api = ChurchToolsApi('https://elkw1610.krz.tools')
-    songs = api.get_songs()
-    df_ct = pd.json_normalize(songs)
-    """
-
+def clean_all_songs():
     logging.info('starting validate_verse_order_coverage() with fix')
     df_sng['SngFile'].apply(lambda x: x.validate_verse_order_coverage(fix=True))
 
@@ -192,6 +189,8 @@ if __name__ == '__main__':
 
     validate_all_headers(df_sng, True)
 
+
+def write_df_to_file():
     # Writing Output
     output_path = './output'
     logging.info('starting write_path_change({})'.format(output_path))
@@ -199,6 +198,97 @@ if __name__ == '__main__':
 
     logging.info('starting write_file()')
     df_sng['SngFile'].apply(lambda x: x.write_file())
+
+
+def check_ct_song_categories_exist_as_folder(ct_song_categories, path):
+    """
+    Method which check whether all Song Categories of ChurchTools exist in the specified folder
+    :param ct_song_categories: List of all ChurchTools Song categories
+    :param path: for local files
+    :return:
+    """
+    logging.debug("checking categories{} in {}".format(ct_song_categories, path))
+    local_directories = os.listdir(path)
+    return all([category in local_directories for category in ct_song_categories])
+
+
+def validate_ct_songs_exist_locally_by_name_and_category(df_ct, df_sng):
+    """
+    Function which checks that all song loaded from ChurchTools as DataFrame do exist locally
+    Uses Name and Category to match them - does not compare IDs !
+
+    And logs warning for all elements that can not be mapped
+
+    Can be used to identify changes in ChurchTools that were not updated locally
+    :param df_ct: DataFrame with all columns from a JSON response getting all songs from CT
+    :type df_ct: pd.DataFrame
+    :param df_sng: DataFrame with all local SNG files with headings matching CT Dataframe
+    :type df_sng: pd.DataFrame
+    :return: reference to merged Dataframe
+    :rtype: pd.Dataframe
+    """
+
+    generate_ct_compare_columns(df_sng)
+
+    logging.info("validate_ct_songs_exist_locally_by_name_and_category()")
+    df_ct_join_name = df_sng.merge(df_ct, on=['name', 'category.name'], how='right', indicator=True)
+
+    issues = df_ct_join_name[df_ct_join_name['_merge'] != 'both'].sort_values(by=['category.name', 'name'])
+    for issue in issues[["name", 'category.name', 'id_y']].iterrows():
+        logging.warning("Song ({}) in category ({}) exists as ChurchTools ID={} but not matched locally".format(
+            issue[1]["name"], issue[1]["category.name"], issue[1]['id_y']))
+
+    return df_ct_join_name
+
+
+def validate_ct_songs_exist_locally_by_id(df_ct, df_sng):
+    """
+    Function which checks that all song loaded from ChurchTools as DataFrame do exist locally
+    Uses only ID to match them - does not compare name or cateogry !
+
+    And logs warning for all elements that can not be mapped
+
+    Can be used to identify changes in ChurchTools that were not updated locally
+    :param df_ct: DataFrame with all columns from a JSON response getting all songs from CT
+    :type df_ct: pd.DataFrame
+    :param df_sng: DataFrame with all local SNG files with headings matching CT Dataframe
+    :type df_sng: pd.DataFrame
+    :return: reference to merged Dataframe
+    :rtype: pd.Dataframe
+    """
+
+    # prep df id, category and name columns
+    generate_ct_compare_columns(df_sng)
+
+    logging.info("validate_ct_songs_exist_locally_by_id()")
+    df_ct_join_id = df_sng.merge(df_ct, on=['id'], how='right', indicator=True)
+
+    issues = df_ct_join_id[df_ct_join_id['_merge'] != 'both'].sort_values(by=['category.name_y', 'name_y'])
+    for issue in issues[["name_y", 'category.name_y', 'id']].iterrows():
+        logging.warning(
+            "Song ({}) in category ({}) exists with ChurchTools ID={} online but ID not matched locally".format(
+                issue[1]["name_y"], issue[1]["category.name_y"], issue[1]['id']))
+
+    return df_ct_join_id
+
+
+if __name__ == '__main__':
+    logging.basicConfig(filename='logs/main.py.log', encoding='utf-8',
+                        format="%(asctime)s %(name)-10s %(levelname)-8s %(message)s",
+                        level=logging.DEBUG)
+    logging.info("Excecuting Main RUN")
+
+    df_sng = read_baiersbronn_songs_to_df()
+
+    clean_all_songs()
+
+    # write_df_to_file()
+
+    df_ct = read_baiersbronn_ct_songs()
+    compare_by_namecat_df = validate_ct_songs_exist_locally_by_name_and_category(df_ct, df_sng)
+    compare_by_id_df = validate_ct_songs_exist_locally_by_id(df_ct, df_sng)
+
+    df_join_id = df_sng.merge(df_ct, on=['id'], how='left', indicator=True)
 
     logging.info('Main Method finished')
 
