@@ -167,27 +167,33 @@ def generate_ct_compare_columns(df_sng):
         lambda x: x.path.split("/")[-1])
 
 
-def clean_all_songs():
+def clean_all_songs(df: pd.DataFrame):
+    """
+    Helper function which runs cleaning methods for sng files on a dataframe
+    :param df_sng: Dataframe to work on
+    :type df_sng: pd.DataFrame
+    :return:
+    """
     logging.info('starting validate_verse_order_coverage() with fix')
-    df_sng['SngFile'].apply(lambda x: x.validate_verse_order_coverage(fix=True))
+    df['SngFile'].apply(lambda x: x.validate_verse_order_coverage(fix=True))
 
     logging.info('starting fix_intro_slide()')
-    df_sng['SngFile'].apply(lambda x: x.fix_intro_slide())
+    df['SngFile'].apply(lambda x: x.fix_intro_slide())
 
     # Fixing without auto moving to end because sometimes on purpose, and cases might be
     logging.info('starting validate_stop_verseorder(fix=True, should_be_at_end=False)')
-    df_sng['SngFile'].apply(lambda x: x.validate_stop_verseorder(fix=True, should_be_at_end=False))
+    df['SngFile'].apply(lambda x: x.validate_stop_verseorder(fix=True, should_be_at_end=False))
     # Logging cases that are not at end ...
     # logging.info('starting validate_stop_verseorder(fix=False, should_be_at_end=True)')
     # df_sng['SngFile'].apply(lambda x: x.validate_stop_verseorder(fix=False, should_be_at_end=True))
 
     logging.info('starting validate_verse_numbers() with fix')
-    df_sng['SngFile'].apply(lambda x: x.validate_verse_numbers(fix=True))
+    df['SngFile'].apply(lambda x: x.validate_verse_numbers(fix=True))
 
     logging.info('starting validate_content_slides_number_of_lines() with fix')
-    df_sng['SngFile'].apply(lambda x: x.validate_content_slides_number_of_lines(fix=True))
+    df['SngFile'].apply(lambda x: x.validate_content_slides_number_of_lines(fix=True))
 
-    validate_all_headers(df_sng, True)
+    validate_all_headers(df, True)
 
 
 def write_df_to_file():
@@ -280,12 +286,12 @@ if __name__ == '__main__':
 
     df_sng = read_baiersbronn_songs_to_df()
 
-    clean_all_songs()
+    clean_all_songs(df_sng)
 
     # write_df_to_file()
 
     df_ct = read_baiersbronn_ct_songs()
-    compare_by_namecat_df = validate_ct_songs_exist_locally_by_name_and_category(df_ct, df_sng)
+    compare_by_name_and_category_df = validate_ct_songs_exist_locally_by_name_and_category(df_ct, df_sng)
     compare_by_id_df = validate_ct_songs_exist_locally_by_id(df_ct, df_sng)
 
     df_join_id = df_sng.merge(df_ct, on=['id'], how='left', indicator=True)

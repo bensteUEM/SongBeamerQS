@@ -7,7 +7,8 @@ from ChurchToolsApi import ChurchToolsApi
 
 import SNG_DEFAULTS
 from main import check_ct_song_categories_exist_as_folder, parse_sng_from_directory, read_baiersbronn_songs_to_df, \
-    generate_songbook_column
+    generate_songbook_column, read_baiersbronn_ct_songs, validate_ct_songs_exist_locally_by_name_and_category, \
+    clean_all_songs
 
 
 class TestSNG(unittest.TestCase):
@@ -92,3 +93,28 @@ class TestSNG(unittest.TestCase):
         song = parse_sng_from_directory('./testData', '', special_files)[0]
         expected = '77u/RW50c3ByaWNodCBuaWNodCBkZXIgVmVyc2lvbiBhdXMgZGVtIEVHIQ=='
         self.assertEqual(expected, song.header['Comments'])
+
+    def test_missing_song(self):
+        """
+        Checking why Hintergrundmusik fails
+        :return:
+        """
+        songs_temp = parse_sng_from_directory(SNG_DEFAULTS.KnownDirectory + 'Hintergrundmusik',
+                                              'The Knowledge of Good and Evil.sng')
+        songs_temp = read_baiersbronn_songs_to_df()
+
+
+        df_ct = read_baiersbronn_ct_songs()
+        df_ct = df_ct[df_ct['id'] == 204]
+
+        df_sng = pd.DataFrame(songs_temp, columns=["SngFile"])
+        for index, value in df_sng['SngFile'].items():
+            df_sng.loc[(index, 'filename')] = value.filename
+            df_sng.loc[(index, 'path')] = value.path
+
+        compare = validate_ct_songs_exist_locally_by_name_and_category(df_ct, df_sng)
+        self.assertEqual(compare['_merge'][0], 'both')
+
+        clean_all_songs(df_sng)
+        compare = validate_ct_songs_exist_locally_by_name_and_category(df_ct, df_sng)
+        self.assertEqual(compare['_merge'][0], 'both')

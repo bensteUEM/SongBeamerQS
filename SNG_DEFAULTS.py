@@ -51,6 +51,8 @@ KnownFolderWithPrefix = {
     'Feiert Jesus 5': 'FJ5',
     'Sonstige Lieder': '',
     'Sonstige Texte': '',
+    'Hintergrundmusik': '',
+    'Test': '',
     'Wwdlp (Wo wir dich loben, wachsen neue Lieder plus)': 'Wwdlp'
 }
 
