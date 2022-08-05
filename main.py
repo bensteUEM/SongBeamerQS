@@ -279,6 +279,32 @@ def validate_ct_songs_exist_locally_by_id(df_ct, df_sng):
     return df_ct_join_id
 
 
+def apply_id_to_unknown_local_songs(df_sng, df_ct):
+    """
+    Helper function which write the ID of into each SNG file that
+    * does not have a valid ChurchTools Song ID
+    * AND does have a match using name and category comparison with ChurchTools Dataframe
+    :param df_sng: All local songs to check
+    :param df_ct:  All known songs from ChurchTools
+    :return:
+    """
+    logging.info("Starting apply_id_to_unknown_local_songs()")
+
+    compare_by_name_and_category_df = validate_ct_songs_exist_locally_by_name_and_category(df_ct, df_sng)
+    compare_by_id_df = validate_ct_songs_exist_locally_by_id(df_ct, df_sng)
+
+    # Part used to overwrite local IDs with CT name_cat in case it exists in CT
+    ct_missing_by_id_df = compare_by_id_df[compare_by_id_df['_merge'] == 'right_only']
+    ct_missing_by_id_df.drop(['name_x', 'category.name_x', '_merge'], axis=1, inplace=True)
+    ct_missing_by_id_df.rename(columns={'name_y': 'name', 'category.name_y': 'category.name'}, inplace=True)
+    overwrite_id_by_name_cat = validate_ct_songs_exist_locally_by_name_and_category(ct_missing_by_id_df, df_sng)
+    for index, row in overwrite_id_by_name_cat.iterrows():
+        row['SngFile_x'].set_id(row['id_y'])
+        logging.debug('Prepare overwrite song id for song {} with ID {}'.format(row['filename_x'], row['id_y']))
+
+    overwrite_id_by_name_cat['SngFile_x'].apply(lambda x: x.write_file())
+
+
 def upload_local_songs_without_id(df_sng, df_ct, default_tag_id=52):
     """
     Helper Function which creates new ChurchTools Songs for all SNG Files from dataframe which don't have an ID
@@ -290,6 +316,10 @@ def upload_local_songs_without_id(df_sng, df_ct, default_tag_id=52):
     :param default_tag_id: default ID used to tag new songs - depends on instance of churchtools used !
     :return:
     """
+    #TODO dringend - FJ 3 - 238 ist leer obwohl in Sicherheitskopie text enthält
+    #TODO dringend Sonstige - #Title=Bei dir kommt keiner zu kurz - da fehlen auch die Metadatan ...
+    logging.critical("TODOs in Code that must be checked before continuing !")
+    logging.info("Starting upload_local_songs_without_id()")
 
     generate_ct_compare_columns(df_sng)
 
@@ -333,18 +363,15 @@ if __name__ == '__main__':
     logging.info("Excecuting Main RUN")
 
     df_sng = read_baiersbronn_songs_to_df()
-
-    clean_all_songs(df_sng)
-
+    clean_all_songs(df_sng) #TODO check if changes applied to files !
     # write_df_to_file()
 
     df_ct = read_baiersbronn_ct_songs()
-    compare_by_name_and_category_df = validate_ct_songs_exist_locally_by_name_and_category(df_ct, df_sng)
-    compare_by_id_df = validate_ct_songs_exist_locally_by_id(df_ct, df_sng)
+    apply_id_to_unknown_local_songs(df_sng, df_ct)
 
-    df_join_id = df_sng.merge(df_ct, on=['id'], how='left', indicator=True)
-
-
+    #To be safe - re-read all data sources
+    df_sng = read_baiersbronn_songs_to_df()
+    df_ct = read_baiersbronn_ct_songs()
     upload_local_songs_without_id(df_sng, df_ct)
 
     logging.info('Main Method finished')
