@@ -628,6 +628,7 @@ class SngFile:
         :return:
         """
         self.header['id'] = str(id)
+        self.update_editor_because_content_modified()
 
     def is_eg_psalm(self):
         """ Helper function to determine if the song is an EG Psalm
