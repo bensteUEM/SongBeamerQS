@@ -2,6 +2,7 @@ import logging
 import os.path
 
 import pandas as pd
+from ChurchToolsApi import ChurchToolsApi
 
 import SNG_DEFAULTS
 from SngFile import SngFile
@@ -278,6 +279,53 @@ def validate_ct_songs_exist_locally_by_id(df_ct, df_sng):
     return df_ct_join_id
 
 
+def upload_local_songs_without_id(df_sng, df_ct, default_tag_id=52):
+    """
+    Helper Function which creates new ChurchTools Songs for all SNG Files from dataframe which don't have an ID
+    Iterates through all songs in df_sng that don't match
+    :param df_sng: Pandas DataFrame with SNG objects that should be checked against
+    :type df_sng: pd.DataFrame
+    :param df_ct: Pandas DataFrame with Information retrieved about all ChurchTools Songs
+    :type df_ct: pd.DataFrame
+    :param default_tag_id: default ID used to tag new songs - depends on instance of churchtools used !
+    :return:
+    """
+
+    generate_ct_compare_columns(df_sng)
+
+    to_upload = df_sng.merge(df_ct, on=['id'], how='left', indicator=True)
+    to_upload = to_upload[to_upload['_merge'] == 'left_only']
+
+    api = ChurchToolsApi('https://elkw1610.krz.tools')
+    song_category_dict = api.get_song_category_map()
+
+    for index, row in to_upload.iterrows():
+        title = row['filename'][:-4]
+        category_id = song_category_dict[row['category.name_x']]
+
+        author1 = row['SngFile'].header['Author'] if 'Author' in row['SngFile'].header.keys() else None
+        author2 = row['SngFile'].header['Melody'] if 'Melody' in row['SngFile'].header.keys() else None
+        authors = [author1, author2]  # TODO does not check duplicate listing of author and melody if identical
+        authors = ', '.join([author for author in authors if author is not None])
+
+        ccli = row['SngFile'].header['ccli'] if 'ccli' in row['SngFile'].header.keys() else ''
+        copy = row['SngFile'].header['(c)'] if '(c)' in row['SngFile'].header.keys() else ''
+
+        logging.info("Uploading Song '{}' with Category ID '{}' from '{}' with (C) from '{}' and ccli '{}'"
+                     .format(title, category_id, authors, copy, ccli))
+        song_id = api.create_song(title=title, songcategory_id=category_id, author=authors,
+                                  copyright=copy, ccli=ccli)
+        logging.debug("Created new Song with ID '{}'".format(song_id))
+        api.add_song_tag(song_id=song_id, song_tag_id=default_tag_id)
+        row['SngFile'].set_id(song_id)
+        row['SngFile'].write_file()
+
+        song = api.get_songs(song_id=song_id)
+
+        api.file_upload("/".join([row['path'], row['filename']]), domain_type='song_arrangement',
+                        domain_identifier=song['arrangements'][0]['id'], overwrite=False)
+
+
 if __name__ == '__main__':
     logging.basicConfig(filename='logs/main.py.log', encoding='utf-8',
                         format="%(asctime)s %(name)-10s %(levelname)-8s %(message)s",
@@ -295,6 +343,9 @@ if __name__ == '__main__':
     compare_by_id_df = validate_ct_songs_exist_locally_by_id(df_ct, df_sng)
 
     df_join_id = df_sng.merge(df_ct, on=['id'], how='left', indicator=True)
+
+
+    upload_local_songs_without_id(df_sng, df_ct)
 
     logging.info('Main Method finished')
 
