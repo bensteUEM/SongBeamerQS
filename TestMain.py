@@ -99,10 +99,9 @@ class TestSNG(unittest.TestCase):
         Checking why Hintergrundmusik fails
         :return:
         """
-        songs_temp = parse_sng_from_directory(SNG_DEFAULTS.KnownDirectory + 'Hintergrundmusik',
-                                              'The Knowledge of Good and Evil.sng')
+        songs_temp = parse_sng_from_directory(SNG_DEFAULTS.KnownDirectory + 'Hintergrundmusik', '',
+                                              ['The Knowledge of Good and Evil.sng'])
         songs_temp = read_baiersbronn_songs_to_df()
-
 
         df_ct = read_baiersbronn_ct_songs()
         df_ct = df_ct[df_ct['id'] == 204]
