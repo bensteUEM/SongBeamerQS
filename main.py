@@ -316,8 +316,7 @@ def upload_local_songs_without_id(df_sng, df_ct, default_tag_id=52):
     :param default_tag_id: default ID used to tag new songs - depends on instance of churchtools used !
     :return:
     """
-    #TODO dringend - FJ 3 - 238 ist leer obwohl in Sicherheitskopie text enthält
-    #TODO dringend Sonstige - #Title=Bei dir kommt keiner zu kurz - da fehlen auch die Metadatan ...
+
     logging.critical("TODOs in Code that must be checked before continuing !")
     logging.info("Starting upload_local_songs_without_id()")
 
@@ -362,6 +361,16 @@ if __name__ == '__main__':
                         level=logging.DEBUG)
     logging.info("Excecuting Main RUN")
 
+    songs_temp = []
+    """
+    #For Testing only!
+
+    for key, value in SNG_DEFAULTS.KnownFolderWithPrefix.items():
+        dirname = '/home/benste/Documents/Kirchengemeinde Baiersbronn/Beamer/Songbeamer - Songs/' + key
+        dirprefix = value
+        songs_temp.extend(parse_sng_from_directory(dirname, dirprefix))
+
+    """
     df_sng = read_baiersbronn_songs_to_df()
     clean_all_songs(df_sng) #TODO check if changes applied to files !
     # write_df_to_file()

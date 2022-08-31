@@ -118,3 +118,15 @@ class TestSNG(unittest.TestCase):
         clean_all_songs(df_sng)
         compare = validate_ct_songs_exist_locally_by_name_and_category(df_ct, df_sng)
         self.assertEqual(compare['_merge'][0], 'both')
+
+    def test_emptied_song(self):
+        """
+        Test that checks on FJ 3 - 238 because it was emptied during execution even though backup did have content
+        Issue was encoding UTF8 - needed to save song again to correct encoding - added ERROR logging for song parsing
+        :return:
+        """
+
+        songs_temp = parse_sng_from_directory(SNG_DEFAULTS.KnownDirectory + 'Feiert Jesus 3',
+                                              'FJ3', ['238 Der Herr segne dich.sng'])
+        self.assertIn('Refrain', songs_temp[0].content.keys())
+        songs_temp = read_baiersbronn_songs_to_df()

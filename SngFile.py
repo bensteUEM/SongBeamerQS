@@ -30,6 +30,9 @@ class SngFile:
             if line[0] == "#" and line[1] != "#":  # Tech Param for Header
                 self.parse_param(line)
                 continue
+            if line[0:4] == 'ï»¿#':
+                logging.error("File ({}) starts with ï»¿# likely encoding error!".format(filename))
+                continue
             if line == "---":  # For each new Slide within a block add new list and increase index
                 temp_content.append([])
             else:  # Textzeile
