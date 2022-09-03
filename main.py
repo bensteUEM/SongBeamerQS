@@ -279,7 +279,7 @@ def validate_ct_songs_exist_locally_by_id(df_ct, df_sng):
     return df_ct_join_id
 
 
-def apply_id_to_unknown_local_songs(df_sng, df_ct):
+def add_id_to_local_song_if_available_in_ct(df_sng, df_ct):
     """
     Helper function which write the ID of into each SNG file that
     * does not have a valid ChurchTools Song ID
@@ -288,7 +288,7 @@ def apply_id_to_unknown_local_songs(df_sng, df_ct):
     :param df_ct:  All known songs from ChurchTools
     :return:
     """
-    logging.info("Starting apply_id_to_unknown_local_songs()")
+    logging.info("Starting add_id_to_local_song_if_available_in_ct()")
 
     compare_by_name_and_category_df = validate_ct_songs_exist_locally_by_name_and_category(df_ct, df_sng)
     compare_by_id_df = validate_ct_songs_exist_locally_by_id(df_ct, df_sng)
@@ -305,9 +305,9 @@ def apply_id_to_unknown_local_songs(df_sng, df_ct):
     overwrite_id_by_name_cat['SngFile_x'].apply(lambda x: x.write_file())
 
 
-def upload_local_songs_without_id(df_sng, df_ct, default_tag_id=52):
+def upload_new_local_songs_and_generate_ct_id(df_sng, df_ct, default_tag_id=52):
     """
-    Helper Function which creates new ChurchTools Songs for all SNG Files from dataframe which don't have an ID
+    Helper Function which creates new ChurchTools Songs for all SNG Files from dataframe which don't have a song ID
     Iterates through all songs in df_sng that don't match
     :param df_sng: Pandas DataFrame with SNG objects that should be checked against
     :type df_sng: pd.DataFrame
@@ -352,7 +352,32 @@ def upload_local_songs_without_id(df_sng, df_ct, default_tag_id=52):
         song = api.get_songs(song_id=song_id)
 
         api.file_upload("/".join([row['path'], row['filename']]), domain_type='song_arrangement',
-                        domain_identifier=song['arrangements'][0]['id'], overwrite=False)
+                        domain_identifier=[i['id'] for i in song['arrangements'] if i['isDefault'] is True][0],
+                        overwrite=False)
+
+
+def upload_local_songs_by_id(df_sng, df_ct):
+    """
+    Helper function that overwrites the SNG file of the default arrangement in ChurchTools with same song id
+    :return:
+    """
+
+    generate_ct_compare_columns(df_sng)
+    to_upload = df_sng.merge(df_ct, on=['id'], how='left', indicator=True)
+    api = ChurchToolsApi('https://elkw1610.krz.tools')
+
+    to_upload['arrangement_id'] = to_upload['arrangements'].apply(
+        lambda x: [i['id'] for i in x if i['isDefault'] is True][0])
+
+    to_upload = to_upload[to_upload['filename'] == '019 Die Gnade.sng']  # TODO debugging - one song only
+
+    for index, row in to_upload.iterrows():
+        api.file_upload("/".join([row['path'], row['filename']]), domain_type='song_arrangement',
+                        domain_identifier=row['arrangement_id'],
+                        overwrite=True)
+
+    logging.info("upload_local_songs_by_id - will overwrite all CT SNG default arrangement files with known ID")
+
 
 
 if __name__ == '__main__':
@@ -372,16 +397,23 @@ if __name__ == '__main__':
 
     """
     df_sng = read_baiersbronn_songs_to_df()
-    clean_all_songs(df_sng) #TODO check if changes applied to files !
-    # write_df_to_file()
+    clean_all_songs(df_sng)
+    # write_df_to_file() #TODO CHECK here ... why error
 
     df_ct = read_baiersbronn_ct_songs()
-    apply_id_to_unknown_local_songs(df_sng, df_ct)
+    add_id_to_local_song_if_available_in_ct(df_sng, df_ct)
 
-    #To be safe - re-read all data sources
+    # To be safe - re-read all data sources
     df_sng = read_baiersbronn_songs_to_df()
     df_ct = read_baiersbronn_ct_songs()
-    upload_local_songs_without_id(df_sng, df_ct)
+    upload_new_local_songs_and_generate_ct_id(df_sng, df_ct)
+
+    # To be safe - re-read all data sources and upload
+    """
+    df_sng = read_baiersbronn_songs_to_df()
+    df_ct = read_baiersbronn_ct_songs()
+    upload_local_songs_by_id(df_sng, df_ct)
+    """
 
     logging.info('Main Method finished')
 
