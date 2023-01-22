@@ -205,6 +205,7 @@ class TestSNG(unittest.TestCase):
         2. EG prefix with special number xxx.x
         3. no prefix
         4. testprefix without number should trigger warning
+        5. not correcting ' '  songbook
         :return:
         """
         song = SngFile('./testData/618 Wenn die Last der Welt.sng', songbook_prefix="test")
@@ -225,6 +226,14 @@ class TestSNG(unittest.TestCase):
             song.fix_songbook()
         self.assertEqual(cm.output,
                          ['WARNING:root:Invalid number format in Filename - can\'t fix songbook of ' + song.filename])
+
+        with self.assertLogs(level=logging.DEBUG) as cm:
+            song = SngFile('./testData/Gesegneten Sonntag.sng')
+            self.assertEqual(" ", song.header['Songbook'])
+            song.fix_songbook()
+            self.assertEqual(" ", song.header['Songbook'])
+        self.assertEqual(cm.output,
+                         ['DEBUG:root:Parsing content for: Gesegneten Sonntag.sng'])
 
     def test_header_songbook_special(self):
         """

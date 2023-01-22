@@ -21,10 +21,14 @@ class SngFile:
         self.parse_file(filename)
 
     def parse_file(self, filename):
+        """
+        Opens a file and tries to parse the respective lines
+        :param filename:
+        :return:
+        """
         file = open(filename, 'r', encoding='iso-8859-1')
         temp_content = []
         for line in file.read().splitlines():
-            line = line.strip()  # clean spaces
             if len(line) == 0:  # Skip empty row
                 continue
             if line[0] == "#" and line[1] != "#":  # Tech Param for Header
@@ -243,10 +247,6 @@ class SngFile:
 
         if fix and not songbook_valid:
             self.fix_header_church_song_id_caps()
-            if 'Songbook' in self.header.keys():  # Prepare Logging text
-                text = 'Corrected Songbook from ({})'.format(self.header["Songbook"])
-            else:
-                text = 'New Songbook'
             fixed = self.fix_songbook()
 
             if not fixed and 'Songbook' not in self.header.keys():
@@ -259,10 +259,7 @@ class SngFile:
                 logging.error(
                     "Problem occurred with Songbook Fixing of {} - kept original {},{}".format(
                         self.filename, self.header["Songbook"], self.header["ChurchSongID"]))
-            else:
-                logging.debug(text + ' to (' + self.header['Songbook'] + ') in ' + self.filename)
 
-            self.update_editor_because_content_modified()
             songbook_valid = self.validate_header_songbook(fix=False)
 
         return songbook_valid
@@ -473,18 +470,27 @@ class SngFile:
         :return: if something was updated
         """
         number = self.filename.split(" ")[0]
+        if 'Songbook' in self.header.keys():
+            songbook_before_change = self.header['Songbook']
+        else:
+            songbook_before_change = 'NOT SET'
 
         if all(digit in SNG_DEFAULTS.SngTitleNumberChars for digit in number):  # Filename starts with number
+            # Feiert Jesus Prefix
             if "FJ" in self.songbook_prefix:
                 songbook = self.songbook_prefix + '/' + number
+
+            # Evangelisches Gesangsbuch - Psalm
             elif self.is_eg_psalm():
                 logging.warning(
                     'EG Psalm "{}" can not be auto corrected - please adjust manually'.format(self.filename))
                 return False
-            else:  # All other cases
+            # All other with filename that starts with number
+            else:
                 songbook = self.songbook_prefix + ' ' + number
             self.header["Songbook"] = songbook
             self.header["ChurchSongID"] = songbook
+
         else:  # Filename does not start with number
             if self.songbook_prefix in SNG_DEFAULTS.KnownSongBookPrefix:
                 logging.warning('Invalid number format in Filename - can\'t fix songbook of ' + self.filename)
@@ -494,9 +500,21 @@ class SngFile:
                 if "Songbook" not in self.header.keys():
                     self.header["Songbook"] = self.songbook_prefix + ' ???'
                     self.header["ChurchSongID"] = self.songbook_prefix + ' ???'
+            elif 'Songbook' in self.header.keys() and 'ChurchSongID' in self.header.keys():
+                if self.header["Songbook"] == ' ' and self.header["ChurchSongID"] == ' ':
+                    return True
+                else:
+                    logging.warning('This case should not exist! please check code logic')
             else:  # No Prefix or Number
                 self.header["Songbook"] = ' '
                 self.header["ChurchSongID"] = ' '
+
+        # In any case that was not returned before
+        if 'Songbook' in self.header.keys():  # Prepare Logging text
+            text = 'Corrected Songbook / ChurchSongID from ({})  to ({}) in {}' \
+                .format(songbook_before_change, self.header['Songbook'], self.filename)
+            logging.debug(text)
+
         self.update_editor_because_content_modified()
         return True
 
