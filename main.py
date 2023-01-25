@@ -296,6 +296,8 @@ def add_id_to_local_song_if_available_in_ct(df_sng, df_ct):
     :return:
     """
     logging.info("Starting add_id_to_local_song_if_available_in_ct()")
+    logging.critical(
+        "This function might destroy your data in case a songname exists twice in one songbook #13")  # 13 TODO
 
     compare_by_name_and_category_df = validate_ct_songs_exist_locally_by_name_and_category(df_ct, df_sng)
     compare_by_id_df = validate_ct_songs_exist_locally_by_id(df_ct, df_sng)
@@ -305,11 +307,18 @@ def add_id_to_local_song_if_available_in_ct(df_sng, df_ct):
     ct_missing_by_id_df.drop(['name_x', 'category.name_x', '_merge'], axis=1, inplace=True)
     ct_missing_by_id_df.rename(columns={'name_y': 'name', 'category.name_y': 'category.name'}, inplace=True)
     overwrite_id_by_name_cat = validate_ct_songs_exist_locally_by_name_and_category(ct_missing_by_id_df, df_sng)
-    for index, row in overwrite_id_by_name_cat.iterrows():
-        row['SngFile_x'].set_id(row['id_y'])
-        logging.debug('Prepare overwrite song id for song {} with ID {}'.format(row['filename_x'], row['id_y']))
 
-    overwrite_id_by_name_cat['SngFile_x'].apply(lambda x: x.write_file())
+    for index, row in overwrite_id_by_name_cat.iterrows():
+        if isinstance(row['SngFile_x'], SngFile):
+            row['SngFile_x'].set_id(row['id_y'])
+            logging.debug('Prepare overwrite id  {} for song {} with new id {}'.format(
+                row['id_y'], row['filename_x'], row['id_y']))
+        else:
+            logging.warning('CT song ID= {} from ({}) with title "{}" not found locally'.format(
+                row['id_y'], row['category.name'], row['name']))  # #7 TODO download if not available #TODO #7
+
+    missing_files = overwrite_id_by_name_cat['SngFile_x'].apply(lambda x: not isinstance(x, SngFile))
+    overwrite_id_by_name_cat[~missing_files]['SngFile_x'].apply(lambda x: x.write_file())
 
 
 def upload_new_local_songs_and_generate_ct_id(df_sng, df_ct, default_tag_id=52):
@@ -411,6 +420,7 @@ if __name__ == '__main__':
     clean_all_songs(df_sng)
     write_df_to_file()
 
+    # Match all SongIDs from CT to local songs where missing
     df_ct = read_baiersbronn_ct_songs()
     add_id_to_local_song_if_available_in_ct(df_sng, df_ct)
 
