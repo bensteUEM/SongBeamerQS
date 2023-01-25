@@ -299,7 +299,6 @@ def add_id_to_local_song_if_available_in_ct(df_sng, df_ct):
     logging.critical(
         "This function might destroy your data in case a songname exists twice in one songbook #13")  # 13 TODO
 
-    compare_by_name_and_category_df = validate_ct_songs_exist_locally_by_name_and_category(df_ct, df_sng)
     compare_by_id_df = validate_ct_songs_exist_locally_by_id(df_ct, df_sng)
 
     # Part used to overwrite local IDs with CT name_cat in case it exists in CT
@@ -325,6 +324,7 @@ def upload_new_local_songs_and_generate_ct_id(df_sng, df_ct, default_tag_id=52):
     """
     Helper Function which creates new ChurchTools Songs for all SNG Files from dataframe which don't have a song ID
     Iterates through all songs in df_sng that don't match
+    New version of the SNG file including the newly created id is overwritten locally
     :param df_sng: Pandas DataFrame with SNG objects that should be checked against
     :type df_sng: pd.DataFrame
     :param df_ct: Pandas DataFrame with Information retrieved about all ChurchTools Songs
@@ -416,6 +416,7 @@ if __name__ == '__main__':
         songs_temp.extend(parse_sng_from_directory(dirname, dirprefix))
 
     """
+    # TODO CHECK why new songs from CT download are UTF8 problematic #4
     df_sng = read_baiersbronn_songs_to_df()
     clean_all_songs(df_sng)
     write_df_to_file()
@@ -424,6 +425,7 @@ if __name__ == '__main__':
     df_ct = read_baiersbronn_ct_songs()
     add_id_to_local_song_if_available_in_ct(df_sng, df_ct)
 
+    # Upload all songs into CT that are new
     df_ct = read_baiersbronn_ct_songs()
     upload_new_local_songs_and_generate_ct_id(df_sng, df_ct)
 
