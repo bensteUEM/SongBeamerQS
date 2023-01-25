@@ -2,7 +2,6 @@ import logging
 import os.path
 
 import pandas as pd
-from ChurchToolsApi import ChurchToolsApi
 
 import SNG_DEFAULTS
 from SngFile import SngFile
@@ -103,17 +102,18 @@ def read_baiersbronn_songs_to_df():
     return result_df
 
 
-def read_baiersbronn_ct_songs():
+def get_ct_songs_as_df(api):
     """
     Helper function reading all songs into a df
-    :return:
+    :param api: reference to a churchtools system
+    :type api: ChurchToolsApi
+    :return: Dataframe with all Songs from ChurchTools Instance
+    :rtype:  pandas.DataFrame
     """
-    from ChurchToolsApi import ChurchToolsApi
 
-    api = ChurchToolsApi('https://elkw1610.krz.tools')
     songs = api.get_songs()
-    df_ct = pd.json_normalize(songs)
-    return df_ct
+    result = pd.json_normalize(songs)
+    return result
 
 
 def generate_title_column(df_to_change):
@@ -428,18 +428,25 @@ if __name__ == '__main__':
     clean_all_songs(df_sng)
     write_df_to_file()
 
+    from ChurchToolsApi import ChurchToolsApi
+    api = ChurchToolsApi('https://elkw1610.krz.tools')
+
     # Match all SongIDs from CT to local songs where missing
-    df_ct = read_baiersbronn_ct_songs()
+    df_ct = get_ct_songs_as_df(api)
     add_id_to_local_song_if_available_in_ct(df_sng, df_ct)
 
     # Upload all songs into CT that are new
-    df_ct = read_baiersbronn_ct_songs()
+    df_ct = get_ct_songs_as_df(api)
     upload_new_local_songs_and_generate_ct_id(df_sng, df_ct)
 
     # To be safe - re-read all data sources and upload
+    df_sng = read_baiersbronn_songs_to_df()
+    df_ct = get_ct_songs_as_df(api)
+    download_missing_online_songs(df_sng, df_ct, api)
+
     """
     df_sng = read_baiersbronn_songs_to_df()
-    df_ct = read_baiersbronn_ct_songs()
+    df_ct = get_ct_songs_as_df()
     upload_local_songs_by_id(df_sng, df_ct)
     """
 

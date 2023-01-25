@@ -7,7 +7,7 @@ from ChurchToolsApi import ChurchToolsApi
 
 import SNG_DEFAULTS
 from main import check_ct_song_categories_exist_as_folder, parse_sng_from_directory, read_baiersbronn_songs_to_df, \
-    generate_songbook_column, read_baiersbronn_ct_songs, validate_ct_songs_exist_locally_by_name_and_category, \
+    generate_songbook_column, get_ct_songs_as_df, validate_ct_songs_exist_locally_by_name_and_category, \
     clean_all_songs
 
 
@@ -103,7 +103,10 @@ class TestSNG(unittest.TestCase):
                                               ['The Knowledge of Good and Evil.sng'])
         songs_temp = read_baiersbronn_songs_to_df()
 
-        df_ct = read_baiersbronn_ct_songs()
+        from ChurchToolsApi import ChurchToolsApi
+        api = ChurchToolsApi('https://elkw1610.krz.tools')
+
+        df_ct = get_ct_songs_as_df(api)
         df_ct = df_ct[df_ct['id'] == 204]
 
         df_sng = pd.DataFrame(songs_temp, columns=["SngFile"])
