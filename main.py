@@ -219,11 +219,17 @@ def check_ct_song_categories_exist_as_folder(ct_song_categories, path):
     Method which check whether all Song Categories of ChurchTools exist in the specified folder
     :param ct_song_categories: List of all ChurchTools Song categories
     :param path: for local files
-    :return:
+    :return: if all CT categories exist as folder in local path
     """
     logging.debug("checking categories{} in {}".format(ct_song_categories, path))
     local_directories = os.listdir(path)
-    return all([category in local_directories for category in ct_song_categories])
+
+    for category in ct_song_categories:
+        if category not in local_directories:
+            logging.warning('Missing CT category {} in {}'.format(category, path))
+            return False
+
+    return True
 
 
 def validate_ct_songs_exist_locally_by_name_and_category(df_ct, df_sng):
