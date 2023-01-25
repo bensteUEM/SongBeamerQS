@@ -435,6 +435,21 @@ class SngFile:
                     return True
         return False
 
+    def fix_header_ccli_caps(self):
+        """
+        Function which replaces any caps of e.g. ccli Ccli CCLi to CCLI in header keys
+        :return: if updated
+        """
+        if "CCLI" not in self.header.keys():
+            for i in self.header.keys():
+                if i.upper() == 'CCLI':
+                    self.header['CCLI'] = self.header[i]
+                    del self.header[i]
+                    logging.debug("Changed Key from {} to CCLI in {}".format(i, self.filename))
+                    self.update_editor_because_content_modified()
+                    return True
+        return False
+
     def validate_headers_illegal_removed(self, fix=False):
         """
         Checks if all illegeal headers are removed and optionally fixes it by removing illegal ones

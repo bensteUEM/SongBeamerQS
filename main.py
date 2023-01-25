@@ -61,6 +61,9 @@ def validate_all_headers(df_to_change, fix=False):
     logging.info("Starting validate_headers_illegal_removed({})".format(fix))
     headers_valid &= df_to_change["SngFile"].apply(lambda x: x.validate_headers_illegal_removed(fix))
 
+    # 4. fix caps of CCLI entry if required
+    df_to_change["SngFile"].apply(lambda x: x.fix_header_ccli_caps())
+
     # Set Background for all Psalm entries
     psalms_select = df_to_change["SngFile"].apply(lambda x: x.is_eg_psalm())
     logging.info("Starting validate_header_background({}) for {} psalms".format(fix, sum(psalms_select)))
@@ -332,15 +335,23 @@ def upload_new_local_songs_and_generate_ct_id(df_sng, df_ct, default_tag_id=52):
         title = row['filename'][:-4]
         category_id = song_category_dict[row['category.name_x']]
 
-        author1 = row['SngFile'].header['Author'] if 'Author' in row['SngFile'].header.keys() else None
-        author2 = row['SngFile'].header['Melody'] if 'Melody' in row['SngFile'].header.keys() else None
-        authors = [author1, author2]  # TODO does not check duplicate listing of author and melody if identical
+        author1 = row['SngFile'].header['Author'].split(', ') if 'Author' in row['SngFile'].header.keys() else []
+        author2 = row['SngFile'].header['Melody'].split(', ') if 'Melody' in row['SngFile'].header.keys() else []
+
+        authors = []
+        for author in author1:
+            if author not in authors:
+                authors.append(author)
+        for author in author2:
+            if author not in authors:
+                authors.append(author)
+
         authors = ', '.join([author for author in authors if author is not None])
 
-        ccli = row['SngFile'].header['ccli'] if 'ccli' in row['SngFile'].header.keys() else ''
+        ccli = row['SngFile'].header['CCLI'] if 'CCLI' in row['SngFile'].header.keys() else ''
         copy = row['SngFile'].header['(c)'] if '(c)' in row['SngFile'].header.keys() else ''
 
-        logging.info("Uploading Song '{}' with Category ID '{}' from '{}' with (C) from '{}' and ccli '{}'"
+        logging.info("Uploading Song '{}' with Category ID '{}' from '{}' with (C) from '{}' and CCLI '{}'"
                      .format(title, category_id, authors, copy, ccli))
         song_id = api.create_song(title=title, songcategory_id=category_id, author=authors,
                                   copyright=copy, ccli=ccli)
@@ -379,7 +390,6 @@ def upload_local_songs_by_id(df_sng, df_ct):
     logging.info("upload_local_songs_by_id - will overwrite all CT SNG default arrangement files with known ID")
 
 
-
 if __name__ == '__main__':
     logging.basicConfig(filename='logs/main.py.log', encoding='utf-8',
                         format="%(asctime)s %(name)-10s %(levelname)-8s %(message)s",
@@ -403,8 +413,6 @@ if __name__ == '__main__':
     df_ct = read_baiersbronn_ct_songs()
     add_id_to_local_song_if_available_in_ct(df_sng, df_ct)
 
-    # To be safe - re-read all data sources
-    df_sng = read_baiersbronn_songs_to_df()
     df_ct = read_baiersbronn_ct_songs()
     upload_new_local_songs_and_generate_ct_id(df_sng, df_ct)
 
