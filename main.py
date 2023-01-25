@@ -200,11 +200,15 @@ def clean_all_songs(df: pd.DataFrame):
     validate_all_headers(df, True)
 
 
-def write_df_to_file():
-    # Writing Output
-    output_path = './output'
-    logging.info('starting write_path_change({})'.format(output_path))
-    df_sng['SngFile'].apply(lambda x: x.write_path_change(output_path))
+def write_df_to_file(target_dir=None):
+    """
+    write files to either it's original main directory or use a separate dir
+    :param target_dir: e.g. './output' to write output into a separate folder
+    :return:
+    """
+    if target_dir is not None:
+        logging.info('starting write_path_change({})'.format(target_dir))
+        df_sng['SngFile'].apply(lambda x: x.write_path_change(target_dir))
 
     logging.info('starting write_file()')
     df_sng['SngFile'].apply(lambda x: x.write_file())
@@ -320,9 +324,6 @@ def upload_new_local_songs_and_generate_ct_id(df_sng, df_ct, default_tag_id=52):
     :return:
     """
 
-    logging.critical("TODOs in Code that must be checked before continuing !")
-    logging.info("Starting upload_local_songs_without_id()")
-
     generate_ct_compare_columns(df_sng)
 
     to_upload = df_sng.merge(df_ct, on=['id'], how='left', indicator=True)
@@ -408,7 +409,7 @@ if __name__ == '__main__':
     """
     df_sng = read_baiersbronn_songs_to_df()
     clean_all_songs(df_sng)
-    # write_df_to_file() #TODO CHECK here ... why error
+    write_df_to_file()
 
     df_ct = read_baiersbronn_ct_songs()
     add_id_to_local_song_if_available_in_ct(df_sng, df_ct)
