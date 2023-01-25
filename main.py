@@ -291,7 +291,7 @@ def add_id_to_local_song_if_available_in_ct(df_sng, df_ct):
     Helper function which write the ID of into each SNG file that
     * does not have a valid ChurchTools Song ID
     * AND does have a match using name and category comparison with ChurchTools Dataframe
-    :param df_sng: All local songs to check
+    :param df_sng: All local songs to check - a copy i used for processing ...
     :param df_ct:  All known songs from ChurchTools
     :return:
     """
@@ -302,7 +302,7 @@ def add_id_to_local_song_if_available_in_ct(df_sng, df_ct):
     compare_by_id_df = validate_ct_songs_exist_locally_by_id(df_ct, df_sng)
 
     # Part used to overwrite local IDs with CT name_cat in case it exists in CT
-    ct_missing_by_id_df = compare_by_id_df[compare_by_id_df['_merge'] == 'right_only']
+    ct_missing_by_id_df = compare_by_id_df[compare_by_id_df['_merge'] == 'right_only'].copy()
     ct_missing_by_id_df.drop(['name_x', 'category.name_x', '_merge'], axis=1, inplace=True)
     ct_missing_by_id_df.rename(columns={'name_y': 'name', 'category.name_y': 'category.name'}, inplace=True)
     overwrite_id_by_name_cat = validate_ct_songs_exist_locally_by_name_and_category(ct_missing_by_id_df, df_sng)
