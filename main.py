@@ -382,6 +382,7 @@ def upload_local_songs_by_id(df_sng, df_ct):
     Helper function that overwrites the SNG file of the default arrangement in ChurchTools with same song id
     :return:
     """
+    logging.critical("upload_local_songs_by_id is not fully implemnted yet - check issue #14") #14
 
     generate_ct_compare_columns(df_sng)
     to_upload = df_sng.merge(df_ct, on=['id'], how='left', indicator=True)
@@ -390,7 +391,7 @@ def upload_local_songs_by_id(df_sng, df_ct):
     to_upload['arrangement_id'] = to_upload['arrangements'].apply(
         lambda x: [i['id'] for i in x if i['isDefault'] is True][0])
 
-    to_upload = to_upload[to_upload['filename'] == '019 Die Gnade.sng']  # TODO debugging - one song only
+    to_upload = to_upload[to_upload['filename'] == '019 Die Gnade.sng']  # TODO debugging - one song only #14
 
     for index, row in to_upload.iterrows():
         api.file_upload("/".join([row['path'], row['filename']]), domain_type='song_arrangement',
