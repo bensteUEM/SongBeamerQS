@@ -351,8 +351,14 @@ def download_missing_online_songs(df_sng, df_ct, ct_api_reference):
 
         default_arrangement_id = [item['id'] for item in song['arrangements'] if item['isDefault'] is True][0]
         category_name = song['category']['name']
-        file_path_in_collection = os.sep.join([collection_path, category_name])  # TODO #7 check if filename exists
+        file_path_in_collection = os.sep.join([collection_path, category_name])
         filename = '{}.sng'.format(song['name'])
+
+        if os.path.exists(os.sep.join([file_path_in_collection, filename])):
+            logging.warning(
+                'Local file {} from CT ID {} does already exist - try automatch instead!'.format(filename, id))
+            is_successful &= False
+            continue
 
         result = ct_api_reference.file_download(filename=filename,
                                                 domain_type='song_arrangement',
@@ -362,7 +368,7 @@ def download_missing_online_songs(df_sng, df_ct, ct_api_reference):
             logging.debug('Downloaded {} into {} from CT IT {}'.format(filename, file_path_in_collection, id))
         else:
             logging.debug('Failed to download {} into {} from CT IT {}'.format(filename, file_path_in_collection, id))
-        is_successful |= result
+        is_successful &= result
 
     return is_successful
 
