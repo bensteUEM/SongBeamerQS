@@ -326,6 +326,47 @@ def add_id_to_local_song_if_available_in_ct(df_sng, df_ct):
     overwrite_id_by_name_cat[~missing_files]['SngFile_x'].apply(lambda x: x.write_file())
 
 
+def download_missing_online_songs(df_sng, df_ct, ct_api_reference):
+    """
+    Function which will check which songs are missing (by ID) and tries to download them to the respective folders
+    It is highly recommended to execute add_id_to_local_song_if_available_in_ct() and
+    upload_new_local_songs_and_generate_ct_id() before in order to try to match all songs local and avoid duplicates
+    :param df_sng: DataFrame with all local files
+    :param df_ct: DataFrame with all online files
+    :param ct_api_reference: direct access to ChurchTools API instance
+    :return: Success message
+    :rtype: bool
+    """
+
+    compare = validate_ct_songs_exist_locally_by_id(df_ct, df_sng)
+    song_path = compare[compare['path'].notnull()].iloc[0]['path']
+    collection_path = "/".join(song_path.split('/')[:-1])
+
+    ids = compare[compare['SngFile'].apply(lambda x: not isinstance(x, SngFile))]['id']
+
+    is_successful = True
+    for id in ids:
+        song = ct_api_reference.get_songs(song_id=id)
+        logging.debug('Downloading CT song id={} "{}" ({})'.format(id, song['name'], song['category']))
+
+        default_arrangement_id = [item['id'] for item in song['arrangements'] if item['isDefault'] is True][0]
+        category_name = song['category']['name']
+        file_path_in_collection = os.sep.join([collection_path, category_name])  # TODO #7 check if filename exists
+        filename = '{}.sng'.format(song['name'])
+
+        result = ct_api_reference.file_download(filename=filename,
+                                                domain_type='song_arrangement',
+                                                domain_identifier=default_arrangement_id,
+                                                path_for_download=file_path_in_collection)
+        if result:
+            logging.debug('Downloaded {} into {} from CT IT {}'.format(filename, file_path_in_collection, id))
+        else:
+            logging.debug('Failed to download {} into {} from CT IT {}'.format(filename, file_path_in_collection, id))
+        is_successful |= result
+
+    return is_successful
+
+
 def upload_new_local_songs_and_generate_ct_id(df_sng, df_ct, default_tag_id=52):
     """
     Helper Function which creates new ChurchTools Songs for all SNG Files from dataframe which don't have a song ID

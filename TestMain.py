@@ -1,4 +1,5 @@
 import logging
+import os
 import unittest
 
 import pandas
@@ -8,7 +9,7 @@ from ChurchToolsApi import ChurchToolsApi
 import SNG_DEFAULTS
 from main import check_ct_song_categories_exist_as_folder, parse_sng_from_directory, read_baiersbronn_songs_to_df, \
     generate_songbook_column, get_ct_songs_as_df, validate_ct_songs_exist_locally_by_name_and_category, \
-    clean_all_songs
+    clean_all_songs, download_missing_online_songs
 
 
 class TestSNG(unittest.TestCase):
@@ -132,3 +133,60 @@ class TestSNG(unittest.TestCase):
                                               'FJ3', ['238 Der Herr segne dich.sng'])
         self.assertIn('Refrain', songs_temp[0].content.keys())
         songs_temp = read_baiersbronn_songs_to_df()
+
+    def test_add_id_to_local_song_if_available_in_ct(self):  # TODO #13
+        self.assertFalse(True, 'Not Implemented')
+
+    def test_download_missing_online_songs(self):
+        """
+        ELKW1610.krz.tools specific test case for the named function (using 2 specific song IDs)
+        deletes EG 002 if exists locally
+        Reads one local sng file (EG 001)
+        tries to detect that EG002 from CT is missing
+        downloads the file
+        checks if download success
+        deletes file
+        :return:
+        """
+
+        songs_temp = []
+        dirname = 'testData/'
+        dirprefix = 'TEST'
+
+        test2name = '002 Er ist die rechte Freudensonn.sng'
+        test2path = dirname + '/EG Lieder/' + test2name
+
+        exists = os.path.exists(test2path)
+        if exists:
+            os.remove(test2path)
+
+        songs = parse_sng_from_directory(dirname, dirprefix)
+
+        for key, value in SNG_DEFAULTS.KnownFolderWithPrefix.items():
+            dirname = './testData/' + key
+            if not os.path.exists(dirname):
+                continue
+            dirprefix = value
+            songs_temp.extend(parse_sng_from_directory(dirname, dirprefix))
+
+        df_sng_test = pd.DataFrame(songs_temp, columns=["SngFile"])
+        for index, value in df_sng_test['SngFile'].items():
+            df_sng_test.loc[(index, 'filename')] = value.filename
+            df_sng_test.loc[(index, 'path')] = value.path
+
+        api = ChurchToolsApi('https://elkw1610.krz.tools')
+        ct_songs = [api.get_songs(song_id=762), api.get_songs(song_id=1113)]
+        df_ct_test = pd.json_normalize(ct_songs)
+
+        result = download_missing_online_songs(df_sng_test, df_ct_test, api)
+        self.assertTrue(result)
+
+        exists = os.path.exists(test2path)
+        self.assertTrue(exists)
+        os.remove(test2path)
+
+    def test_upload_new_local_songs_and_generate_ct_id(self):  # TODO #15
+        self.assertFalse(True, 'Not Implemented')
+
+    def test_upload_local_songs_by_id(self):
+        self.assertFalse(True, 'Not Implemented')  # TODO #14
