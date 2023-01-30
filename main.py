@@ -320,7 +320,7 @@ def add_id_to_local_song_if_available_in_ct(df_sng, df_ct):
                 row['id_y'], row['filename_x'], row['id_y']))
         else:
             logging.warning('CT song ID= {} from ({}) with title "{}" not found locally'.format(
-                row['id_y'], row['category.name'], row['name']))  # #7 TODO download if not available #TODO #7
+                row['id_y'], row['category.name'], row['name']))
 
     missing_files = overwrite_id_by_name_cat['SngFile_x'].apply(lambda x: not isinstance(x, SngFile))
     overwrite_id_by_name_cat[~missing_files]['SngFile_x'].apply(lambda x: x.write_file())
@@ -429,7 +429,7 @@ def upload_local_songs_by_id(df_sng, df_ct):
     Helper function that overwrites the SNG file of the default arrangement in ChurchTools with same song id
     :return:
     """
-    logging.critical("upload_local_songs_by_id is not fully implemnted yet - check issue #14") #14
+    logging.critical("upload_local_songs_by_id is not fully implemnted yet - check issue #14")  # TODO #14
 
     generate_ct_compare_columns(df_sng)
     to_upload = df_sng.merge(df_ct, on=['id'], how='left', indicator=True)
@@ -470,6 +470,7 @@ if __name__ == '__main__':
     write_df_to_file()
 
     from ChurchToolsApi import ChurchToolsApi
+
     api = ChurchToolsApi('https://elkw1610.krz.tools')
 
     # Match all SongIDs from CT to local songs where missing
