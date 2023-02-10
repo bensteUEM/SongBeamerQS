@@ -734,6 +734,60 @@ class TestSNG(unittest.TestCase):
         song.set_id(-2)
         self.assertEqual(song.get_id(), -2)
 
+    def test_isoutf8(self):
+        """
+        Test method for conversion of iso-8859-1  files to UTF-8 using public domain sample from tests folder
+
+        1. Check that all test files exist and encoding match accordingly
+
+        2. Parses an iso file with iso encoding without any warnings
+            Parses an utf8 file with default iso encoding logging a warning
+
+        3. Parses an iso file with utf8 encoding logging warning issues
+             Parses an utf8 file with utf8 encoding not logging issues
+
+        4. parses an iso file and writing an utf8 output file, parsing output again and not having issues
+
+        :return:
+        """
+
+        # Part 1
+
+        iso_file_path = 'testData/ISO-UTF8/Herr du wollest uns bereiten_iso.sng'
+        utf_file_path = 'testData/ISO-UTF8/Herr du wollest uns bereiten_utf8.sng'
+
+        file_iso_as_iso = open(iso_file_path, encoding='iso-8859-1')
+        text = file_iso_as_iso.read()
+        self.assertEqual('#', text[0], 'ISO file read with correct ISO encoding')
+        file_iso_as_iso.close()
+
+        file_iso_as_utf = open(iso_file_path, encoding='utf-8')
+        with self.assertRaises(UnicodeDecodeError) as cm:
+            text = file_iso_as_utf.read()
+        file_iso_as_utf.close()
+
+        file_utf_as_iso = open(utf_file_path, encoding='iso-8859-1')
+        text = file_utf_as_iso.read()
+        self.assertEqual("ï»¿", text[0:3], 'UTF8 file read with wrong encoding')
+        file_utf_as_iso.close()
+
+        file_utf_as_utf = open(utf_file_path, encoding='utf-8')
+        text = file_utf_as_utf.read()
+        self.assertEqual("\ufeff", text[0], 'UTF8 file read with correct encoding including BOM')
+        file_utf_as_utf.close()
+
+        # Part 2
+
+        with self.assertNoLogs(level=logging.WARNING) as cm:
+            sng = SngFile(iso_file_path)
+        self.assertIsNone(cm)
+
+        with self.assertLogs(level=logging.WARNING) as cm:
+            sng = SngFile(utf_file_path)
+        self.assertIsNotNone(cm)
+
+        # Part 3
+        #TODO requires change of implementation
 
 if __name__ == '__main__':
     unittest.main()
