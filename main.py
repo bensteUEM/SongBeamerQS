@@ -1,5 +1,6 @@
 import logging
 import os.path
+import time
 
 import pandas as pd
 
@@ -433,9 +434,12 @@ def upload_new_local_songs_and_generate_ct_id(df_sng, df_ct, default_tag_id=52):
 def upload_local_songs_by_id(df_sng, df_ct):
     """
     Helper function that overwrites the SNG file of the default arrangement in ChurchTools with same song id
-    :return:
+    :param df_sng: the local song library as dataframe
+    :type df_sng: pd.DataFrame
+    :param df_ct: the remote song library as dataframe
+    :type df_ct: pd.DataFrame
+    :return: None
     """
-    logging.critical("upload_local_songs_by_id is not fully implemnted yet - check issue #14")  # TODO #14
 
     generate_ct_compare_columns(df_sng)
     to_upload = df_sng.merge(df_ct, on=['id'], how='left', indicator=True)
@@ -444,14 +448,18 @@ def upload_local_songs_by_id(df_sng, df_ct):
     to_upload['arrangement_id'] = to_upload['arrangements'].apply(
         lambda x: [i['id'] for i in x if i['isDefault'] is True][0])
 
-    to_upload = to_upload[to_upload['filename'] == '019 Die Gnade.sng']  # TODO debugging - one song only #14
-
+    progress = 0
+    target = len(to_upload)
     for index, row in to_upload.iterrows():
         api.file_upload("/".join([row['path'], row['filename']]), domain_type='song_arrangement',
                         domain_identifier=row['arrangement_id'],
                         overwrite=True)
+        progress += 1
+        if progress % 50 == 0:
+            print("Finished upload {} of {} - sleep 15".format(progress, target))
+            time.sleep(15)
 
-    logging.info("upload_local_songs_by_id - will overwrite all CT SNG default arrangement files with known ID")
+    logging.info("upload_local_songs_by_id - will overwrote all CT SNG default arrangement files with known ID")
 
 
 if __name__ == '__main__':
@@ -461,16 +469,6 @@ if __name__ == '__main__':
     logging.info("Excecuting Main RUN")
 
     songs_temp = []
-    """
-    #For Testing only!
-
-    for key, value in SNG_DEFAULTS.KnownFolderWithPrefix.items():
-        dirname = '/home/benste/Documents/Kirchengemeinde Baiersbronn/Beamer/Songbeamer - Songs/' + key
-        dirprefix = value
-        songs_temp.extend(parse_sng_from_directory(dirname, dirprefix))
-
-    """
-    # TODO CHECK why new songs from CT download are UTF8 problematic #4
     df_sng = read_baiersbronn_songs_to_df()
     clean_all_songs(df_sng)
     write_df_to_file()
@@ -486,6 +484,7 @@ if __name__ == '__main__':
     # Upload all songs into CT that are new
     df_ct = get_ct_songs_as_df(api)
     upload_new_local_songs_and_generate_ct_id(df_sng, df_ct)
+    upload_local_songs_by_id(df_sng, df_ct)
 
     # To be safe - re-read all data sources and upload
     df_sng = read_baiersbronn_songs_to_df()

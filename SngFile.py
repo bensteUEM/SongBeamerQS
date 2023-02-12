@@ -23,12 +23,30 @@ class SngFile:
     def parse_file(self, filename):
         """
         Opens a file and tries to parse the respective lines
-        :param filename:
-        :return:
+        by default utf8 is tried. INFO is logged if BOM is missing.
+        In case of Decoding errors iso-8859-1 is tried instead logging an INFO message
+        :param filename: name including file extension of the file to be opened
+        :type filename: str
+        :return: None because the object itself is created
+        :rtype: None
         """
-        file = open(filename, 'r', encoding='iso-8859-1')
+
+        try:
+            file = open(filename, 'r', encoding='utf-8')
+            content = file.read()
+            if content[0] == '\ufeff':
+                logging.debug('{} is detected as utf-8 because of BOM'.format(filename))
+                content = content[1:]
+            else:
+                logging.info('{} is read as utf-8 but no BOM'.format(filename))
+        except UnicodeDecodeError:
+            file.close()
+            file = open(filename, 'r', encoding='iso-8859-1')
+            content = file.read()
+            logging.info('{} is read as iso-8859-1 - be aware that encoding is change upon write!'.format(filename))
+
         temp_content = []
-        for line in file.read().splitlines():
+        for line in content.splitlines():
             if len(line) == 0:  # Skip empty row
                 continue
             if line[0] == "#" and line[1] != "#":  # Tech Param for Header
@@ -110,15 +128,19 @@ class SngFile:
         logging.debug("Changing path from {} to {}".format(self.path, new_path))
         self.path = new_path
 
-    def write_file(self, suffix=""):
+    def write_file(self, suffix="", encoding='utf-8'):
         """
         Function used to write a processed SngFile to disk
         Converts Verse Order from list to string
         :param suffix: suffix to append to file name - default ist _new, test should use _test overwrite by ""
+        :param encoding: name of the encoding usually utf-8 alternatively iso-8859-1 for older files
+        :type encoding: str
         :return:
         """
         filename = self.path + '/' + self.filename[:-4] + suffix + ".sng"
-        new_file = open(filename, 'w', encoding='iso-8859-1')
+        new_file = open(filename, 'w', encoding=encoding)
+        if encoding == 'utf-8':
+            new_file.write('\ufeff') #BOM to indicate UTF-8 encoding for legacy compatibility
         for key, value in self.header.items():
             if key == "VerseOrder":
                 new_file.write("#" + key + "=" + ','.join(value) + "\n")

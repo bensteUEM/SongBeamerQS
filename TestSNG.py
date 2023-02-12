@@ -739,17 +739,20 @@ class TestSNG(unittest.TestCase):
         Test method for conversion of iso-8859-1  files to UTF-8 using public domain sample from tests folder
 
         1. Check that all test files exist and encoding match accordingly
-
-        2. Parses an iso file with iso encoding without any warnings
-            Parses an utf8 file with default iso encoding logging a warning
-
-        3. Parses an iso file with utf8 encoding logging warning issues
-             Parses an utf8 file with utf8 encoding not logging issues
-
-        4. parses an iso file and writing an utf8 output file, parsing output again and not having issues
+        2. Parses an iso 8859-1 encoded file
+        3. Parses an utf-8 file with BOM
+        4. Parses an utf-8 file without BOM
+        5. Parsing iso file writes utf8 and checks if output file has BOM
 
         :return:
         """
+
+        path = 'testData/ISO-UTF8/'
+        iso_file_path = path + 'Herr du wollest uns bereiten_iso.sng'
+        iso2utf_file_name = 'Herr du wollest uns bereiten_iso2utf.sng'
+        iso2utf_file_path = path + iso2utf_file_name
+        utf_file_path = path + 'Herr du wollest uns bereiten_ct_utf8.sng'
+        noBOM_utf_file_path = path + 'Herr du wollest uns bereiten_noBOM_utf8.sng'
 
         # Part 1
 
@@ -777,17 +780,38 @@ class TestSNG(unittest.TestCase):
         file_utf_as_utf.close()
 
         # Part 2
-
-        with self.assertNoLogs(level=logging.WARNING) as cm:
+        with self.assertLogs(level=logging.DEBUG) as cm:
             sng = SngFile(iso_file_path)
-        self.assertIsNone(cm)
-
-        with self.assertLogs(level=logging.WARNING) as cm:
-            sng = SngFile(utf_file_path)
-        self.assertIsNotNone(cm)
+        expected1 = 'INFO:root:testData/ISO-UTF8/Herr du wollest uns bereiten_iso.sng is read as iso-8859-1 - be aware that encoding is change upon write!'
+        self.assertEqual(expected1, cm.output[0])
+        self.assertEqual(2, len(cm.output))
 
         # Part 3
-        #TODO requires change of implementation
+        with self.assertLogs(level=logging.DEBUG) as cm:
+            sng = SngFile(utf_file_path)
+        expected1 = 'DEBUG:root:testData/ISO-UTF8/Herr du wollest uns bereiten_ct_utf8.sng is detected as utf-8 because of BOM'
+        self.assertEqual(expected1, cm.output[0])
+        self.assertEqual(2, len(cm.output))
+
+        # Part 4
+        with self.assertLogs(level=logging.INFO) as cm:
+            sng = SngFile(noBOM_utf_file_path)
+        expected1 = 'INFO:root:testData/ISO-UTF8/Herr du wollest uns bereiten_noBOM_utf8.sng is read as utf-8 but no BOM'
+        self.assertEqual(expected1, cm.output[0])
+        self.assertEqual(1, len(cm.output))
+
+        # Part 5
+        sng = SngFile(iso_file_path)
+        sng.filename = iso2utf_file_name
+        sng.write_file()
+
+        file_iso2utf = open(iso2utf_file_path, encoding='utf-8')
+        text = file_iso2utf.read()
+        self.assertEqual("\ufeff", text[0], 'UTF8 file read with correct encoding including BOM')
+        file_iso2utf.close()
+
+        os.remove(iso2utf_file_path)
+
 
 if __name__ == '__main__':
     unittest.main()
