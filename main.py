@@ -4,6 +4,9 @@ import time
 
 import pandas as pd
 
+from ChurchToolsAPI.ChurchToolsApi import ChurchToolsApi
+from secure.config import ct_token
+
 import SNG_DEFAULTS
 from SngFile import SngFile
 
@@ -392,7 +395,7 @@ def upload_new_local_songs_and_generate_ct_id(df_sng, df_ct, default_tag_id=52):
     to_upload = df_sng.merge(df_ct, on=['id'], how='left', indicator=True)
     to_upload = to_upload[to_upload['_merge'] == 'left_only']
 
-    api = ChurchToolsApi('https://elkw1610.krz.tools')
+    api = ChurchToolsApi('https://elkw1610.krz.tools', ct_token=ct_token)
     song_category_dict = api.get_song_category_map()
 
     for index, row in to_upload.iterrows():
@@ -473,9 +476,7 @@ if __name__ == '__main__':
     clean_all_songs(df_sng)
     write_df_to_file()
 
-    from ChurchToolsApi import ChurchToolsApi
-
-    api = ChurchToolsApi('https://elkw1610.krz.tools')
+    api = ChurchToolsApi('https://elkw1610.krz.tools', ct_token=ct_token)
 
     # Match all SongIDs from CT to local songs where missing
     df_ct = get_ct_songs_as_df(api)
