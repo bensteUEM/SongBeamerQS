@@ -4,7 +4,7 @@ import time
 
 import pandas as pd
 
-from ChurchToolsAPI.ChurchToolsApi import ChurchToolsApi
+from ChurchToolsApi import ChurchToolsApi
 from secure.config import ct_token
 
 import SNG_DEFAULTS
@@ -350,7 +350,7 @@ def download_missing_online_songs(df_sng, df_ct, ct_api_reference):
 
     is_successful = True
     for id in ids:
-        song = ct_api_reference.get_songs(song_id=id)
+        song = ct_api_reference.get_songs(song_id=id)[0]
         logging.debug('Downloading CT song id={} "{}" ({})'.format(id, song['name'], song['category']))
 
         default_arrangement_id = [item['id'] for item in song['arrangements'] if item['isDefault'] is True][0]
@@ -367,7 +367,7 @@ def download_missing_online_songs(df_sng, df_ct, ct_api_reference):
         result = ct_api_reference.file_download(filename=filename,
                                                 domain_type='song_arrangement',
                                                 domain_identifier=default_arrangement_id,
-                                                path_for_download=file_path_in_collection)
+                                                target_path=file_path_in_collection)
         if result:
             logging.debug('Downloaded {} into {} from CT IT {}'.format(filename, file_path_in_collection, id))
         else:
