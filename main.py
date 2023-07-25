@@ -427,7 +427,7 @@ def upload_new_local_songs_and_generate_ct_id(df_sng, df_ct, default_tag_id=52):
         row['SngFile'].set_id(song_id)
         row['SngFile'].write_file()
 
-        song = api.get_songs(song_id=song_id)
+        song = api.get_songs(song_id=song_id)[0]
 
         api.file_upload("/".join([row['path'], row['filename']]), domain_type='song_arrangement',
                         domain_identifier=[i['id'] for i in song['arrangements'] if i['isDefault'] is True][0],
