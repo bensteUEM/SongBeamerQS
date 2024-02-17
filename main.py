@@ -4,6 +4,9 @@ import time
 
 import pandas as pd
 
+from ChurchToolsApi import ChurchToolsApi
+from secure.config import ct_token
+
 import SNG_DEFAULTS
 from SngFile import SngFile
 
@@ -347,7 +350,7 @@ def download_missing_online_songs(df_sng, df_ct, ct_api_reference):
 
     is_successful = True
     for id in ids:
-        song = ct_api_reference.get_songs(song_id=id)
+        song = ct_api_reference.get_songs(song_id=id)[0]
         logging.debug('Downloading CT song id={} "{}" ({})'.format(id, song['name'], song['category']))
 
         default_arrangement_id = [item['id'] for item in song['arrangements'] if item['isDefault'] is True][0]
@@ -364,7 +367,7 @@ def download_missing_online_songs(df_sng, df_ct, ct_api_reference):
         result = ct_api_reference.file_download(filename=filename,
                                                 domain_type='song_arrangement',
                                                 domain_identifier=default_arrangement_id,
-                                                path_for_download=file_path_in_collection)
+                                                target_path=file_path_in_collection)
         if result:
             logging.debug('Downloaded {} into {} from CT IT {}'.format(filename, file_path_in_collection, id))
         else:
@@ -392,7 +395,7 @@ def upload_new_local_songs_and_generate_ct_id(df_sng, df_ct, default_tag_id=52):
     to_upload = df_sng.merge(df_ct, on=['id'], how='left', indicator=True)
     to_upload = to_upload[to_upload['_merge'] == 'left_only']
 
-    api = ChurchToolsApi('https://elkw1610.krz.tools')
+    api = ChurchToolsApi('https://elkw1610.krz.tools', ct_token=ct_token)
     song_category_dict = api.get_song_category_map()
 
     for index, row in to_upload.iterrows():
@@ -424,7 +427,7 @@ def upload_new_local_songs_and_generate_ct_id(df_sng, df_ct, default_tag_id=52):
         row['SngFile'].set_id(song_id)
         row['SngFile'].write_file()
 
-        song = api.get_songs(song_id=song_id)
+        song = api.get_songs(song_id=song_id)[0]
 
         api.file_upload("/".join([row['path'], row['filename']]), domain_type='song_arrangement',
                         domain_identifier=[i['id'] for i in song['arrangements'] if i['isDefault'] is True][0],
@@ -473,9 +476,7 @@ if __name__ == '__main__':
     clean_all_songs(df_sng)
     write_df_to_file()
 
-    from ChurchToolsApi import ChurchToolsApi
-
-    api = ChurchToolsApi('https://elkw1610.krz.tools')
+    api = ChurchToolsApi('https://elkw1610.krz.tools', ct_token=ct_token)
 
     # Match all SongIDs from CT to local songs where missing
     df_ct = get_ct_songs_as_df(api)
