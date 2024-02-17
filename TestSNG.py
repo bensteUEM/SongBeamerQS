@@ -689,6 +689,39 @@ class TestSNG(unittest.TestCase):
         self.assertNotEqual('STOP', song.header['VerseOrder'][5])
         self.assertEqual('STOP', song.header['VerseOrder'][-1])
 
+    def test_validate_suspicious_encoding(self):
+        """
+        Test function which reads a file which was broken by opening a utf8 as iso8995-1 encoding
+        Loggs issues and tries to replace them
+        """
+        song = SngFile('./testData/ISO-UTF8/TestSongISOcharsUTF8.sng')
+        result = song.validate_suspicious_encoding()
+        self.assertFalse(result, 'Should detect issues within the file')
+
+        with self.assertLogs(level='DEBUG') as cm:
+            result = song.validate_suspicious_encoding(fix=True)
+            self.assertTrue(result, 'Should have fixed issues within the file')
+        messages =
+            ['WARNING:root:Found problematic encoding [Ã¤aaaÃ¤a] of '
+             'TestSongISOcharsUTF8.sng',
+             'DEBUG:root:line after regex repalce äaaaäa',
+             'WARNING:root:Found problematic encoding [Ã¤] of TestSongISOcharsUTF8.sng',
+             'DEBUG:root:line after regex repalce ä',
+             'WARNING:root:Found problematic encoding [Ã¶] of TestSongISOcharsUTF8.sng',
+             'DEBUG:root:line after regex repalce ö',
+             'WARNING:root:Found problematic encoding [Ã¼] of TestSongISOcharsUTF8.sng',
+             'DEBUG:root:line after regex repalce ü',
+             'WARNING:root:Found problematic encoding [Ã\x84] of TestSongISOcharsUTF8.sng',
+             'DEBUG:root:line after regex repalce Ä',
+             'WARNING:root:Found problematic encoding [Ã\x96] of TestSongISOcharsUTF8.sng',
+             'DEBUG:root:line after regex repalce Ö',
+             'WARNING:root:Found problematic encoding [Ã\x9c] of TestSongISOcharsUTF8.sng',
+             'DEBUG:root:line after regex repalce Ü',
+             'WARNING:root:Found problematic encoding [Ã\x9f] of TestSongISOcharsUTF8.sng',
+             'DEBUG:root:line after regex repalce ß']
+
+        self.assertEqual(messages, cm.output)
+
     def test_helper_contains_songbook_prefix(self):
         """
         Test that runs various variations of songbook parts which should be detected by improved helper method

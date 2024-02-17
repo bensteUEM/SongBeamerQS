@@ -140,7 +140,7 @@ class SngFile:
         filename = self.path + '/' + self.filename[:-4] + suffix + ".sng"
         new_file = open(filename, 'w', encoding=encoding)
         if encoding == 'utf-8':
-            new_file.write('\ufeff') #BOM to indicate UTF-8 encoding for legacy compatibility
+            new_file.write('\ufeff')  # BOM to indicate UTF-8 encoding for legacy compatibility
         for key, value in self.header.items():
             if key == "VerseOrder":
                 new_file.write("#" + key + "=" + ','.join(value) + "\n")
@@ -667,6 +667,35 @@ class SngFile:
                                 format(self.filename, self.header["VerseOrder"]))
         return result
 
+    def validate_suspicious_encoding(self, fix=False):
+        """
+        Function that checks the SNG content for suspicious characters which might be result of previous encoding errors
+        utf8_as_iso dict is used to check for common occurances of utf-8 german Umlaut when read as iso8895-1
+        :param fix: if method should try to fix the encoding issues
+        :type fix: bool
+        :return: if no suspicious encoding exists
+        :rtype: bool
+        """
+
+        valid = True
+
+        # Check headers
+        for headername, header in self.header.items():
+            logging.warning(
+                'Found problematic encoding [{}] in header [{}] of {}'.format(header, headername, self.filename))
+            # TODO 17
+
+        # Check contant
+        for verse in self.content.values():
+            text_slides = verse[1:]
+            for slide in text_slides:
+                for line in slide:
+                    result = None  # TODO
+                    if validate_suspicious_encoding_line(line, fix=fix):
+                        pass
+
+        return valid
+
     def get_id(self):
         """
         Helper function accessing ID in header mapping not existant to -1
@@ -697,6 +726,31 @@ class SngFile:
         @:return bool
         """
         return "EG" in self.songbook_prefix and 701 <= float(self.filename.split(" ")[0]) <= 758
+
+
+def validate_suspicious_encoding_line(line, fix):
+    """
+        Function that checks a single line assuming a utf8 encoded file has been accidentaly written as iso8995-1
+        and replacing common germen Umlaut and sz
+        :param fix: if method should try to fix the encoding issues
+        :type fix: bool
+        :return: (if no suspicious encoding exists, line)
+        :rtype: (bool,string)
+    """
+    if re.match('Ã¤|Ã¶|Ã¼|Ã\\x84|Ã\\x96|Ã\\x9c|Ã\\x9f', line):  # TODO issue #17
+        logging.warning('Found problematic encoding [{}]'.format(line))
+        if fix:
+            line = re.sub('Ã¤', 'ä', line, count=0)
+            line = re.sub('Ã¶', 'ö', line, count=0)
+            line = re.sub('Ã¼', 'ü', line, count=0)
+            line = re.sub('Ã\x84', 'Ä', line, count=0)
+            line = re.sub('Ã\x96', 'Ö', line, count=0)
+            line = re.sub('Ã\x9c', 'Ü', line, count=0)
+            line = re.sub('Ã\x9f', 'ß', line, count=0)
+            logging.debug('line after regex repalce {}'.format(line))
+        else:
+            valid = False
+    return valid, line
 
 
 def get_verse_marker_line(line):
