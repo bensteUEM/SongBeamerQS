@@ -1,1 +1,2 @@
 ChurchToolsAPI @ git+https://github.com/bensteUEM/ChurchToolsAPI.git@1.3.11#egg=ChurchToolsAPI
+pandas
