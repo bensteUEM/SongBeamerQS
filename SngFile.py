@@ -140,7 +140,7 @@ class SngFile:
         filename = self.path + '/' + self.filename[:-4] + suffix + ".sng"
         new_file = open(filename, 'w', encoding=encoding)
         if encoding == 'utf-8':
-            new_file.write('\ufeff') #BOM to indicate UTF-8 encoding for legacy compatibility
+            new_file.write('\ufeff')  # BOM to indicate UTF-8 encoding for legacy compatibility
         for key, value in self.header.items():
             if key == "VerseOrder":
                 new_file.write("#" + key + "=" + ','.join(value) + "\n")
@@ -667,6 +667,43 @@ class SngFile:
                                 format(self.filename, self.header["VerseOrder"]))
         return result
 
+    def validate_suspicious_encoding(self, fix=False):
+        """
+        Function that checks the SNG content for suspicious characters which might be result of previous encoding errors
+        utf8_as_iso dict is used to check for common occurances of utf-8 german Umlaut when read as iso8895-1
+        
+        :param fix: if method should try to fix the encoding issues
+        :type fix: bool
+        :return: if no suspicious encoding exists
+        :rtype: bool
+        """
+
+        valid = True
+
+        # Check headers
+        for headername, header in self.header.items():
+            header, valid_text = validate_suspicious_encoding_str(header, fix=fix)
+            if not valid_text:
+                valid = False
+                logging.info(
+                'Found problematic encoding [%s] in header [%s] in %s',
+                header, headername, self.filename)
+
+        # Check content
+        for verse in self.content.values():
+            text_slides = verse[1:] #skip verse marker
+            for slide_no, slide in enumerate(text_slides):
+                for line_no, line in enumerate(slide):
+                    valid_text, line = validate_suspicious_encoding_str(line, fix=fix)
+                    if not valid_text:
+                        valid =  False
+                        logging.info(
+                            'Found problematic encoding [%s] in %s %s slide line %s of %s',
+                            line, verse[1], slide_no, line_no, self.filename)
+                        return valid # if not fixed can abort on first error 
+
+        return valid
+
     def get_id(self):
         """
         Helper function accessing ID in header mapping not existant to -1
@@ -697,6 +734,36 @@ class SngFile:
         @:return bool
         """
         return "EG" in self.songbook_prefix and 701 <= float(self.filename.split(" ")[0]) <= 758
+
+
+def validate_suspicious_encoding_str(text:str, fix:bool=False)->(bool, str):
+    """
+        Function that checks a single text str assuming a utf8 encoded file has been accidentaly written as iso8995-1
+        and replacing common german 'Umlaut' and sz
+        
+        :param text: the str to check and or correct
+        :param fix: if method should try to fix the encoding issues
+        :return: (bool if no suspicious character remains, line)
+    """
+    valid = True
+    if re.match('Ã¤|Ã¶|Ã¼|Ã\\x84|Ã\\x96|Ã\\x9c|Ã\\x9f', text):
+        logging.info("Found problematic encoding in str '%s'",text)
+        if fix:
+            orginal_text = text
+            text = re.sub('Ã¤', 'ä', text, count=0)
+            text = re.sub('Ã¶', 'ö', text, count=0)
+            text = re.sub('Ã¼', 'ü', text, count=0)
+            text = re.sub('Ã\x84', 'Ä', text, count=0)
+            text = re.sub('Ã\x96', 'Ö', text, count=0)
+            text = re.sub('Ã\x9c', 'Ü', text, count=0)
+            text = re.sub('Ã\x9f', 'ß', text, count=0)
+            if text != orginal_text:
+                logging.debug('replaced %s by %s', orginal_text, text )
+            else:
+                logging.warning('%s - could not be fixed automatically', orginal_text)
+        else:
+            valid = False
+    return valid, text
 
 
 def get_verse_marker_line(line):
