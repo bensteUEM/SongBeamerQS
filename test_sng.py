@@ -701,7 +701,7 @@ class TestSNG(unittest.TestCase):
         with self.assertLogs(level='DEBUG') as cm:
             result = song.validate_suspicious_encoding(fix=True)
             self.assertTrue(result, 'Should have fixed issues within the file')
-        messages =
+        messages =\
             ['WARNING:root:Found problematic encoding [Ã¤aaaÃ¤a] of '
              'TestSongISOcharsUTF8.sng',
              'DEBUG:root:line after regex repalce äaaaäa',
