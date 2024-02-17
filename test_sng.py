@@ -691,8 +691,8 @@ class TestSNG(unittest.TestCase):
 
     def test_validate_suspicious_encoding(self):
         """
-        Test function which reads a file which was broken by opening a utf8 as iso8995-1 encoding
-        Loggs issues and tries to replace them
+        Test function which reads a file which was broken by opening a utf8 as iso8995-1 and saving it with wrong
+        Logs issues and tries to replace them
         """
         song = SngFile('./testData/ISO-UTF8/TestSongISOcharsUTF8.sng')
         result = song.validate_suspicious_encoding()
@@ -701,26 +701,38 @@ class TestSNG(unittest.TestCase):
         with self.assertLogs(level='DEBUG') as cm:
             result = song.validate_suspicious_encoding(fix=True)
             self.assertTrue(result, 'Should have fixed issues within the file')
-        messages =\
-            ['WARNING:root:Found problematic encoding [Ã¤aaaÃ¤a] of '
-             'TestSongISOcharsUTF8.sng',
-             'DEBUG:root:line after regex repalce äaaaäa',
-             'WARNING:root:Found problematic encoding [Ã¤] of TestSongISOcharsUTF8.sng',
-             'DEBUG:root:line after regex repalce ä',
-             'WARNING:root:Found problematic encoding [Ã¶] of TestSongISOcharsUTF8.sng',
-             'DEBUG:root:line after regex repalce ö',
-             'WARNING:root:Found problematic encoding [Ã¼] of TestSongISOcharsUTF8.sng',
-             'DEBUG:root:line after regex repalce ü',
-             'WARNING:root:Found problematic encoding [Ã\x84] of TestSongISOcharsUTF8.sng',
-             'DEBUG:root:line after regex repalce Ä',
-             'WARNING:root:Found problematic encoding [Ã\x96] of TestSongISOcharsUTF8.sng',
-             'DEBUG:root:line after regex repalce Ö',
-             'WARNING:root:Found problematic encoding [Ã\x9c] of TestSongISOcharsUTF8.sng',
-             'DEBUG:root:line after regex repalce Ü',
-             'WARNING:root:Found problematic encoding [Ã\x9f] of TestSongISOcharsUTF8.sng',
-             'DEBUG:root:line after regex repalce ß']
+        info_template_prefix =  "INFO:root:Found problematic encoding in str '"
 
+        messages =\
+            [f"{info_template_prefix}Ã¤aaaÃ¤a'",
+             "DEBUG:root:replaced Ã¤aaaÃ¤a by äaaaäa",
+             f"{info_template_prefix}Ã¤'",
+            "DEBUG:root:replaced Ã¤ by ä",
+             f"{info_template_prefix}Ã¶'",
+            "DEBUG:root:replaced Ã¶ by ö",
+             f"{info_template_prefix}Ã¼'",
+            "DEBUG:root:replaced Ã¼ by ü",
+             f"{info_template_prefix}Ã\x84'",
+            "DEBUG:root:replaced Ã\x84 by Ä",
+            f"{info_template_prefix}Ã\x96'",
+            "DEBUG:root:replaced Ã\x96 by Ö",
+             f"{info_template_prefix}Ã\x9c'",
+            "DEBUG:root:replaced Ã\x9c by Ü",
+             f"{info_template_prefix}Ã\x9f'",
+            "DEBUG:root:replaced Ã\x9f by ß"
+             ]
         self.assertEqual(messages, cm.output)
+        
+    def test_validate_suspicious_encoding_2(self):
+        """
+        Test function which reads a file which is iso8995-1 but automatically parses correctly
+        This usually happens when automatic ChurchTools CCLI imports are read by Songbeamer without any modifications
+        Logs issues and tries to replace them
+        """
+        song = SngFile('./testData/ISO-UTF8/TestSongISOchars.sng')
+        result = song.validate_suspicious_encoding()
+        self.assertTrue(result, 'Should not detect issues within the file because of auto detected encoding')
+
 
     def test_helper_contains_songbook_prefix(self):
         """
@@ -788,9 +800,6 @@ class TestSNG(unittest.TestCase):
         noBOM_utf_file_path = path + 'Herr du wollest uns bereiten_noBOM_utf8.sng'
 
         # Part 1
-
-        iso_file_path = 'testData/ISO-UTF8/Herr du wollest uns bereiten_iso.sng'
-        utf_file_path = 'testData/ISO-UTF8/Herr du wollest uns bereiten_utf8.sng'
 
         file_iso_as_iso = open(iso_file_path, encoding='iso-8859-1')
         text = file_iso_as_iso.read()
