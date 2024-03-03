@@ -412,6 +412,25 @@ class TestSNG(unittest.TestCase):
         for marker in markers:
             self.assertIn(marker, excepted_blocks)
 
+    def test_content_implicit_blocks_psalm(self) -> None:
+        """Test method using Psalm/752 Psalm 134_neu.sng ot ensure no duplicate "unknown" in text from fix."""
+        song = SngFile("./testData/Psalm/752 Psalm 134_neu.sng")
+        expected_blocks = {"Unknown"}
+
+        verse_labels = set(song.content.keys())
+        self.assertEqual(expected_blocks, verse_labels)
+
+        song.generate_verses_from_unknown()
+        verse_labels = set(song.content.keys())
+        self.assertEqual(expected_blocks, verse_labels)
+
+        for block in song.content.values():
+            for slide in block[1:]:
+                if len(slide) == 0:
+                    continue
+                # Affects only slides because versemarker unknown is only one str
+                self.assertFalse(slide[0].upper().startswith("Unknown".upper()))
+
     def test_content_missing_block(self) -> None:
         """Checks that a file which does not have any section headers can be read without error."""
         song = SngFile("./testData/Psalm/764 Test Ohne Versmarker.sng")
