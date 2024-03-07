@@ -3,6 +3,7 @@
 defining some "activites" reading local files and connecting to a server
 It mainly works based on df comparison
 """
+
 import logging
 import os.path
 import time
@@ -122,6 +123,9 @@ def read_baiersbronn_songs_to_df() -> pd.DataFrame:
         )
 
     result_df = pd.DataFrame(songs_temp, columns=["SngFile"])
+    result_df["filename"] = ""
+    result_df["path"] = ""
+
     for index, value in result_df["SngFile"].items():
         result_df.loc[(index, "filename")] = value.filename
         result_df.loc[(index, "path")] = value.path
