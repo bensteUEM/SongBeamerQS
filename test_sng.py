@@ -2,6 +2,7 @@
 
 import logging
 import re
+import shutil
 import unittest
 from pathlib import Path
 
@@ -30,11 +31,32 @@ class TestSNG(unittest.TestCase):
 
     def test_file_name(self) -> None:
         """Checks if song contains correct filename and path information."""
-        path = "testData/"
-        filename = "022 Die Liebe des Retters.sng"
-        song = SngFile(path + filename)
+        path = Path("testData/EG Lieder/")
+        filename = "001 Macht Hoch die Tuer.sng"
+        song = SngFile(path / filename)
         self.assertEqual(song.filename, filename)
         self.assertEqual(song.path, Path(path))
+
+    def test_write_path_change(self) -> None:
+        """Check that path was successfully changed on sample file."""
+        path = Path("testData/EG Lieder/")
+        filename = "001 Macht Hoch die Tuer.sng"
+        song = SngFile(path / filename)
+        self.assertEqual(song.filename, filename)
+        self.assertEqual(song.path, Path(path))
+
+        new_path = Path("test_output/EG Lieder/")
+        shutil.rmtree(new_path.parent, ignore_errors=True)
+        # path.walk with rmdir and unlink would require python 3.12
+        """for root, dirs, files in new_path.walk(top_down=False):
+            for name in files:
+                (root / name).unlink()
+            for name in dirs:
+                (root / name).rmdir()
+        new_path.rmdir()
+        """
+        song.write_path_change(new_path.parent)
+        self.assertEqual(song.path, new_path)
 
     def test_header_title_parse(self) -> None:
         """Checks if param Title is correctly parsed.

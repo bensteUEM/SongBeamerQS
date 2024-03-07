@@ -1,6 +1,8 @@
 """This module contains tests for most methods defined in main.py."""
+
 import logging
 import os
+import time
 import unittest
 from pathlib import Path
 
@@ -17,7 +19,9 @@ from main import (
     parse_sng_from_directory,
     read_baiersbronn_songs_to_df,
     validate_ct_songs_exist_locally_by_name_and_category,
+    write_df_to_file,
 )
+from SngFile import SngFile
 
 
 class TestSNG(unittest.TestCase):
@@ -248,3 +252,35 @@ class TestSNG(unittest.TestCase):
     def test_upload_local_songs_by_id(self) -> None:
         """This should verify that upload_local_songs_by_id is working as expected."""
         self.assertFalse(True, "Not Implemented")  # TODO #14
+
+    def test_write_df_to_file(self) -> None:
+        """Test method checking functionality of write_df_to_file.
+
+        checks modification time is not older than two seconds for
+        1. sample file as dataframe and writing contents without change
+        2. sample file as dataframe and writing contents to custom target dir
+        """
+        path = Path("testData/EG Lieder/")
+        filename = "001 Macht Hoch die Tuer.sng"
+        sample_path = path / filename
+        song = SngFile(sample_path)
+
+        sample_df = pd.DataFrame({"SngFile": [song]})
+
+        # 1 same DIR
+        write_df_to_file(sample_df)
+        modification_time = sample_path.stat().st_mtime
+        current_time = time.time()
+        time_difference = current_time - modification_time
+
+        self.assertGreater(2, time_difference)
+
+        # 2 other target DIR
+        new_output_parent_path = Path("test_output")
+        write_df_to_file(sample_df, target_dir=new_output_parent_path)
+        expected_output_path = new_output_parent_path / song.path.name / song.filename
+        modification_time = expected_output_path.stat().st_mtime
+        current_time = time.time()
+        time_difference = current_time - modification_time
+
+        self.assertGreater(2, time_difference)
