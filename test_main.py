@@ -195,9 +195,14 @@ class TestSNG(unittest.TestCase):
         self.assertIn("Refrain", songs_temp[0].content.keys())
         songs_temp = read_baiersbronn_songs_to_df()
 
-    def test_add_id_to_local_song_if_available_in_ct(self) -> None:  # TODO #13
+    def test_add_id_to_local_song_if_available_in_ct(self) -> None:
         """This should verify that add_id_to_local_song_if_available_in_ct is working as expected."""
-        self.assertFalse(True, "Not Implemented")
+        self.assertFalse(
+            True,
+            "Not Implemented see https://github.com/bensteUEM/SongBeamerQS/issues/13",
+        )
+        # TODO (bensteUEM): implement test_add_id_to_local_song_if_available_in_ct
+        # https://github.com/bensteUEM/SongBeamerQS/issues/13
 
     def test_download_missing_online_songs(self) -> None:
         """ELKW1610.krz.tools specific test case for the named function (using 2 specific song IDs).
@@ -245,13 +250,23 @@ class TestSNG(unittest.TestCase):
         self.assertTrue(exists)
         Path(test2path).unlink()
 
-    def test_upload_new_local_songs_and_generate_ct_id(self) -> None:  # TODO #15
+    def test_upload_new_local_songs_and_generate_ct_id(self) -> None:
         """This should verify that upload_new_local_songs_and_generate_ct_id is working as expected."""
-        self.assertFalse(True, "Not Implemented")
+        self.assertFalse(
+            True,
+            "Not Implemented see https://github.com/bensteUEM/SongBeamerQS/issues/32",
+        )
+        # TODO (bensteUEM): implement test_upload_new_local_songs_and_generate_ct_id
+        # https://github.com/bensteUEM/SongBeamerQS/issues/32
 
     def test_upload_local_songs_by_id(self) -> None:
         """This should verify that upload_local_songs_by_id is working as expected."""
-        self.assertFalse(True, "Not Implemented")  # TODO #14
+        self.assertFalse(
+            True,
+            "Not Implemented see https://github.com/bensteUEM/SongBeamerQS/issues/14",
+        )
+        # TODO (bensteUEM): implement test_upload_local_songs_by_id
+        # https://github.com/bensteUEM/SongBeamerQS/issues/14
 
     def test_write_df_to_file(self) -> None:
         """Test method checking functionality of write_df_to_file.

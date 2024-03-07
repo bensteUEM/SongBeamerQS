@@ -501,7 +501,8 @@ class TestSNG(unittest.TestCase):
         song = SngFile("testData/Psalm/726 Psalm 047_iso-8859-1.sng", "EG")
         self.assertNotIn("ChurchSongID", song.header.keys())
 
-        # TODO Add test for language marker validation in EG psalms
+        # TODO (bensteUEM): Add test for language marker validation in EG psalms
+        # https://github.com/bensteUEM/SongBeamerQS/issues/36
 
         # Test background image validation for EG Psalms
         self.assertFalse(song.validate_header_background(fix=False))
@@ -680,7 +681,8 @@ class TestSNG(unittest.TestCase):
             set(expected_verse_markers) - {"STOP"}, set(existing_verse_markers)
         )
 
-        # TODO optionally add test case for logged warning when new verse already exists in VerseOrder
+        # TODO (bensteUEM): optionally add test case for logged warning when new verse already exists in VerseOrder
+        # https://github.com/bensteUEM/SongBeamerQS/issues/35
 
     def test_header_verse_order_special2(self) -> None:
         """Test case for special cases occured while running on sample files.
