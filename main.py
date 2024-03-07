@@ -234,9 +234,11 @@ def write_df_to_file(df_sng: pd.DataFrame, target_dir: str | None = None) -> Non
     Params:
         target_dir: e.g. './output' to write output into a separate folder
     """
-    if target_dir is not None:
-        logging.info("starting write_path_change(%s)", target_dir)
-        df_sng["SngFile"].apply(lambda x: x.write_path_change(target_dir))
+    if target_dir:
+        target_path = Path(target_dir)
+
+        logging.info("starting write_path_change(%s)", target_path)
+        df_sng["SngFile"].apply(lambda x: x.write_path_change(target_path))
 
     logging.info("starting write_file()")
     df_sng["SngFile"].apply(lambda x: x.write_file())

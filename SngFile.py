@@ -126,12 +126,15 @@ class SngFile:
         """Method used to update editor to mark files that are updated compared to it's original."""
         self.header["Editor"] = SngDefaultHeader["Editor"]
 
-    def write_path_change(self, dirname: str = "/home/benste/Desktop") -> None:
+    def write_path_change(
+        self, new_parent_dir: Path = Path("/home/benste/Desktop")
+    ) -> None:
         """Method to change the path entry to a different directory keeping the file collection specific last level folder.
 
-        Args: dirname: default path to insert before folder name
+        Args: new_parent_dir: default path to insert before folder name of songbook
         """
-        new_path = "/".join([dirname, self.path.split("/")[-1]])
+        new_path = new_parent_dir / self.path.name
+        new_path.mkdir(parents=True, exist_ok=True)
         logging.debug("Changing path from %s to %s", self.path, new_path)
         self.path = new_path
 
