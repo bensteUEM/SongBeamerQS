@@ -25,11 +25,11 @@ SngRequiredHeader = [
 
 SngOptionalHeader = [
     "ID",  # ChurchTools ID
-    "OTitle",  # TODO Title parts slides - e.g. FJ5/073
-    "TitleLang2",  # TODO Title parts slides - e.g. FJ5/073
+    "OTitle",
+    "TitleLang2",
     "Translation",
     "Bible",  # Checked with Psalms only
-    "RECHTE",  # TODO check spelling
+    "Rights",
 ]
 
 SngIllegalHeader = [

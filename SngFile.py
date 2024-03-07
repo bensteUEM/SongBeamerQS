@@ -217,9 +217,8 @@ class SngFile:
             and "Translation" not in self.header
         ):
             missing.append("Translation")
-            # TODO add test case for language validation
-
-            # TODO add TitleLang2 validation
+            # TODO (bensteUEM): Add language validation
+            # https://github.com/bensteUEM/SongBeamerQS/issues/33
 
         result = len(missing) == 0
 
@@ -334,7 +333,9 @@ class SngFile:
             # sample is EG 548 & WWDLP 170 = loc 77
             # -> no longer needed because of regex check
 
-            # TODO low Prio - check numeric range of songbooks
+            # TODO (bensteUEM): low Prio - check numeric range of songbooks
+            # https://github.com/bensteUEM/SongBeamerQS/issues/34
+
             # EG 1 - 851 incl.non numeric e.g. 178.14
             # EG Psalms in EG Württemberg EG 701-758
             # Syntax should be EG xxx - Psalm Y
@@ -388,8 +389,11 @@ class SngFile:
         logging.debug(error_message)
         return False
 
-        # TODO validate background against resolution list #29
-        # TODO validate background against copyright available #30
+        # TODO (bensteUEM): validate background against resolution list
+        # https://github.com/bensteUEM/SongBeamerQS/issues/29
+
+        # TODO (bensteUEM): validate background against copyright available
+        # https://github.com/bensteUEM/SongBeamerQS/issues/30
 
     def fix_header_background(self) -> bool:
         """Helper which tries to fix background image information automatically.
@@ -536,7 +540,10 @@ class SngFile:
             "Added new '%s' in Verse Order of (%s)", new_block_keys, self.filename
         )
         self.content.pop("Unknown")
-        self.content.update(new_blocks)  # TODO check what happens if already exists
+        self.content.update(new_blocks)
+        # TODO (bensteUEM): check what happens if already exists
+        # https://github.com/bensteUEM/SongBeamerQS/issues/35
+
         logging.info(
             "Replaced 'Unknown' with '%s' in Verse Order of (%s)",
             new_block_keys,

@@ -603,13 +603,3 @@ if __name__ == "__main__":
     """
 
     logging.info("Main Method finished")
-
-    # TODO Ideensammlung
-    # Check for leere Folie mit Strophe 0 - bsp. EG 449
-    # Psalm Auto Language Marking if space idented
-
-    # Check Verses in numerical order
-    # Replace Vers and Strophe by Verse and Chorus by Refrain
-
-    # validate_header_songbook(df, True)
-    # df.to_csv("Main_DF_Export.csv", quoting=csv.QUOTE_NONNUMERIC)

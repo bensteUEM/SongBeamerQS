@@ -40,7 +40,6 @@ ignore = [
 
     #ToDo Items
     "FIX",
-    "TD",
 ]
 
 extend-ignore = [] #Skip rules that need more code cleaning...
