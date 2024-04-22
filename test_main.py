@@ -1,10 +1,12 @@
 """This module contains tests for most methods defined in main.py."""
 
+import filecmp
 import logging
 import os
 import time
 import unittest
 from pathlib import Path
+from shutil import copyfile
 
 import pandas as pd
 from ChurchToolsApi import ChurchToolsApi
@@ -18,6 +20,7 @@ from main import (
     get_ct_songs_as_df,
     parse_sng_from_directory,
     read_baiersbronn_songs_to_df,
+    upload_new_local_songs_and_generate_ct_id,
     validate_ct_songs_exist_locally_by_name_and_category,
     write_df_to_file,
 )
@@ -251,13 +254,66 @@ class TestSNG(unittest.TestCase):
         Path(test2path).unlink()
 
     def test_upload_new_local_songs_and_generate_ct_id(self) -> None:
-        """This should verify that upload_new_local_songs_and_generate_ct_id is working as expected."""
-        self.assertFalse(
-            True,
-            "Not Implemented see https://github.com/bensteUEM/SongBeamerQS/issues/32",
+        """This should verify that upload_new_local_songs_and_generate_ct_id is working as expected.
+
+        1. copy sample template file and prepare it as parsed df
+        2. retrieve list of current songs from CT isntance
+        3. upload file
+        4. check that local file now has id= param and rename remaining local file
+        5. download and compare to expected
+        6. cleanup
+        """
+        test_data_dir = Path("testData/Test")
+
+        copyfile(
+            test_data_dir / "sample_template.sng",
+            test_data_dir / "sample.sng",
         )
-        # TODO (bensteUEM): implement test_upload_new_local_songs_and_generate_ct_id
-        # https://github.com/bensteUEM/SongBeamerQS/issues/32
+        song = SngFile(test_data_dir / "sample.sng")
+
+        df_song = pd.DataFrame([song], columns=["SngFile"])
+        for index, value in df_song["SngFile"].items():
+            df_song.loc[(index, "filename")] = value.filename
+            df_song.loc[(index, "path")] = value.path
+
+        # 2. check ct
+        df_ct = get_ct_songs_as_df(self.api)
+
+        # 3. upload file
+        upload_new_local_songs_and_generate_ct_id(df_sng=df_song, df_ct=df_ct)
+        song_id = df_song.iloc[0]["SngFile"].get_id()
+
+        # 4. check local ID
+        self.assertNotEqual(song_id, -1, "Should have specifc ID when created")
+
+        ct_song = self.api.get_songs(song_id=song_id)[0]
+        arrangement_id = next(
+            arrangement["id"]
+            for arrangement in ct_song["arrangements"]
+            if arrangement["isDefault"]
+        )
+
+        Path(test_data_dir / "sample.sng").rename(test_data_dir / "expected.sng")
+
+        self.api.file_download(
+            filename="sample.sng",
+            domain_type="song_arrangement",
+            domain_identifier=arrangement_id,
+            target_path=str(test_data_dir),
+        )
+
+        self.assertTrue(
+            filecmp.cmp(
+                test_data_dir / "expected.sng",
+                test_data_dir / "sample.sng",
+            )
+        )
+
+        # 6. cleanup
+        self.api.delete_song(song_id=song_id)
+
+        Path(test_data_dir / "sample.sng").unlink()
+        Path(test_data_dir / "expected.sng").unlink()
 
     def test_upload_local_songs_by_id(self) -> None:
         """This should verify that upload_local_songs_by_id is working as expected."""

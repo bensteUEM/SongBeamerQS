@@ -524,7 +524,7 @@ def upload_new_local_songs_and_generate_ct_id(
         song = api.get_songs(song_id=song_id)[0]
 
         api.file_upload(
-            "/".join([row["path"], row["filename"]]),
+            str(row["path"] / row["filename"]),
             domain_type="song_arrangement",
             domain_identifier=next(
                 i["id"] for i in song["arrangements"] if i["isDefault"] is True
