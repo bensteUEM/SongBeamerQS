@@ -1,5 +1,6 @@
 """This module contains tests for most methods defined in main.py."""
 
+import datetime
 import filecmp
 import logging
 import os
@@ -20,6 +21,7 @@ from main import (
     get_ct_songs_as_df,
     parse_sng_from_directory,
     read_baiersbronn_songs_to_df,
+    upload_local_songs_by_id,
     upload_new_local_songs_and_generate_ct_id,
     validate_ct_songs_exist_locally_by_name_and_category,
     write_df_to_file,
@@ -266,7 +268,7 @@ class TestSNG(unittest.TestCase):
         test_data_dir = Path("testData/Test")
 
         copyfile(
-            test_data_dir / "sample_template.sng",
+            test_data_dir / "sample_no_ct.sng",
             test_data_dir / "sample.sng",
         )
         song = SngFile(test_data_dir / "sample.sng")
@@ -316,13 +318,86 @@ class TestSNG(unittest.TestCase):
         Path(test_data_dir / "expected.sng").unlink()
 
     def test_upload_local_songs_by_id(self) -> None:
-        """This should verify that upload_local_songs_by_id is working as expected."""
-        self.assertFalse(
-            True,
-            "Not Implemented see https://github.com/bensteUEM/SongBeamerQS/issues/14",
+        """This should verify that upload_local_songs_by_id is working as expected.
+
+        Define two songs -
+        1. should already have an attachment in Churchtools
+        2. should exist but not have an attachement yet
+
+        Cleanup ... Delete recently created attachment, remove local file copys and recover bak files
+
+        """
+        test_data_dir = Path("testData/Test")
+
+        copyfile(
+            test_data_dir / "sample.sng",
+            test_data_dir / "sample.sng_bak",
         )
-        # TODO (bensteUEM): implement test_upload_local_songs_by_id
-        # https://github.com/bensteUEM/SongBeamerQS/issues/14
+        song_with_attachment = SngFile(test_data_dir / "sample.sng")
+
+        copyfile(
+            test_data_dir / "sample_no_ct_attachement.sng",
+            test_data_dir / "sample_no_ct_attachement.sng_bak",
+        )
+        song_no_attachment = SngFile(test_data_dir / "sample_no_ct_attachement.sng")
+
+        df_songs = pd.DataFrame(
+            [song_with_attachment, song_no_attachment], columns=["SngFile"]
+        )
+        for index, value in df_songs["SngFile"].items():
+            df_songs.loc[(index, "filename")] = value.filename
+            df_songs.loc[(index, "path")] = value.path
+
+        df_ct = get_ct_songs_as_df(self.api)
+        upload_local_songs_by_id(df_sng=df_songs, df_ct=df_ct)
+
+        # Check sample 1 has attachment online and recently changed mod date
+        ct_song_1 = self.api.get_songs(song_id=df_songs.iloc[0]["SngFile"].get_id())[0]
+        arrangement_1 = next(
+            arrangement
+            for arrangement in ct_song_1["arrangements"]
+            if arrangement["isDefault"]
+        )
+        self.assertIsNotNone(arrangement_1["id"], "Should have a song arrangement")
+        ct_sng_attachment = next(
+            file for file in arrangement_1["files"] if "sng" in file["name"]
+        )
+        ct_sng_modified_date = ct_sng_attachment["meta"]["modifiedDate"]
+        ct_sng_modified_date = datetime.datetime.fromisoformat(
+            ct_sng_modified_date.replace("Z", "+00:00")
+        )
+        # Get the local timezone of the system
+        local_timezone = (
+            datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo
+        )
+        datetime.datetime.now(local_timezone)
+
+        offset = datetime.datetime.now(local_timezone) - ct_sng_modified_date
+        allowed_delta = datetime.timedelta(minutes=2)
+        self.assertGreater(
+            allowed_delta, offset, "Last changed date of file should be recent"
+        )
+
+        # Check sample 2 has attachment
+        ct_song_2 = self.api.get_songs(song_id=df_songs.iloc[1]["SngFile"].get_id())[0]
+        arrangement_2 = next(
+            arrangement
+            for arrangement in ct_song_2["arrangements"]
+            if arrangement["isDefault"]
+        )
+        self.assertIsNotNone(arrangement_2["id"], "Should have a song arrangement")
+
+        # cleanup
+        self.api.file_delete(
+            domain_type="song_arrangement",
+            domain_identifier=arrangement_2["id"],
+            filename_for_selective_delete="sample_no_ct_attachement.sng",
+        )
+
+        Path(test_data_dir / "sample.sng_bak").rename(test_data_dir / "sample.sng")
+        Path(test_data_dir / "sample_no_ct_attachement.sng_bak").rename(
+            test_data_dir / "sample_no_ct_attachement.sng"
+        )
 
     def test_write_df_to_file(self) -> None:
         """Test method checking functionality of write_df_to_file.
