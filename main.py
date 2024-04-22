@@ -545,7 +545,7 @@ def upload_local_songs_by_id(df_sng: pd.DataFrame, df_ct: pd.DataFrame) -> None:
     api = ChurchToolsApi(domain=ct_domain, ct_token=ct_token)
 
     to_upload["arrangement_id"] = to_upload["arrangements"].apply(
-        lambda x: next(i["id"] for i in x if i["isDefault"] is True)
+        lambda x: next(i["id"] for i in x if i["isDefault"])
     )
 
     progress = 0
@@ -553,7 +553,7 @@ def upload_local_songs_by_id(df_sng: pd.DataFrame, df_ct: pd.DataFrame) -> None:
     for progress, data in enumerate(to_upload.iterrows()):
         _index, row = data
         api.file_upload(
-            "/".join([row["path"], row["filename"]]),
+            str(row["path"] / row["filename"]),
             domain_type="song_arrangement",
             domain_identifier=row["arrangement_id"],
             overwrite=True,
@@ -563,7 +563,7 @@ def upload_local_songs_by_id(df_sng: pd.DataFrame, df_ct: pd.DataFrame) -> None:
             time.sleep(15)
 
     logging.info(
-        "upload_local_songs_by_id - will overwrote all CT SNG default arrangement files with known ID"
+        "upload_local_songs_by_id - will overwrite all CT SNG default arrangement files with known ID"
     )
 
 
