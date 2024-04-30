@@ -567,6 +567,20 @@ def upload_local_songs_by_id(df_sng: pd.DataFrame, df_ct: pd.DataFrame) -> None:
     )
 
 
+def validate_ct_song_sng_count(api: ChurchToolsApi) -> None:
+    """Check that all arrangements from ChurchTools songs have exactly 1 sng attachment.
+
+    If there is no sng file attachment the song arrangement is incomplete and should be tagged with a "missing SNG" tag.
+    If there is more than one sng attachment agenda downloads might retrieve the wrong one therefore only should be tagged with "too many SNG" tag.
+
+    Arguments:
+        api: instance connected to any churchtools instance
+    """
+    tags = api.get_tags(type="str")
+    logging.debug(tags)
+    raise NotImplementedError
+
+
 if __name__ == "__main__":
     logging.basicConfig(
         filename="logs/main.py.log",
@@ -586,6 +600,8 @@ if __name__ == "__main__":
     # Match all SongIDs from CT to local songs where missing
     df_ct = get_ct_songs_as_df(api)
     add_id_to_local_song_if_available_in_ct(df_sng, df_ct)
+
+    validate_ct_song_sng_count(api)
 
     # Upload all songs into CT that are new
     df_ct = get_ct_songs_as_df(api)
