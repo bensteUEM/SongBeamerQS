@@ -122,6 +122,46 @@ class TestSNG(unittest.TestCase):
             test_song.header["Title"] = title
             self.assertFalse(test_song.validate_header_title(fix=False))
 
+    def test_header_title_special4(self) -> None:
+        """Test validate_header_title with WWDLP Psalm.
+
+        as indicated in https://github.com/bensteUEM/SongBeamerQS/issues/23
+        """
+        test_song = SngFile(
+            "./testData/Wwdlp (Wo wir dich loben, wachsen neue Lieder plus)/909.1 Psalm 85 I.sng",
+            songbook_prefix="WWDLP",
+        )
+        self.assertEqual(test_song.header["Title"], "Psalm 85 I")
+
+        result = test_song.validate_header_title(fix=False)
+        self.assertTrue(result, "title should be valid")
+
+    def test_is_psalm(self) -> None:
+        """Checks for some files if they are psalms."""
+        test_song = SngFile(
+            "./testData/Wwdlp (Wo wir dich loben, wachsen neue Lieder plus)/909.1 Psalm 85 I.sng",
+            songbook_prefix="WWDLP",
+        )
+        self.assertTrue(test_song.is_psalm())
+
+        test_song = SngFile(
+            "./testData/Psalm/709 Herr, sei nicht ferne.sng",
+            songbook_prefix="EG",
+        )
+        self.assertTrue(test_song.is_psalm())
+
+        test_song = SngFile(
+            "./testData/EG Lieder/001 Macht Hoch die Tuer.sng",
+            songbook_prefix="EG",
+        )
+        self.assertFalse(test_song.is_psalm())
+
+        test_song = SngFile(
+            "./testData/Test/sample_no_ct.sng",
+            songbook_prefix="",
+        )
+        self.assertFalse(test_song.is_psalm())
+
     def test_header_all(self) -> None:
         """Checks if all params of the test file are correctly parsed.
 

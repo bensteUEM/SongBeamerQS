@@ -208,7 +208,7 @@ class SngFile:
             key for key in SNG_DEFAULTS.SngRequiredHeader if key not in self.header
         ]
 
-        if self.is_eg_psalm() and "Bible" not in self.header:
+        if self.is_psalm() and "Bible" not in self.header:
             missing.append("Bible")
 
         if (
@@ -251,7 +251,7 @@ class SngFile:
         if not title:
             error_message = f"Song without a Title in Header: {self.filename}"
 
-        elif not self.songbook_prefix:
+        elif not self.songbook_prefix or self.is_psalm():
             # special case - songs without prefix might contain numbers e.g. "Psalm 21.sng" - not the one in EG...
             return True
 
@@ -373,7 +373,7 @@ class SngFile:
         if "BackgroundImage" not in self.header:
             error_message = f"No Background in ({self.filename})"
         elif (
-            self.is_eg_psalm()
+            self.is_psalm()
             and self.header["BackgroundImage"] != "Evangelisches Gesangbuch.jpg"
         ):
             error_message = (
@@ -404,7 +404,7 @@ class SngFile:
         Returns:
             if header background was fixed - assuming fixes do fix ...
         """
-        if self.is_eg_psalm():
+        if self.is_psalm():
             self.header["BackgroundImage"] = "Evangelisches Gesangbuch.jpg"
             logging.debug("Fixing background for Psalm in (%s)", self.filename)
             self.update_editor_because_content_modified()
@@ -685,7 +685,7 @@ class SngFile:
         songbook_before_change = self.header.get("Songbook", "NOT SET")
 
         # Evangelisches Gesangsbuch - Psalm
-        if self.is_eg_psalm():
+        if self.is_psalm():
             self.header["Songbook"] = self.header.get("Songbook", " ")
             self.header["ChurchSongID"] = self.header.get("ChurchSongID", " ")
             logging.info(
@@ -998,22 +998,36 @@ class SngFile:
         self.header["id"] = str(new_id)
         self.update_editor_because_content_modified()
 
-    def is_eg_psalm(self) -> bool:
-        """Helper function to determine if the song is an EG Psalm.
+    def is_psalm(self) -> bool:
+        """Helper function to determine if the song is a Psalm.
+
+        this means it is allowed to have numbers in title
+        and songbook can not be auto fixed because of combination.
 
         Conditions are
-        1. must have EG in Songbook Prefix
+        1. must have Songbook Prefix which is defined in KnownSongBookPsalmRange
         2. filename must start with number in correct range
             EG Psalms in EG Württemberg EG 701-758
 
         Returns:
             if condition applies
         """
+        songbook_prefix = next(
+            (
+                prefix
+                for prefix in KnownSongBookPsalmRange
+                if prefix in self.songbook_prefix
+            ),
+            None,
+        )
+
+        if not songbook_prefix:
+            return False
+
         return (
-            "EG" in self.songbook_prefix
-            and KnownSongBookPsalmRange["EG"][0]
+            KnownSongBookPsalmRange[songbook_prefix]["start"]
             <= float(self.filename.split(" ")[0])
-            <= KnownSongBookPsalmRange["EG"][1]
+            <= KnownSongBookPsalmRange[songbook_prefix]["end"]
         )
 
 
