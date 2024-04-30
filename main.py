@@ -567,6 +567,31 @@ def upload_local_songs_by_id(df_sng: pd.DataFrame, df_ct: pd.DataFrame) -> None:
     )
 
 
+def apply_ct_song_sng_count_qs_tag(
+    api: ChurchToolsApi, song_id: int, number_of_sngs: int, tags_by_name: dict
+) -> None:
+    """Helper function which adds tags to songs in case sng attachment mismatches expectations.
+
+    Args:
+        api: instance connected to any churchtools instance
+        song_id: song_id
+        number_of_sngs: number of sngs attached to this song
+        tags_by_name: dictionary referencing tag ids by name
+    """
+    if number_of_sngs == 1:
+        api.remove_song_tag(
+            song_id=song_id, song_tag_id=tags_by_name["QS: missing sng"]
+        )
+        api.remove_song_tag(
+            song_id=song_id, song_tag_id=tags_by_name["QS: too many sng"]
+        )
+
+    if number_of_sngs == 0:
+        api.add_song_tag(song_id=song_id, song_tag_id=tags_by_name["QS: missing sng"])
+    if number_of_sngs > 1:
+        api.add_song_tag(song_id=song_id, song_tag_id=tags_by_name["QS: too many sng"])
+
+
 def validate_ct_song_sng_count(api: ChurchToolsApi) -> None:
     """Check that all arrangements from ChurchTools songs have exactly 1 sng attachment.
 
@@ -576,9 +601,41 @@ def validate_ct_song_sng_count(api: ChurchToolsApi) -> None:
     Arguments:
         api: instance connected to any churchtools instance
     """
-    tags = api.get_tags(type="str")
-    logging.debug(tags)
-    raise NotImplementedError
+    tags = api.get_tags(type="songs")
+    tags_by_name = {tag["name"]: tag["id"] for tag in tags}
+
+    # missing sng
+    if "QS: missing sng" not in tags_by_name:
+        pass
+        # TODO@Benedict: implement create_tag
+        # https://github.com/bensteUEM/ChurchToolsAPI/issues/92
+        # name = "QS: missing sng"
+        # tag_id = api.create_tag(name=name,type="songs")
+        # tags_by_name[name]=tag_id
+        # logging.info("created %s with ID=%s on instance because song tag did not exist", name, tag_id)
+
+    # too many sng
+    if "QS: too many sng" not in tags_by_name:
+        pass
+        # TODO@Benedict: implement create_tag
+        # https://github.com/bensteUEM/ChurchToolsAPI/issues/92
+        # name = "QS: too many sng"
+        # tag_id = api.create_tag(name=name,type="songs")
+        # tags_by_name[name]=tag_id
+        # logging.info("created %s with ID=%s on instance because song tag did not exist", name, tag_id)
+
+    songs = api.get_songs()
+    for song in songs:
+        for arrangement in song["arrangements"]:
+            sngs = [
+                ".sng" in file["name"].contains(".sng") for file in arrangement["files"]
+            ]
+            apply_ct_song_sng_count_qs_tag(
+                api=api,
+                song_id=song["id"],
+                number_of_sngs=len(sngs),
+                tags_by_name=tags_by_name,
+            )
 
 
 if __name__ == "__main__":
@@ -596,12 +653,11 @@ if __name__ == "__main__":
     write_df_to_file(df_sng)
 
     api = ChurchToolsApi(domain=ct_domain, ct_token=ct_token)
+    validate_ct_song_sng_count(api)
 
     # Match all SongIDs from CT to local songs where missing
     df_ct = get_ct_songs_as_df(api)
     add_id_to_local_song_if_available_in_ct(df_sng, df_ct)
-
-    validate_ct_song_sng_count(api)
 
     # Upload all songs into CT that are new
     df_ct = get_ct_songs_as_df(api)
