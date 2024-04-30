@@ -64,7 +64,10 @@ KnownFolderWithPrefix = {
     "Wwdlp (Wo wir dich loben, wachsen neue Lieder plus)": "Wwdlp",
 }
 
-KnownSongBookPsalmRange = {"EG": (701, 758), "WWDLP": (901, 921)}
+KnownSongBookPsalmRange = {
+    "EG": {"start": 701, "end": 758},
+    "WWDLP": {"start": 901, "end": 921},
+}
 
 VerseMarker = [
     "Unbekannt",

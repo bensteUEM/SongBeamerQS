@@ -90,7 +90,7 @@ def validate_all_headers(df_to_change: pd.DataFrame, fix: bool = False) -> pd.Se
     df_to_change["SngFile"].apply(lambda x: x.fix_header_ccli_caps())
 
     # Set Background for all Psalm entries
-    psalms_select = df_to_change["SngFile"].apply(lambda x: x.is_eg_psalm())
+    psalms_select = df_to_change["SngFile"].apply(lambda x: x.is_psalm())
     logging.info(
         "Starting validate_header_background(%s) for %s psalms", fix, sum(psalms_select)
     )
