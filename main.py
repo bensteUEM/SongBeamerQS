@@ -568,38 +568,44 @@ def upload_local_songs_by_id(df_sng: pd.DataFrame, df_ct: pd.DataFrame) -> None:
 
 
 def apply_ct_song_sng_count_qs_tag(
-    api: ChurchToolsApi, song_id: int, number_of_sngs: int, tags_by_name: dict
+    api: ChurchToolsApi, song: dict, tags_by_name: dict
 ) -> None:
-    """Helper function which adds tags to songs in case sng attachment mismatches expectations.
+    """Helper function which adds tags to songs in case sng attachment counts mismatches expectations.
+
+    Requires respective tags to be present - can be ensured using prepare_required_song_tags()
 
     Args:
         api: instance connected to any churchtools instance
-        song_id: song_id
-        number_of_sngs: number of sngs attached to this song
+        song: churchtools song as dict
         tags_by_name: dictionary referencing tag ids by name
     """
-    if number_of_sngs == 1:
-        api.remove_song_tag(
-            song_id=song_id, song_tag_id=tags_by_name["QS: missing sng"]
-        )
-        api.remove_song_tag(
-            song_id=song_id, song_tag_id=tags_by_name["QS: too many sng"]
-        )
+    for arrangement in song["arrangements"]:
+        sngs = [True for file in arrangement["files"] if ".sng" in file["name"]]
+        number_of_sngs = len(sngs)
 
-    if number_of_sngs == 0:
-        api.add_song_tag(song_id=song_id, song_tag_id=tags_by_name["QS: missing sng"])
-    if number_of_sngs > 1:
-        api.add_song_tag(song_id=song_id, song_tag_id=tags_by_name["QS: too many sng"])
+        if number_of_sngs == 1:
+            api.remove_song_tag(
+                song_id=song["id"], song_tag_id=tags_by_name["QS: missing sng"]
+            )
+            api.remove_song_tag(
+                song_id=song["id"], song_tag_id=tags_by_name["QS: too many sng"]
+            )
+
+        elif number_of_sngs == 0:
+            api.add_song_tag(
+                song_id=song["id"], song_tag_id=tags_by_name["QS: missing sng"]
+            )
+        elif number_of_sngs > 1:
+            api.add_song_tag(
+                song_id=song["id"], song_tag_id=tags_by_name["QS: too many sng"]
+            )
 
 
-def validate_ct_song_sng_count(api: ChurchToolsApi) -> None:
-    """Check that all arrangements from ChurchTools songs have exactly 1 sng attachment.
+def prepare_required_song_tags(api: ChurchToolsApi) -> dict:
+    """Helper which retrieves all song tags, checks that all required ones exist and returns dict of values.
 
-    If there is no sng file attachment the song arrangement is incomplete and should be tagged with a "missing SNG" tag.
-    If there is more than one sng attachment agenda downloads might retrieve the wrong one therefore only should be tagged with "too many SNG" tag.
-
-    Arguments:
-        api: instance connected to any churchtools instance
+    Returns:
+        dict of name:id pairs for song tags
     """
     tags = api.get_tags(type="songs")
     tags_by_name = {tag["name"]: tag["id"] for tag in tags}
@@ -624,18 +630,28 @@ def validate_ct_song_sng_count(api: ChurchToolsApi) -> None:
         # tags_by_name[name]=tag_id
         # logging.info("created %s with ID=%s on instance because song tag did not exist", name, tag_id)
 
+    return tags_by_name
+
+
+def validate_ct_song_sng_count(api: ChurchToolsApi) -> None:
+    """Check that all arrangements from ChurchTools songs have exactly 1 sng attachment.
+
+    If there is no sng file attachment the song arrangement is incomplete and should be tagged with a "missing SNG" tag.
+    If there is more than one sng attachment agenda downloads might retrieve the wrong one therefore only should be tagged with "too many SNG" tag.
+
+    Arguments:
+        api: instance connected to any churchtools instance
+    """
+    tags_by_name = prepare_required_song_tags(api=api)
+
     songs = api.get_songs()
+
     for song in songs:
-        for arrangement in song["arrangements"]:
-            sngs = [
-                ".sng" in file["name"].contains(".sng") for file in arrangement["files"]
-            ]
-            apply_ct_song_sng_count_qs_tag(
-                api=api,
-                song_id=song["id"],
-                number_of_sngs=len(sngs),
-                tags_by_name=tags_by_name,
-            )
+        apply_ct_song_sng_count_qs_tag(
+            api=api,
+            song=song,
+            tags_by_name=tags_by_name,
+        )
 
 
 if __name__ == "__main__":
