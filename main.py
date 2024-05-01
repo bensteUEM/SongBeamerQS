@@ -106,17 +106,39 @@ def validate_all_headers(df_to_change: pd.DataFrame, fix: bool = False) -> pd.Se
 
 
 def read_baiersbronn_songs_to_df() -> pd.DataFrame:
-    """Default method which reads all known directories used at Evangelische Kirchengemeinde Baiersbronn."""
+    """Default method which reads all known directories used at Evangelische Kirchengemeinde Baiersbronn.
+
+    requires all directories from SNG_DEFAULTS to be present
+    """
     songs_temp = []
-    """
-    For Testing only!
-    dirname = 'testData/'
-    dirprefix = 'TEST'
-    songs = parse_sng_from_directory(dirname, dirprefix)
-    """
 
     for key, value in SNG_DEFAULTS.KnownFolderWithPrefix.items():
         dirname = SNG_DEFAULTS.KnownDirectory + key
+        dirprefix = value
+        songs_temp.extend(
+            parse_sng_from_directory(directory=dirname, songbook_prefix=dirprefix)
+        )
+
+    result_df = pd.DataFrame(songs_temp, columns=["SngFile"])
+    result_df["filename"] = ""
+    result_df["path"] = ""
+
+    for index, value in result_df["SngFile"].items():
+        result_df.loc[(index, "filename")] = value.filename
+        result_df.loc[(index, "path")] = value.path
+    return result_df
+
+
+def read_test_songs_to_df() -> pd.DataFrame:
+    """Default method which reads all known directories used for testing.
+
+    Skips directories that do not exist
+    """
+    songs_temp = []
+    for key, value in SNG_DEFAULTS.KnownFolderWithPrefix.items():
+        dirname = "testData/" + key
+        if not Path(dirname).exists():
+            continue
         dirprefix = value
         songs_temp.extend(
             parse_sng_from_directory(directory=dirname, songbook_prefix=dirprefix)

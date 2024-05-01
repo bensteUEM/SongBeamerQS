@@ -23,6 +23,7 @@ from main import (
     parse_sng_from_directory,
     prepare_required_song_tags,
     read_baiersbronn_songs_to_df,
+    read_test_songs_to_df,
     upload_local_songs_by_id,
     upload_new_local_songs_and_generate_ct_id,
     validate_ct_songs_exist_locally_by_name_and_category,
@@ -96,20 +97,33 @@ class TestSNG(unittest.TestCase):
         )
 
     def test_eg_with_songbook_prefix(self) -> None:
-        """Check that all songs in EG Lieder does have EG Songbook prefix."""
-        songs_df = read_baiersbronn_songs_to_df()
-        filter1 = songs_df["path"] == Path(
-            "/home/benste/Documents/Kirchengemeinde Baiersbronn/Beamer/Songbeamer - Songs/EG Lieder"
-        )
-        filter2 = songs_df["path"] == Path(
-            "/home/benste/Documents/Kirchengemeinde Baiersbronn/Beamer/Songbeamer - Songs/EG Psalmen & Sonstiges"
+        """Check that all fixable songs in EG Lieder do have EG Songbook prefix."""
+        songs_df = read_test_songs_to_df()
+
+        filter1 = songs_df["path"] == Path("testData/EG Lieder")
+        filter2 = songs_df["path"] == Path("testData/EG Psalmen & Sonstiges")
+        eg_songs_df = songs_df[filter1 | filter2].copy()
+        generate_songbook_column(eg_songs_df)
+
+        # following variables are dependant on the number of files included in respective folders
+        number_of_files_in_eg = 10
+        number_of_files_with_eg_songbook_pre_fix = number_of_files_in_eg - 1 - 3
+        # eg songs will be fixed, psalm range not ; EG764 is Sonstige, not Psalm
+        number_of_files_with_eg_songbook_post_fix = number_of_files_in_eg - 2
+
+        self.assertEqual(len(eg_songs_df), number_of_files_in_eg)
+        self.assertEqual(
+            eg_songs_df["Songbook"].str.startswith("EG").sum(),
+            number_of_files_with_eg_songbook_pre_fix,
         )
 
         songs_df["SngFile"].apply(lambda x: x.validate_header_songbook(True))
-        eg_songs_df = songs_df[filter1 | filter2]
-        generate_songbook_column(songs_df)
+
+        generate_songbook_column(eg_songs_df)
+
         self.assertEqual(
-            len(eg_songs_df["SngFile"]), songs_df["Songbook"].str.startswith("EG").sum()
+            eg_songs_df["Songbook"].str.startswith("EG").sum(),
+            number_of_files_with_eg_songbook_post_fix,
         )
 
     def test_validate_songbook_special_cases(self) -> None:
