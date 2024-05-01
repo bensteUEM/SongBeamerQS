@@ -646,12 +646,17 @@ def validate_ct_song_sng_count(api: ChurchToolsApi) -> None:
 
     songs = api.get_songs()
 
-    for song in songs:
+    len_songs = len(songs)
+    for song_count, song in enumerate(songs):
         apply_ct_song_sng_count_qs_tag(
             api=api,
             song=song,
             tags_by_name=tags_by_name,
         )
+        if song_count % 25 == 0:
+            # avoid Too many requests. Rate Limit Exceeded.
+            logging.debug("sleep 1 second after %s / %s", song_count, len_songs)
+            time.sleep(1)
 
 
 if __name__ == "__main__":
