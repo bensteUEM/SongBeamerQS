@@ -14,12 +14,14 @@ from ChurchToolsApi import ChurchToolsApi
 
 import SNG_DEFAULTS
 from main import (
+    apply_ct_song_sng_count_qs_tag,
     check_ct_song_categories_exist_as_folder,
     clean_all_songs,
     download_missing_online_songs,
     generate_songbook_column,
     get_ct_songs_as_df,
     parse_sng_from_directory,
+    prepare_required_song_tags,
     read_baiersbronn_songs_to_df,
     upload_local_songs_by_id,
     upload_new_local_songs_and_generate_ct_id,
@@ -430,3 +432,79 @@ class TestSNG(unittest.TestCase):
         time_difference = current_time - modification_time
 
         self.assertGreater(2, time_difference)
+
+    def test_apply_ct_song_sng_count_qs_tag(self) -> None:
+        """Test that checks qs sng tags are correctly applied.
+
+        IMPORTANT - This test method and the parameters used depend on the target system!
+
+        Requires 2 sample songs
+        * song_id=408 without SNG attached to any arrangement
+        * song_id=2034 with SNG attached to any arrangement (also used with fake upload to check for 2 sng attachments)
+        """
+        sample_1_id = 408
+        sample_2_id = 2034
+
+        tags_by_name = prepare_required_song_tags(api=self.api)
+
+        song1 = self.api.get_songs(song_id=sample_1_id)[0]
+        song2 = self.api.get_songs(song_id=sample_2_id)[0]
+
+        # Check first song
+        apply_ct_song_sng_count_qs_tag(
+            api=self.api, song=song1, tags_by_name=tags_by_name
+        )
+        tags1 = self.api.get_song_tags(song_id=sample_1_id)
+        self.assertIn(str(tags_by_name["QS: missing sng"]), tags1)
+        self.assertNotIn(str(tags_by_name["QS: too many sng"]), tags1)
+
+        # Check 2nd song
+        apply_ct_song_sng_count_qs_tag(
+            api=self.api, song=song2, tags_by_name=tags_by_name
+        )
+        tags2 = self.api.get_song_tags(song_id=sample_2_id)
+        self.assertNotIn(str(tags_by_name["QS: missing sng"]), tags2)
+        self.assertNotIn(str(tags_by_name["QS: too many sng"]), tags2)
+
+        # 3. modify 2nd song to include another fake sng attachement and validate
+        dummy_filename = "QS_DELETE_ME_2_FILES.sng"
+        arrangement_id_2 = song2["arrangements"][0]["id"]
+        self.api.file_upload(
+            source_filepath="testData/Test/sample_no_ct.sng",
+            domain_type="song_arrangement",
+            domain_identifier=arrangement_id_2,
+            custom_file_name=dummy_filename,
+        )
+        song3 = self.api.get_songs(song_id=sample_2_id)[0]
+
+        apply_ct_song_sng_count_qs_tag(
+            api=self.api, song=song3, tags_by_name=tags_by_name
+        )
+        # get_song_tags uses cached version either refresh of cache or 10s cooldown required to see updated values
+        time.sleep(10)
+
+        tags3 = self.api.get_song_tags(song_id=sample_2_id)
+        self.assertNotIn(str(tags_by_name["QS: missing sng"]), tags3)
+        self.assertIn(str(tags_by_name["QS: too many sng"]), tags3)
+
+        # song sng qs tags from samples
+        self.api.file_delete(
+            domain_type="song_arrangement",
+            domain_identifier=arrangement_id_2,
+            filename_for_selective_delete=dummy_filename,
+        )
+        for song_tag in [
+            tags_by_name["QS: missing sng"],
+            tags_by_name["QS: too many sng"],
+        ]:
+            self.api.remove_song_tag(song_id=sample_1_id, song_tag_id=song_tag)
+            self.api.remove_song_tag(song_id=sample_2_id, song_tag_id=song_tag)
+
+    def test_prepare_required_song_tags(self) -> None:
+        """Checks that prepare song tags returns respective tags in list.
+
+        Creation of non existant tags is not validated because tags are in use!
+        """
+        tags_by_name = prepare_required_song_tags(api=self.api)
+        self.assertIn("QS: missing sng", tags_by_name)
+        self.assertIn("QS: too many sng", tags_by_name)
