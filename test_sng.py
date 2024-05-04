@@ -145,7 +145,7 @@ class TestSNG(unittest.TestCase):
         self.assertTrue(test_song.is_psalm())
 
         test_song = SngFile(
-            "./testData/Psalm/709 Herr, sei nicht ferne.sng",
+            "./testData/EG Psalmen & Sonstiges/709 Herr, sei nicht ferne.sng",
             songbook_prefix="EG",
         )
         self.assertTrue(test_song.is_psalm())
@@ -263,7 +263,9 @@ class TestSNG(unittest.TestCase):
 
     def test_header_illegal_removed(self) -> None:
         """Tests that all illegal headers are removed."""
-        song = SngFile("./testData/Psalm/709 Herr, sei nicht ferne.sng", "EG")
+        song = SngFile(
+            "./testData/EG Psalmen & Sonstiges/709 Herr, sei nicht ferne.sng", "EG"
+        )
         self.assertIn("FontSize", song.header.keys())
         song.validate_headers_illegal_removed(fix=False)
         self.assertIn("FontSize", song.header.keys())
@@ -324,16 +326,18 @@ class TestSNG(unittest.TestCase):
     def test_header_songbook_special(self) -> None:
         """Test checking special cases discovered in logging while programming."""
         # The file should already have correct ChurchSongID but did raise an error on logging
-        song = SngFile("./testData/Psalm/752 Psalm 134.sng", "EG")
-        self.assertEqual("EG 752 - Psalm 134", song.header["ChurchSongID"])
-        self.assertEqual("EG 752 - Psalm 134", song.header["Songbook"])
+        song = SngFile(
+            "./testData/EG Psalmen & Sonstiges/709 Herr, sei nicht ferne.sng", "EG"
+        )
+        self.assertEqual("EG 709 - Psalm 22 I", song.header["ChurchSongID"])
+        self.assertEqual("EG 709 - Psalm 22 I", song.header["Songbook"])
 
         with self.assertNoLogs(level="WARNING"):
             song.validate_header_songbook(fix=False)
             song.validate_header_songbook(fix=True)
 
-        self.assertEqual("EG 752 - Psalm 134", song.header["ChurchSongID"])
-        self.assertEqual("EG 752 - Psalm 134", song.header["Songbook"])
+        self.assertEqual("EG 709 - Psalm 22 I", song.header["ChurchSongID"])
+        self.assertEqual("EG 709 - Psalm 22 I", song.header["Songbook"])
 
     def test_header_church_song_id_caps(self) -> None:
         """Test that checks for incorrect capitalization in ChurchSongID and it's autocorrect.
@@ -516,7 +520,9 @@ class TestSNG(unittest.TestCase):
 
         e.g. 709 Herr, sei nicht ferne.sng
         """
-        song = SngFile("./testData/Psalm/709 Herr, sei nicht ferne.sng", "EG")
+        song = SngFile(
+            "./testData/EG Psalmen & Sonstiges/709 Herr, sei nicht ferne.sng", "EG"
+        )
         self.assertEqual(song.header["Songbook"], "EG 709 - Psalm 22 I")
 
         songbook_regex = r"^(Wwdlp \d{3})|(FJ([1-5])\/\d{3})|(EG \d{3}(.\d{1,2})?(( - Psalm )\d{1,3})?( .{1,3})?)$"
