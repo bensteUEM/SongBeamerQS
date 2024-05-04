@@ -16,17 +16,14 @@ import SNG_DEFAULTS
 from main import (
     apply_ct_song_sng_count_qs_tag,
     check_ct_song_categories_exist_as_folder,
-    clean_all_songs,
     download_missing_online_songs,
     generate_songbook_column,
     get_ct_songs_as_df,
     parse_sng_from_directory,
     prepare_required_song_tags,
-    read_baiersbronn_songs_to_df,
     read_test_songs_to_df,
     upload_local_songs_by_id,
     upload_new_local_songs_and_generate_ct_id,
-    validate_ct_songs_exist_locally_by_name_and_category,
     write_df_to_file,
 )
 from SngFile import SngFile
@@ -188,47 +185,18 @@ class TestSNG(unittest.TestCase):
         expected = "77u/RW50c3ByaWNodCBuaWNodCBkZXIgVmVyc2lvbiBhdXMgZGVtIEVHIQ=="
         self.assertEqual(expected, song.header["Comments"])
 
-    def test_missing_song(self) -> None:
-        """Checking why Hintergrundmusik fails.
-
-        ELKW1610.krz.tools specific test case
-        requires song id 204 to be present
-        """
-        sample_song_id = 204
-        songs_temp = parse_sng_from_directory(
-            directory=SNG_DEFAULTS.KnownDirectory + "Hintergrundmusik",
-            songbook_prefix="",
-            filenames=["The Knowledge of Good and Evil.sng"],
-        )
-        songs_temp = read_baiersbronn_songs_to_df()
-        df_ct = get_ct_songs_as_df(self.api)
-        df_ct = df_ct[df_ct["id"] == sample_song_id]
-
-        df_sng = pd.DataFrame(songs_temp, columns=["SngFile"])
-        for index, value in df_sng["SngFile"].items():
-            df_sng.loc[(index, "filename")] = value.filename
-            df_sng.loc[(index, "path")] = value.path
-
-        compare = validate_ct_songs_exist_locally_by_name_and_category(df_ct, df_sng)
-        self.assertEqual(compare["_merge"][0], "both")
-
-        clean_all_songs(df_sng)
-        compare = validate_ct_songs_exist_locally_by_name_and_category(df_ct, df_sng)
-        self.assertEqual(compare["_merge"][0], "both")
-
     def test_emptied_song(self) -> None:
-        """Test that checks on FJ 3 - 238.
+        """Test that a song which would have been emptied on parsing because of encoding issues is not empty.
 
         because it was emptied during execution even though backup did have content
         Issue was encoding UTF8 - needed to save song again to correct encoding - added ERROR logging for song parsing
         """
         songs_temp = parse_sng_from_directory(
-            directory=SNG_DEFAULTS.KnownDirectory + "Feiert Jesus 3",
-            songbook_prefix="FJ3",
-            filenames=["238 Der Herr segne dich.sng"],
+            directory="testData/ISO-UTF8",
+            songbook_prefix="TEST",
+            filenames=["Herr du wollest uns bereiten_iso.sng"],
         )
-        self.assertIn("Refrain", songs_temp[0].content.keys())
-        songs_temp = read_baiersbronn_songs_to_df()
+        self.assertIn("Unknown", songs_temp[0].content.keys())
 
     def test_add_id_to_local_song_if_available_in_ct(self) -> None:
         """This should verify that add_id_to_local_song_if_available_in_ct is working as expected."""
