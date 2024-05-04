@@ -180,11 +180,15 @@ def generate_title_column(df_to_change: pd.DataFrame) -> None:
             logging.info("Song without a Title in Header: %s", value.filename)
 
 
-def generate_songbook_column(df_to_change: pd.DataFrame) -> None:
+def generate_songbook_column(df_to_change: pd.DataFrame) -> pd.DataFrame:
     """Method used to generate the 'Songbook' and 'ChurchSongID' columns on all items in a df based on the headers.
+
+    Currently works inplace, but also returns the df reference
 
     Params:
         df_to_change: Dataframe which should me used
+    Returns:
+        df with Songbook and ChurchSongID columns
     """
     df_to_change["Songbook"] = df_to_change["SngFile"].apply(
         lambda x: x.header.get("Songbook", None)
@@ -192,6 +196,7 @@ def generate_songbook_column(df_to_change: pd.DataFrame) -> None:
     df_to_change["ChurchSongID"] = df_to_change["SngFile"].apply(
         lambda x: x.header.get("ChurchSongID", None)
     )
+    return df_to_change
 
 
 def generate_background_image_column(df_to_change: pd.DataFrame) -> None:

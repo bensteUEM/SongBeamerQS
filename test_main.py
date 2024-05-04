@@ -106,8 +106,8 @@ class TestSNG(unittest.TestCase):
         generate_songbook_column(eg_songs_df)
 
         # following variables are dependant on the number of files included in respective folders
-        number_of_files_in_eg = 10
-        number_of_files_with_eg_songbook_pre_fix = number_of_files_in_eg - 1 - 3
+        number_of_files_in_eg = 11
+        number_of_files_with_eg_songbook_pre_fix = number_of_files_in_eg - 2 - 3
         # eg songs will be fixed, psalm range not ; EG764 is Sonstige, not Psalm
         number_of_files_with_eg_songbook_post_fix = number_of_files_in_eg - 2
 
@@ -127,36 +127,50 @@ class TestSNG(unittest.TestCase):
         )
 
     def test_validate_songbook_special_cases(self) -> None:
-        """Checks the application of the validate_header_songbook method in main.py with specific problematic examples."""
+        """Checks the application of the validate_header_songbook method in main.py with specific problematic examples.
+
+        1. regular file with umlaut issues- filename is read
+        2. invalid songbook entry
+        3. Psalm songbook that should be detected as valid
+
+        """
+        # 1. (see docstring explanation)
         special_files = ["709 Herr, sei nicht ferne.sng"]
         song = parse_sng_from_directory(
-            directory="./testData/Psalm", songbook_prefix="EG", filenames=special_files
+            directory="./testData/EG Psalmen & Sonstiges",
+            songbook_prefix="EG",
+            filenames=special_files,
         )[0]
         self.assertEqual(special_files[0], song.filename)
 
-        # Special Case for Regex Testing
-        special_files = ["548 Kreuz auf das ich schaue.sng"]
+        # 1. (see docstring explanation)
+        # Special Case for Regex Testing - sample should have invalid songbook entry at first and valid EG entry later
+        special_files = ["001 Macht Hoch die Tuer_invalid_songbook.sng"]
         song = parse_sng_from_directory(
-            directory="./testData", songbook_prefix="EG", filenames=special_files
+            directory="./testData/EG Lieder",
+            songbook_prefix="EG",
+            filenames=special_files,
         )[0]
         song_df = pd.DataFrame([song], columns=["SngFile"])
         self.assertEqual(
-            "Wwdlp 170 & EG 548", song_df["SngFile"].iloc[0].header["Songbook"]
+            "WWDLP 999 and EG 999", song_df["SngFile"].iloc[0].header["Songbook"]
         )
         result = song_df["SngFile"].apply(lambda x: x.validate_header_songbook(False))
         self.assertEqual(result.sum(), 0, "Should have no valid entries")
         result = song_df["SngFile"].apply(lambda x: x.validate_header_songbook(True))
         self.assertEqual(result.sum(), 1, "Should have one valid entry")
         result = generate_songbook_column(song_df)
-        self.assertEqual("EG 548", song_df["SngFile"].iloc[0].header["Songbook"])
+        self.assertEqual("EG 001", song_df["SngFile"].iloc[0].header["Songbook"])
         self.assertEqual(
             len(song_df["Songbook"]), song_df["Songbook"].str.startswith("EG").sum()
         )
 
-        # Special Case for Regex Testing - Songbook=EG 709 - Psalm 22 I -> is marked as autocorrect ...
+        # 3. Special Case for Regex Testing - Songbook=EG 709 - Psalm 22 I -> is marked as autocorrect ...
         special_files = ["709 Herr, sei nicht ferne.sng"]
         song = parse_sng_from_directory(
-            directory="./testData/Psalm", songbook_prefix="EG", filenames=special_files
+            directory="./testData/EG Psalmen & Sonstiges",
+            songbook_prefix="EG",
+            filenames=special_files,
         )[0]
         song_df = pd.DataFrame([song], columns=["SngFile"])
         self.assertEqual(
