@@ -103,10 +103,10 @@ class TestSNG(unittest.TestCase):
         generate_songbook_column(eg_songs_df)
 
         # following variables are dependant on the number of files included in respective folders
-        number_of_files_in_eg = 11
-        number_of_files_with_eg_songbook_pre_fix = number_of_files_in_eg - 2 - 3
+        number_of_files_in_eg = 5
+        number_of_files_with_eg_songbook_pre_fix = 2
         # eg songs will be fixed, psalm range not ; EG764 is Sonstige, not Psalm
-        number_of_files_with_eg_songbook_post_fix = number_of_files_in_eg - 2
+        number_of_files_with_eg_songbook_post_fix = 4
 
         self.assertEqual(len(eg_songs_df), number_of_files_in_eg)
         self.assertEqual(
@@ -192,11 +192,11 @@ class TestSNG(unittest.TestCase):
         Issue was encoding UTF8 - needed to save song again to correct encoding - added ERROR logging for song parsing
         """
         songs_temp = parse_sng_from_directory(
-            directory="testData/ISO-UTF8",
+            directory="testData/EG Psalmen & Sonstiges",
             songbook_prefix="TEST",
-            filenames=["Herr du wollest uns bereiten_iso.sng"],
+            filenames=["709 Herr, sei nicht ferne.sng"],
         )
-        self.assertIn("Unknown", songs_temp[0].content.keys())
+        self.assertIn("Verse", songs_temp[0].content.keys())
 
     def test_add_id_to_local_song_if_available_in_ct(self) -> None:
         """This should verify that add_id_to_local_song_if_available_in_ct is working as expected."""
@@ -276,9 +276,9 @@ class TestSNG(unittest.TestCase):
 
         copyfile(
             test_data_dir / "sample_no_ct.sng",
-            test_data_dir / "sample.sng",
+            test_data_dir / "sample_no_ct.sng_bak",
         )
-        song = SngFile(test_data_dir / "sample.sng")
+        song = SngFile(test_data_dir / "sample_no_ct.sng")
 
         df_song = pd.DataFrame([song], columns=["SngFile"])
         for index, value in df_song["SngFile"].items():
@@ -302,10 +302,10 @@ class TestSNG(unittest.TestCase):
             if arrangement["isDefault"]
         )
 
-        Path(test_data_dir / "sample.sng").rename(test_data_dir / "expected.sng")
+        Path(test_data_dir / "sample_no_ct.sng").rename(test_data_dir / "expected.sng")
 
         self.api.file_download(
-            filename="sample.sng",
+            filename="sample_no_ct.sng",
             domain_type="song_arrangement",
             domain_identifier=arrangement_id,
             target_path=str(test_data_dir),
@@ -314,15 +314,17 @@ class TestSNG(unittest.TestCase):
         self.assertTrue(
             filecmp.cmp(
                 test_data_dir / "expected.sng",
-                test_data_dir / "sample.sng",
+                test_data_dir / "sample_no_ct.sng",
             )
         )
 
         # 6. cleanup
         self.api.delete_song(song_id=song_id)
 
-        Path(test_data_dir / "sample.sng").unlink()
         Path(test_data_dir / "expected.sng").unlink()
+        Path(test_data_dir / "sample_no_ct.sng_bak").rename(
+            test_data_dir / "sample_no_ct.sng"
+        )
 
     def test_upload_local_songs_by_id(self) -> None:
         """This should verify that upload_local_songs_by_id is working as expected.
@@ -401,10 +403,10 @@ class TestSNG(unittest.TestCase):
             filename_for_selective_delete="sample_no_ct_attachement.sng",
         )
 
-        Path(test_data_dir / "sample.sng_bak").rename(test_data_dir / "sample.sng")
         Path(test_data_dir / "sample_no_ct_attachement.sng_bak").rename(
             test_data_dir / "sample_no_ct_attachement.sng"
         )
+        Path(test_data_dir / "sample.sng_bak").rename(test_data_dir / "sample.sng")
 
     def test_write_df_to_file(self) -> None:
         """Test method checking functionality of write_df_to_file.
