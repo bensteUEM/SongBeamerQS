@@ -181,9 +181,9 @@ class TestSNG(unittest.TestCase):
 
     def test_validate_comment_special_case(self) -> None:
         """Test method which validates one specific file which had differences while parsing."""
-        special_files = ["Psalm 104_Stierlen.sng"]
+        special_files = ["sample.sng"]
         song = parse_sng_from_directory(
-            directory="./testData", songbook_prefix="", filenames=special_files
+            directory="./testData/Test", songbook_prefix="", filenames=special_files
         )[0]
         expected = "77u/RW50c3ByaWNodCBuaWNodCBkZXIgVmVyc2lvbiBhdXMgZGVtIEVHIQ=="
         self.assertEqual(expected, song.header["Comments"])
