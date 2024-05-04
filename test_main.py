@@ -413,30 +413,43 @@ class TestSNG(unittest.TestCase):
         1. sample file as dataframe and writing contents without change
         2. sample file as dataframe and writing contents to custom target dir
         """
-        path = Path("testData/EG Lieder/")
-        filename = "001 Macht Hoch die Tuer.sng"
-        sample_path = path / filename
-        song = SngFile(sample_path)
+        sample_dir = Path("testData/Test/")
+        sample_filename = "sample.sng"
 
-        sample_df = pd.DataFrame({"SngFile": [song]})
+        copyfile(
+            sample_dir / sample_filename,
+            sample_dir / (sample_filename + "_bak"),
+        )
+
+        sample_filepath = sample_dir / sample_filename
+        sample_song = SngFile(sample_filepath)
+
+        sample_df = pd.DataFrame({"SngFile": [sample_song]})
 
         # 1 same DIR
         write_df_to_file(sample_df)
-        modification_time = sample_path.stat().st_mtime
+        modification_time = sample_filepath.stat().st_mtime
         current_time = time.time()
         time_difference = current_time - modification_time
 
         self.assertGreater(2, time_difference)
+        # Cleanup
+        Path(sample_dir / (sample_filename + "_bak")).rename(
+            sample_dir / sample_filename
+        )
 
         # 2 other target DIR
-        new_output_parent_path = Path("test_output")
-        write_df_to_file(sample_df, target_dir=new_output_parent_path)
-        expected_output_path = new_output_parent_path / song.path.name / song.filename
-        modification_time = expected_output_path.stat().st_mtime
+        sample_dir2 = Path("test_output")
+        write_df_to_file(sample_df, target_dir=sample_dir2)
+
+        expected_filepath = sample_dir2 / sample_song.path.name / sample_song.filename
+        modification_time = expected_filepath.stat().st_mtime
         current_time = time.time()
         time_difference = current_time - modification_time
 
         self.assertGreater(2, time_difference)
+        # Cleanup
+        expected_filepath.unlink()
 
     def test_apply_ct_song_sng_count_qs_tag(self) -> None:
         """Test that checks qs sng tags are correctly applied.
