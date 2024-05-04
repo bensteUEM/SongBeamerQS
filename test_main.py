@@ -210,22 +210,27 @@ class TestSNG(unittest.TestCase):
     def test_download_missing_online_songs(self) -> None:
         """ELKW1610.krz.tools specific test case for the named function (using 2 specific song IDs).
 
-        * deletes EG 002 if exists locally
-        * Reads one local sng file (EG 001)
-        * tries to detect that EG002 from CT is missing
-        * downloads the file
-        * checks if download success
-        * deletes file
+        1. define sample data and deletes EG 002 if exists locally
+        2. Reads local sng files from known directories - should not include sample2
+        3. tries to detect that EG002 from CT is missing (by comparing to CT data for sample 1 and 2 only)
+        4. downloads all missing files
+        5. checks that file for sample_2 now exists
+        6. cleanup - deletes file
         """
+        # 1. prepare
         songs_temp = []
         dirname = "testData/"
         dirprefix = "TEST"
 
-        test2name = "002 Er ist die rechte Freudensonn.sng"
-        test2path = dirname + "/EG Lieder/" + test2name
+        sample1_id = 762
+
+        sample2_id = 1113
+        sample2_name = "002 Er ist die rechte Freudensonn.sng"
+        test2path = dirname + "/EG Lieder/" + sample2_name
 
         Path.unlink(test2path, missing_ok=True)
 
+        # 2. read all songs from known folders in testData
         for key, value in SNG_DEFAULTS.KnownFolderWithPrefix.items():
             dirname = "./testData/" + key
             if not Path(dirname).exists():
@@ -240,17 +245,21 @@ class TestSNG(unittest.TestCase):
             df_sng_test.loc[(index, "filename")] = value.filename
             df_sng_test.loc[(index, "path")] = value.path
 
+        # 3. read specific sample ids from CT
         ct_songs = [
-            self.api.get_songs(song_id=762)[0],
-            self.api.get_songs(song_id=1113)[0],
+            self.api.get_songs(song_id=sample1_id)[0],
+            self.api.get_songs(song_id=sample2_id)[0],
         ]
         df_ct_test = pd.json_normalize(ct_songs)
 
+        # 4. start download of mising songs
         result = download_missing_online_songs(df_sng_test, df_ct_test, self.api)
         self.assertTrue(result)
 
-        exists = Path(test2path).exists()
-        self.assertTrue(exists)
+        # 5. check if download successful
+        self.assertTrue(Path(test2path).exists())
+
+        # 6. Cleanup
         Path(test2path).unlink()
 
     def test_upload_new_local_songs_and_generate_ct_id(self) -> None:
