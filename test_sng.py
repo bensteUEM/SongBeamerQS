@@ -184,41 +184,44 @@ class TestSNG(unittest.TestCase):
         Because of datatype Verse Order is checked first
         Rest of headers are compared to dict
         """
-        song = SngFile("./testData/022 Die Liebe des Retters.sng")
+        test_dir = Path("./testData/EG Lieder")
+        test_file_name = "001 Macht Hoch die Tuer.sng"
+        song = SngFile(test_dir / test_file_name)
 
-        target_verse_order = (
-            "Intro,Strophe 1,Strophe 2,Refrain 1,Refrain 1,Strophe 2,Refrain 1,Refrain 1,"
-            "Bridge,Bridge,Bridge,Bridge,Intro,Refrain 1,Refrain 1,Refrain 1,Refrain 1,STOP"
-        )
-        target_verse_order = target_verse_order.split(",")
-
-        self.assertEqual(song.header["VerseOrder"], target_verse_order)
+        expected_verse_order = (
+            "Intro,Strophe 1,Strophe 2,Strophe 3,Strophe 4,Strophe 5,STOP"
+        ).split(",")
+        self.assertEqual(song.header["VerseOrder"], expected_verse_order)
 
         song.header.pop("VerseOrder")
-        target = {
+        expected_header = {
             "LangCount": "1",
-            "Title": "Die Liebe des Retters",
-            "Author": "Mia Friesen, Stefan Schöpfle",
-            "Melody": "Mia Friesen, Stefan Schöpfle",
-            "Editor": "TEMP",
-            "CCLI": "6020110",
-            "(c)": "2010 Outbreakband Musik (Verwaltet von Gerth Medien)",
+            "Title": "Macht Hoch die Tür",
+            "Author": "Georg Weissel (1623) 1642",
+            "Melody": "Halle 1704",
+            "Editor": "SongBeamer 5.17a",
+            "CCLI": "5588206",
+            "(c)": "Public Domain",
             "Version": "3",
             "BackgroundImage": r"Menschen\himmel-und-erde.jpg",
-            "Songbook": "FJ5/022",
-            "ChurchSongID": "FJ5/022",
-            "id": "149",
+            "Songbook": "EG 2",
+            # "ChurchSongID": "", # not part of sample file
+            "id": "762",
             "Comments": "77u/Rm9saWVucmVpaGVuZm9sZ2UgbmFjaCBvZmZpemllbGxlciBBdWZuYWhtZSwgaW4gQmFpZXJzYnJvb"
             "m4gZ2dmLiBrw7xyemVyIHVuZCBtaXQgTXVzaWt0ZWFtIGFienVzdGltbWVu",
+            "Categories": "Advent",  # usually ignored but present in sample
         }
-        self.assertDictEqual(song.header, target)
+        self.assertDictEqual(song.header, expected_header)
 
     def test_header_space(self) -> None:
         """Test that checks that header spaces at beginning and end are omitted while others still exists and might invalidate headers params."""
-        song = SngFile("./testData/022 Die Liebe des Retters_space_header.sng")
+        test_dir = Path("./testData/Test")
+        test_file_name = "sample_missing_headers.sng"
+        song = SngFile(test_dir / test_file_name)
+
         self.assertIn("LangCount", song.header)
         self.assertEqual("1", song.header["LangCount"])
-        self.assertIn("Title", song.header)
+        self.assertIn("VerseOrder", song.header)
         self.assertIn("Author", song.header)
         self.assertNotIn("CCLI", song.header)
 
