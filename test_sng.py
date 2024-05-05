@@ -763,7 +763,9 @@ class TestSNG(unittest.TestCase):
 
     def test_content_intro_slide(self) -> None:
         """Checks that sample file has no Intro in Verse Order or Blocks and repaired file contains both."""
-        song = SngFile("./testData/079 Höher_reformat.sng")
+        test_dir = Path("./testData/Test")
+        test_filename = "sample.sng"
+        song = SngFile(test_dir / test_filename)
         self.assertNotIn("Intro", song.header["VerseOrder"])
         self.assertNotIn("Intro", song.content.keys())
         song.fix_intro_slide()
