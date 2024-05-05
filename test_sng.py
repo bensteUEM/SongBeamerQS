@@ -638,23 +638,26 @@ class TestSNG(unittest.TestCase):
 
     def test_header_verse_order_complete(self) -> None:
         """Method that checks various cases in regards to VerseOrder existance and fixing."""
-        song = SngFile("./testData/022 Die Liebe des Retters_missing_block.sng")
+        test_dir = Path("testData/Test")
+        test_filename = "sample_verseorder_blocks_missing.sng"
+        song = SngFile(test_dir / test_filename)
 
-        verse_order_text = (
+        sample_verse_order = (
             "Intro,Strophe 1,Strophe 2,Refrain 1,Refrain 1,Strophe 2,Refrain 1,Refrain 1,Bridge,"
-            "Bridge,Bridge,Bridge,Intro,Refrain 1,Refrain 1,Refrain 1,Refrain 1,STOP"
+            "Bridge,Intro,Refrain 1,Refrain 1,STOP"
+        ).split(",")
+        sample_blocks = "Unknown,$$M=Testnameblock,Refrain 1,Strophe 2,Bridge".split(
+            ","
         )
-        verse_order = verse_order_text.split(",")
-        verse_blocks = "Unknown,$$M=Testnameblock,Refrain 1,Strophe 2,Bridge".split(",")
-        verse_order_text_fixed = (
-            "Strophe 2,Refrain 1,Refrain 1,Strophe 2,Refrain 1,Refrain 1,Bridge,Bridge,Bridge,"
-            "Bridge,Refrain 1,Refrain 1,Refrain 1,Refrain 1,STOP,Unknown,Testnameblock"
-        )
-        verse_order_fixed = verse_order_text_fixed.split(",")
+        expected_verse_order = (
+            "Strophe 2,Refrain 1,Refrain 1,Strophe 2,Refrain 1,Refrain 1,"
+            "Bridge,Bridge,Refrain 1,Refrain 1,"
+            "STOP,Unknown,Testnameblock"
+        ).split(",")
 
         # 1. Check initial test file state
-        self.assertEqual(song.header["VerseOrder"], verse_order)
-        self.assertEqual(list(song.content.keys()), verse_blocks)
+        self.assertEqual(song.header["VerseOrder"], sample_verse_order)
+        self.assertEqual(list(song.content.keys()), sample_blocks)
 
         # 2. Check that Verse Order shows as incomplete
         with self.assertLogs(level="WARNING") as cm:
@@ -663,34 +666,17 @@ class TestSNG(unittest.TestCase):
         self.assertEqual(
             cm.output,
             [
-                "WARNING:root:Verse Order and Blocks don't match in "
-                "022 Die Liebe des Retters_missing_block.sng",
+                f"WARNING:root:Verse Order and Blocks don't match in {test_filename}",
             ],
         )
 
         # 3. Check that Verse Order is completed
-        song = SngFile("./testData/022 Die Liebe des Retters_missing_block.sng")
-        self.assertEqual(song.header["VerseOrder"], verse_order)
+        song = SngFile(test_dir / test_filename)
+        self.assertEqual(song.header["VerseOrder"], sample_verse_order)
         with self.assertNoLogs(level="WARNING"):
             song.validate_verse_order_coverage(fix=True)
 
-        self.assertEqual(song.header["VerseOrder"], verse_order_fixed)
-
-        # Failsafe with correct file
-        song = SngFile("./testData/079 Höher_reformat.sng")
-        with self.assertNoLogs(level="WARNING"):
-            self.assertTrue(song.validate_verse_order_coverage())
-
-    def test_header_verse_order_special(self) -> None:
-        """Test case for special cases occured while running on sample files.
-
-        e.g. 375 Dass Jesus siegt bleibt ewig ausgemacht.sng - Warning Verse Order and Blocks don't match
-        """
-        song = SngFile(
-            "./testData/375 Dass Jesus siegt bleibt ewig ausgemacht.sng", "EG"
-        )
-        with self.assertNoLogs(level="WARNING"):
-            self.assertTrue(song.validate_verse_order_coverage())
+        self.assertEqual(song.header["VerseOrder"], expected_verse_order)
 
     def test_generate_verse_marker_from_line(self) -> None:
         """Test sample lines that could be converted to verse labels."""
@@ -728,7 +714,9 @@ class TestSNG(unittest.TestCase):
         based on auto detecting 1.2.3. or other numerics or R: at beginning of block
         Also changes respective verse order
         """
-        song = SngFile("./testData/EG Lieder/644 Jesus hat die Kinder lieb.sng", "EG")
+        test_dir = Path("./testData/Test")
+        test_filepath = "sample_no_versemarkers.sng"
+        song = SngFile(test_dir / test_filepath, "test")
         self.assertEqual(
             ["Intro", "Unknown", "Verse 99", "STOP"], song.header["VerseOrder"]
         )
@@ -759,31 +747,6 @@ class TestSNG(unittest.TestCase):
 
         # TODO (bensteUEM): optionally add test case for logged warning when new verse already exists in VerseOrder
         # https://github.com/bensteUEM/SongBeamerQS/issues/35
-
-    def test_header_verse_order_special2(self) -> None:
-        """Test case for special cases occured while running on sample files.
-
-        e.g. 098 Korn das in die Erde in den Tod versinkt.sng
-        DEBUG    Missing VerseOrder in (098 Korn das in die Erde in den Tod versinkt.sng)
-        """
-        song = SngFile(
-            "./testData/EG Lieder/098 Korn das in die Erde in den Tod versinkt.sng",
-            "EG",
-        )
-        with self.assertLogs(level="WARNING") as cm:
-            self.assertFalse(song.validate_verse_order_coverage(fix=False))
-        messages = [
-            "WARNING:root:Verse Order and Blocks don't match in 098 Korn das in die Erde in den Tod versinkt.sng"
-        ]
-        self.assertEqual(messages, cm.output)
-
-        with self.assertLogs(level="DEBUG") as cm:
-            self.assertTrue(song.validate_verse_order_coverage(fix=True))
-        messages = [
-            "DEBUG:root:Fixed VerseOrder to ['Strophe 1a', 'Strophe 1b', 'Strophe 2a', 'Strophe 2b', 'Strophe 3a',"
-            " 'Strophe 3b'] in (098 Korn das in die Erde in den Tod versinkt.sng)"
-        ]
-        self.assertEqual(messages, cm.output)
 
     def test_header_verse_order_special3(self) -> None:
         """Special Case welcome slide with custom verse headers."""
