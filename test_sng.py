@@ -371,11 +371,14 @@ class TestSNG(unittest.TestCase):
 
         Corrected Songbook 085 O Haupt voll Blut und Wunden.sng - used "ChurchSongId instead of ChurchSongID"
         """
-        song = SngFile("./testData/085 O Haupt voll Blut und Wunden.sng", "EG")
+        test_dir = Path("./testData/Test")
+        test_filename = "sample_churchsongid_caps.sng"
+        song = SngFile(test_dir / test_filename, "EG")
+
         self.assertNotIn("ChurchSongID", song.header.keys())
         song.fix_header_church_song_id_caps()
         self.assertNotIn("ChurchSongId", song.header.keys())
-        self.assertEqual(song.header["ChurchSongID"], "EG 085")
+        self.assertEqual(song.header["ChurchSongID"], "EG 000")
 
     def test_validate_header_background(self) -> None:
         """Test case for background images.
