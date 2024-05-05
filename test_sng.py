@@ -1,5 +1,6 @@
 """This module contains tests for most methods defined in SngFile.py."""
 
+import filecmp
 import logging
 import re
 import unittest
@@ -476,22 +477,20 @@ class TestSNG(unittest.TestCase):
 
     def test_file_write(self) -> None:
         """Functions which compares the original file to the one generated after parsing."""
-        song = SngFile("./testData/022 Die Liebe des Retters.sng")
-        song.write_file("_test")
+        test_dir = Path("./testData/Test")
+        test_filename = "sample.sng"
 
-        with Path("./testData/022 Die Liebe des Retters.sng").open(
-            encoding="utf-8"
-        ) as original_file:
-            original_file_list = list(original_file)
-        with Path("./testData/022 Die Liebe des Retters_test.sng").open(
-            encoding="utf-8"
-        ) as original_file:
-            new_file_list = list(original_file)
+        song = SngFile(test_dir / test_filename, "EG")
+        song.write_file(suffix="_test_file_write")
 
-        self.assertListEqual(
-            original_file_list,
-            new_file_list,
+        self.assertTrue(
+            filecmp.cmp(
+                test_dir / test_filename,
+                test_dir / (test_filename[:-4] + "_test_file_write.sng"),
+            )
         )
+
+        (test_dir / (test_filename[:-4] + "_test_file_write.sng")).unlink()
 
     def test_content(self) -> None:
         """Checks if all Markers from the Demo Set are detected.
