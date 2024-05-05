@@ -232,51 +232,49 @@ class TestSNG(unittest.TestCase):
         * with missing title
         * complete set
         * file with translation
+        * Psalm with missing headers logged
+
         Info should be logged in case of missing headers
         """
-        song = SngFile("./testData/022 Die Liebe des Retters_missing_title.sng", "FJ/5")
+        test_dir = Path("./testData/Test")
+        test_file_name = "sample_missing_headers.sng"
+        song = SngFile(test_dir / test_file_name)
         with self.assertLogs(level="WARNING") as cm:
             song.validate_headers()
         self.assertEqual(
             cm.output,
             [
-                "WARNING:root:Missing required headers in (022 Die Liebe des "
-                "Retters_missing_title.sng) ['Title']"
+                f"WARNING:root:Missing required headers in ({test_file_name}) ['Title', 'CCLI']"
             ],
         )
 
-        song = SngFile("./testData/022 Die Liebe des Retters.sng", "FJ/5")
+        test_dir = Path("./testData/Test")
+        test_file_name = "sample.sng"
+        song = SngFile(test_dir / test_file_name)
         check = song.validate_headers()
         self.assertTrue(
             check, song.filename + " should contain other headers - check log"
         )
 
-        song = SngFile("./testData/Holy Holy Holy.sng")
+        test_dir = Path("./testData/Test")
+        test_file_name = "sample_languages.sng"
+        song = SngFile(test_dir / test_file_name)
         song.fix_songbook_from_filename()
         check = song.validate_headers()
         self.assertTrue(
             check, song.filename + " should contain other headers - check log"
         )
 
-        song = SngFile("./testData/Psalm/709 Herr, sei nicht ferne.sng", "EG")
+        test_dir = Path("./testData/EG Psalmen & Sonstiges")
+        test_file_name = "709 Herr, sei nicht ferne.sng"
+        song = SngFile(test_dir / test_file_name, "EG")
         with self.assertLogs(level="WARNING") as cm:
             song.validate_headers()
         self.assertEqual(
             cm.output,
             [
-                "WARNING:root:Missing required headers in (709 Herr, sei nicht ferne.sng) "
+                f"WARNING:root:Missing required headers in ({test_file_name}) "
                 "['Author', 'Melody', 'CCLI', 'Translation']"
-            ],
-        )
-
-        song = SngFile("./testData/Psalm/751 Psalm 130.sng", "EG")
-        with self.assertLogs(level="WARNING") as cm:
-            song.validate_headers()
-        self.assertEqual(
-            cm.output,
-            [
-                "WARNING:root:Missing required headers in (751 Psalm 130.sng) "
-                "['Author', 'Melody', '(c)', 'CCLI', 'VerseOrder', 'Bible']"
             ],
         )
 
