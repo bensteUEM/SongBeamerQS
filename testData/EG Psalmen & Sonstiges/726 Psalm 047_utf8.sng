@@ -5,8 +5,8 @@
 #BackgroundImage=Israel\Jerusalem Skyline Photo.bmp
 #Bible=Psalm 46
 ---
-Schlagt froh in die Hände, alle Völker,
-und jauchzet Gott mit fröhlichem Schall!
+This Psalm should be missing a ChurchSongID
+it is used in test_header_eg_psalm_quality_checks
 Gott fährt auf unter Jauchzen,
 der Herr beim Hall der Posaune.
 ---

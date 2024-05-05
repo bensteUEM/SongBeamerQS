@@ -552,7 +552,9 @@ class TestSNG(unittest.TestCase):
     def test_header_eg_psalm_quality_checks(self) -> None:
         """Test that checks for auto warning on correction of Psalms in EG."""
         # Test Warning for Psalms
-        song = SngFile("testData/Psalm/726 Psalm 047_iso-8859-1.sng", "EG")
+        test_dir = Path("testData/EG Psalmen & Sonstiges")
+        test_filename = "726 Psalm 047_utf8.sng"
+        song = SngFile(test_dir / test_filename, "EG")
         self.assertNotIn("ChurchSongID", song.header.keys())
         with self.assertLogs(level=logging.INFO) as cm:
             song.fix_songbook_from_filename()
@@ -560,13 +562,10 @@ class TestSNG(unittest.TestCase):
         self.assertEqual(
             cm.output,
             [
-                'INFO:root:Psalm "726 Psalm 047_iso-8859-1.sng"'
+                f'INFO:root:Psalm "{test_filename}"'
                 " can not be auto corrected - please adjust manually ( , )"
             ],
         )
-
-        song = SngFile("testData/Psalm/726 Psalm 047_iso-8859-1.sng", "EG")
-        self.assertNotIn("ChurchSongID", song.header.keys())
 
         # TODO (bensteUEM): Add test for language marker validation in EG psalms
         # https://github.com/bensteUEM/SongBeamerQS/issues/36
@@ -574,6 +573,9 @@ class TestSNG(unittest.TestCase):
         # Test background image validation for EG Psalms
         self.assertFalse(song.validate_header_background(fix=False))
         self.assertTrue(song.validate_header_background(fix=True))
+        self.assertNotEqual(
+            song.header["BackgroundImage"], "Israel\\Jerusalem Skyline Photo.bmp"
+        )
 
     def test_content_reformat_slide_4_lines(self) -> None:
         """Tests specific test file to contain issues before fixing.
