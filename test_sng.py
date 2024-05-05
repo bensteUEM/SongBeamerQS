@@ -381,7 +381,7 @@ class TestSNG(unittest.TestCase):
         self.assertEqual(song.header["ChurchSongID"], "EG 000")
 
     def test_validate_header_background(self) -> None:
-        """Test case for background images.
+        """Test case for background images both with and without fix.
 
         1. regular with picture
         2. regular without picture
@@ -390,70 +390,89 @@ class TestSNG(unittest.TestCase):
         5. Psalm with correct picture
         """
         # Case 1. regular with picture
-        song = SngFile("./testData/085 O Haupt voll Blut und Wunden.sng", "EG")
+        test_dir = Path("./testData/Test")
+        test_filename = "sample.sng"
+        song = SngFile(test_dir / test_filename, "test")
+
         self.assertTrue(song.validate_header_background(fix=False))
 
-        # Case 2. regular without picture
+        song = SngFile(test_dir / test_filename, "test")
+        self.assertTrue(song.validate_header_background(fix=True))
 
-        song = SngFile("./testData/EG Lieder/001 Macht Hoch die Tuer.sng", "EG")
+        # Case 2. regular without picture
+        test_dir = Path("./testData/Test")
+        test_filename = "sample_languages.sng"
+        song = SngFile(test_dir / test_filename, "test")
+
         with self.assertLogs(level="DEBUG") as cm:
             self.assertFalse(song.validate_header_background(fix=False))
-        self.assertEqual(
-            cm.output, ["DEBUG:root:No Background in (001 Macht Hoch die Tuer.sng)"]
-        )
+        self.assertEqual(cm.output, [f"DEBUG:root:No Background in ({test_filename})"])
 
-        song = SngFile("./testData/EG Lieder/001 Macht Hoch die Tuer.sng", "EG")
+        song = SngFile(test_dir / test_filename, "test")
         with self.assertLogs(level="WARN") as cm:
             self.assertFalse(song.validate_header_background(fix=True))
         self.assertEqual(
             cm.output,
-            ["WARNING:root:Can't fix background for (001 Macht Hoch die Tuer.sng)"],
+            [f"WARNING:root:Can't fix background for ({test_filename})"],
         )
 
         # Case 3. Psalm with no picture
-        song = SngFile("./testData/Psalm/752 Psalm 134.sng", "EG")
+        test_dir = Path("./testData/EG Psalmen & Sonstiges")
+        test_filename = "752 psalm_background_no.sng"
+        song = SngFile(test_dir / test_filename, "EG")
+
         with self.assertLogs(level="DEBUG") as cm:
             self.assertFalse(song.validate_header_background(fix=False))
-        self.assertEqual(cm.output, ["DEBUG:root:No Background in (752 Psalm 134.sng)"])
+        self.assertEqual(cm.output, [f"DEBUG:root:No Background in ({test_filename})"])
 
-        song = SngFile("./testData/Psalm/752 Psalm 134.sng", "EG")
+        song = SngFile(test_dir / test_filename, "EG")
         with self.assertLogs(level="DEBUG") as cm:
             self.assertTrue(song.validate_header_background(fix=True))
         self.assertEqual(
-            cm.output, ["DEBUG:root:Fixing background for Psalm in (752 Psalm 134.sng)"]
+            cm.output, [f"DEBUG:root:Fixing background for Psalm in ({test_filename})"]
         )
 
         # Case 4. Psalm with wrong picture
-        song = SngFile("./testData/Psalm/751 Psalm 130.sng", "EG")
+        test_dir = Path("./testData/EG Psalmen & Sonstiges")
+        test_filename = "709 Herr, sei nicht ferne.sng"
+        song = SngFile(test_dir / test_filename, "EG")
+
         with self.assertLogs(level="DEBUG") as cm:
             self.assertFalse(song.validate_header_background(fix=False))
         self.assertEqual(
             cm.output,
             [
-                "DEBUG:root:Incorrect background for Psalm in (751 Psalm 130.sng) not fixed"
+                f"DEBUG:root:Incorrect background for Psalm in ({test_filename}) not fixed"
             ],
         )
 
-        song = SngFile("./testData/Psalm/751 Psalm 130.sng", "EG")
+        song = SngFile(test_dir / test_filename, "EG")
         with self.assertLogs(level="DEBUG") as cm:
             self.assertTrue(song.validate_header_background(fix=True))
         self.assertEqual(
-            cm.output, ["DEBUG:root:Fixing background for Psalm in (751 Psalm 130.sng)"]
+            cm.output, [f"DEBUG:root:Fixing background for Psalm in ({test_filename})"]
         )
 
         # Case 5. Psalm with correct picture
-        song = SngFile("./testData/Psalm/764 Test Ohne Versmarker.sng", "EG")
+        test_dir = Path("./testData/EG Psalmen & Sonstiges")
+        test_filename = "753 psalm_background_correct.sng"
+        song = SngFile(test_dir / test_filename, "EG")
+
         with self.assertNoLogs(level="DEBUG"):
             self.assertTrue(song.validate_header_background(fix=False))
 
-        song = SngFile("./testData/Psalm/764 Test Ohne Versmarker.sng", "EG")
+        song = SngFile(test_dir / test_filename, "EG")
         with self.assertNoLogs(level="DEBUG"):
             self.assertTrue(song.validate_header_background(fix=True))
 
     def test_content_empty_block(self) -> None:
         """Test case with a SNG file that contains and empty block because it ends with ---."""
-        song = SngFile("./testData/618 Wenn die Last der Welt.sng")
-        self.assertEqual(len(song.content), 4)
+        test_dir = Path("./testData/Test")
+        test_filename = "sample_churchsongid_caps.sng"
+        song = SngFile(test_dir / test_filename, "EG")
+
+        self.assertEqual(len(song.content), 1)
+        self.assertEqual(len(song.content["Unknown"]), 3)
 
     def test_file_write(self) -> None:
         """Functions which compares the original file to the one generated after parsing."""
