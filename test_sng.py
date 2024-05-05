@@ -584,7 +584,9 @@ class TestSNG(unittest.TestCase):
         * Tests result to contain known blocks, keep Pre Chorus with 2 lines, ans split Chorus to more slides
         * Tests that no single slide has more than 4 lines
         """
-        song = SngFile("./testData/079 Höher_reformat.sng")
+        test_dir = Path("testData/EG Lieder")
+        test_filename = "001 Macht Hoch die Tuer.sng"
+        song = SngFile(test_dir / test_filename)
 
         sample_number_of_lines = 4
 
@@ -597,9 +599,14 @@ class TestSNG(unittest.TestCase):
         )
 
         self.assertEqual(
-            len(song.content["Pre-Chorus"][1]), 2, "Pre Chorus before fixing"
+            len(song.content["Strophe 1"][1]), 4, "Strophe 1 first slide before fixing"
         )
-        self.assertEqual(len(song.content["Chorus 1"][1]), 6, "Chorus before fixing")
+        self.assertEqual(
+            len(song.content["Strophe 2"][1]), 16, "Strophe 2 first slide before fixing"
+        )
+        self.assertEqual(
+            len(song.content["Strophe 3"][1]), 1, "Strophe 3 first slide before fixing"
+        )
 
         self.assertFalse(
             song.validate_content_slides_number_of_lines(
@@ -617,16 +624,16 @@ class TestSNG(unittest.TestCase):
                 len(block[1][1]) <= sample_number_of_lines
                 for block in song.content.items()
             ),
-            "Some slides contain more than 4 lines",
+            f"Some slides contain more than {sample_number_of_lines} lines",
         )
         self.assertEqual(
-            len(song.content["Pre-Chorus"][1]), 2, "Pre Chorus after fixing"
+            len(song.content["Strophe 1"][1]), 4, "Strophe 1 first slide after fixing"
         )
         self.assertEqual(
-            len(song.content["Chorus 1"][1]), 4, "# Slides for Chorus after fixing"
+            len(song.content["Strophe 2"][1]), 4, "Strophe 2 first slide after fixing"
         )
         self.assertEqual(
-            len(song.content["Chorus 1"]), 3, "# Slides for Chorus after fixing"
+            len(song.content["Strophe 3"][1]), 1, "Strophe 3 first slide after fixing"
         )
 
     def test_header_verse_order_complete(self) -> None:
