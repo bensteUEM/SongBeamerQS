@@ -298,45 +298,55 @@ class TestSNG(unittest.TestCase):
         4. testprefix without number should trigger warning
         5. not correcting ' '  songbook
         """
-        song = SngFile(
-            "./testData/618 Wenn die Last der Welt.sng", songbook_prefix="test"
-        )
+        # 1. test prefix
+        test_dir = Path("./testData/EG Lieder")
+        test_filename = "001 Macht Hoch die Tuer.sng"
+        song = SngFile(test_dir / test_filename, songbook_prefix="test")
         song.fix_songbook_from_filename()
-        self.assertEqual("test 618", song.header.get("Songbook", None))
-        self.assertEqual("test 618", song.header.get("ChurchSongID", None))
+        self.assertEqual("test 001", song.header.get("Songbook", None))
+        self.assertEqual("test 001", song.header.get("ChurchSongID", None))
 
+        # 2. EG prefix
+        test_dir = Path("./testData/EG Psalmen & Sonstiges")
+        test_filename = "571.1 Ubi caritas et amor - Wo die Liebe wohnt.sng"
         song = SngFile(
-            "./testData/571.1 Ubi caritas et amor - Wo die Liebe wohnt.sng",
+            test_dir / test_filename,
             songbook_prefix="EG",
         )
         song.fix_songbook_from_filename()
         self.assertEqual("EG 571.1", song.header.get("Songbook", None))
 
-        song = SngFile("./testData/Holy Holy Holy.sng")
+        # no prefix
+        test_dir = Path("./testData/Test/")
+        test_filename = "sample_missing_headers.sng"
+        song = SngFile(test_dir / test_filename)
         song.fix_songbook_from_filename()
         self.assertEqual(" ", song.header["Songbook"])
 
+        # 4. test prefix
         with self.assertLogs(level="WARNING") as cm:
-            song = SngFile("./testData/Holy Holy Holy.sng", "test")
+            song = SngFile(f"./testData/Test/{test_filename}", "test")
             song.fix_songbook_from_filename()
         self.assertEqual(
             cm.output,
             [
-                "WARNING:root:Missing required digits as first block in filename Holy Holy Holy.sng - can't fix songbook"
+                f"WARNING:root:Missing required digits as first block in filename {test_filename} - can't fix songbook"
             ],
         )
 
+        # 5. ' ' songbook not corrected
         with self.assertLogs(level=logging.DEBUG) as cm:
-            song = SngFile("./testData/Gesegneten Sonntag.sng")
+            test_dir = Path("./testData/Test")
+            test_filename = "sample.sng"
+            song = SngFile(test_dir / test_filename)
             self.assertEqual(" ", song.header["Songbook"])
             song.fix_songbook_from_filename()
             self.assertEqual(" ", song.header["Songbook"])
         self.assertEqual(
             cm.output,
             [
-                "INFO:root:testData/Gesegneten Sonntag.sng is read as iso-8859-1 - be aware "
-                "that encoding is change upon write!",
-                "DEBUG:root:Parsing content for: Gesegneten Sonntag.sng",
+                f"DEBUG:root:testData/Test/{test_filename} is detected as utf-8 because of BOM",
+                "DEBUG:root:Parsing content for: sample.sng",
             ],
         )
 
