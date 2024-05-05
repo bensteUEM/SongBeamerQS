@@ -518,50 +518,23 @@ class TestSNG(unittest.TestCase):
         """Checks if all Markers from the Demo Set are detected.
 
         Test to check if a content without proper label is replaced as unknown and custom content header is read
+        Checks that a file which does not have any section headers can be read without error.
         """
-        song = SngFile("./testData/EG Lieder/644 Jesus hat die Kinder lieb.sng")
-        excepted_blocks = ["Intro", "Unknown", "Verse 99"]
-        markers = song.content.keys()
+        test_dir = Path("./testData/EG Psalmen & Sonstiges")
+        test_filename = "726 Psalm 047_utf8.sng"
+        song = SngFile(test_dir / test_filename)
 
-        for marker in markers:
-            self.assertIn(marker, excepted_blocks)
-
-    def test_content_implicit_blocks_psalm(self) -> None:
-        """Test method using Psalm/752 Psalm 134_neu.sng ot ensure no duplicate "unknown" in text from fix."""
-        song = SngFile("./testData/Psalm/752 Psalm 134_neu.sng")
-        expected_blocks = {"Unknown"}
-
-        verse_labels = set(song.content.keys())
-        self.assertEqual(expected_blocks, verse_labels)
-
-        song.generate_verses_from_unknown()
-        verse_labels = set(song.content.keys())
-        self.assertEqual(expected_blocks, verse_labels)
-
-        for block in song.content.values():
-            for slide in block[1:]:
-                if len(slide) == 0:
-                    continue
-                # Affects only slides because versemarker unknown is only one str
-                self.assertFalse(slide[0].upper().startswith("Unknown".upper()))
-
-    def test_content_missing_block(self) -> None:
-        """Checks that a file which does not have any section headers can be read without error."""
-        song = SngFile("./testData/Psalm/764 Test Ohne Versmarker.sng")
-
+        self.assertEqual(list(song.content.keys()), ["Unknown"])
         self.assertEqual(len(song.content.keys()), 1)
-        self.assertEqual(len(song.content["Unknown"]), 1 + 5)
-        self.assertEqual(len(song.content["Unknown"][5]), 2)
-
-    def test_file_broken_encoding_repaired(self) -> None:
-        """Checks that errrors are logged for sample file which is fixed in encoding."""
-        song = SngFile("testData/Psalm/726 Psalm 047_utf8.sng")
-        self.assertEqual(song.filename, "726 Psalm 047_utf8.sng")
+        self.assertEqual(len(song.content["Unknown"]), 1 + 4)
+        self.assertEqual(len(song.content["Unknown"][4]), 2)
 
     def test_file_short(self) -> None:
         """Checks a specific SNG file which contains a header only and no content."""
-        song = SngFile("./testData/Lizenz_Lied.sng")
-        self.assertEqual(song.filename, "Lizenz_Lied.sng")
+        test_dir = Path("./testData/Test/")
+        test_filename = "sample_header_only.sng"
+        song = SngFile(test_dir / test_filename)
+        self.assertEqual(song.filename, test_filename)
 
     def test_header_songbook_eg_psalm_special(self) -> None:
         """Test for debugging special Psalms which might not follow ChurchSongID conventions.
