@@ -1,0 +1,62 @@
+#Title=sample_versemarkers_letter.sng
+#Author=Benedict
+#VerseOrder=Intro,Strophe 1a,Strophe 1b,Strophe 1c,Strophe 2a,Refrain 1a,Refrain 1b,Bridge,Strophe 3a,Strophe 4a
+---
+Intro
+---
+Strophe 1a
+used with test_validate_verse_numbers
+This should be verse 1
+empty lines on purpose
+
+
+---
+Strophe 1b
+text 1b
+text
+text
+text4
+
+text 6
+---
+Strophe 1c
+
+text2
+
+text 4
+
+text6
+
+---
+Strophe 2a
+This should be verse 2
+
+More text
+more empty
+
+rows
+---
+Refrain 1a
+This should be chorus 1
+---
+more of 1a
+---
+Refrain 1b
+This should also be
+part of chorus 1 as new lines
+---
+Bridge
+should stay as bridge
+---
+Strophe 3a
+should become verse 3
+---
+Strophe 4a
+4. fourth text block
+text
+text
+text
+text
+---
+Strophe 4b
+more of verse 4

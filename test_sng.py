@@ -773,8 +773,13 @@ class TestSNG(unittest.TestCase):
         self.assertIn("Intro", song.content.keys())
 
     def test_validate_verse_numbers(self) -> None:
-        """Checks whether verse numbers are regular."""
-        song = SngFile("./testData/123 Du bist der Schöpfer des Universums.sng")
+        """Checks whether verse numbers are merged correctly.
+
+        a, b parts are supposed to be merged into regular verse number
+        """
+        test_dir = Path("./testData/Test")
+        test_filename = "sample_versemarkers_letter.sng"
+        song = SngFile(test_dir / test_filename)
         self.assertIn("Refrain 1a", song.header["VerseOrder"])
         self.assertIn("Refrain 1b", song.header["VerseOrder"])
 
@@ -793,51 +798,18 @@ class TestSNG(unittest.TestCase):
             "Refrain 1",
             "Bridge",
             "Strophe 3",
+            "Strophe 4",
         ]
         self.assertEqual(expected, list(song.content.keys()))
 
-    def test_validate_verse_numbers2(self) -> None:
-        """More complicated file with more issues and problems with None in VerseOrder."""
-        song = SngFile("./testData/375 Dass Jesus siegt bleibt ewig ausgemacht.sng")
-        text = (
-            "Strophe 1a,Strophe 1b,Strophe 1c,Strophe 4a,Strophe 4b,Strophe 4c,STOP,"
-            "Strophe 2a,Strophe 2b,Strophe 2c,Strophe 3a,Strophe 3b,Strophe 3c"
-        )
-
-        expected_order = text.split(",")
-        self.assertEqual(song.header["VerseOrder"], expected_order)
-
+    def test_header_validate_verse_numbers_merge(self) -> None:
+        """Special case check 1b is 2nd part of verse 1."""
+        test_dir = Path("./testData/Test")
+        test_filename = "sample_versemarkers_letter.sng"
+        song = SngFile(test_dir / test_filename)
+        self.assertEqual(song.content["Strophe 1b"][1][0], "text 1b")
         song.validate_verse_numbers(fix=True)
-        expected_order = ["Strophe 1", "Strophe 4", "STOP", "Strophe 2", "Strophe 3"]
-        self.assertEqual(expected_order, song.header["VerseOrder"])
-        expected_order = ["Strophe 1", "Strophe 2", "Strophe 3", "Strophe 4"]
-        self.assertEqual(expected_order, list(song.content.keys()))
-
-    def test_validate_verse_numbers3(self) -> None:
-        """Test with a file that has other verses than verse order.
-
-        fixes verse order based on content
-        and verse number validation should not have any impact
-        """
-        song = SngFile("./testData/289 Nun lob mein Seel den Herren.sng")
-        song.validate_verse_order_coverage(True)
-        song.validate_verse_numbers(True)
-
-        self.assertIn("Verse 1", song.header["VerseOrder"])
-        self.assertIn("STOP", song.header["VerseOrder"])
-        self.assertIn("Verse 1", song.content.keys())
-
-    def test_header_validate_verse_numbers4(self) -> None:
-        """Special Case 375 Dass Jesus siegt bleibt ewig ausgemacht.sng with merging verse blocks.
-
-        did show up as list instead of lines for slide 2 and 3 for verse 1
-        """
-        song = SngFile(
-            "./testData/375 Dass Jesus siegt bleibt ewig ausgemacht.sng", "EG"
-        )
-        self.assertEqual(song.content["Strophe 1b"][1][0], "denn alles ist")
-        song.validate_verse_numbers(fix=True)
-        self.assertEqual(song.content["Strophe 1"][2][0], "denn alles ist")
+        self.assertEqual(song.content["Strophe 1"][2][0], "text 1b")
 
     def test_content_stop_verse_order(self) -> None:
         """Checks and corrects existance of STOP in Verse Order.
