@@ -103,10 +103,10 @@ class TestSNG(unittest.TestCase):
         generate_songbook_column(eg_songs_df)
 
         # following variables are dependant on the number of files included in respective folders
-        number_of_files_in_eg = 5
-        number_of_files_with_eg_songbook_pre_fix = 2
+        number_of_files_in_eg = 8
+        number_of_files_with_eg_songbook_pre_fix = 4
         # eg songs will be fixed, psalm range not ; EG764 is Sonstige, not Psalm
-        number_of_files_with_eg_songbook_post_fix = 4
+        number_of_files_with_eg_songbook_post_fix = 7
 
         self.assertEqual(len(eg_songs_df), number_of_files_in_eg)
         self.assertEqual(
