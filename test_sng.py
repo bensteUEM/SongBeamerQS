@@ -2,9 +2,9 @@
 
 import logging
 import re
-import shutil
 import unittest
 from pathlib import Path
+from shutil import copyfile, rmtree
 
 from SngFile import SngFile, contains_songbook_prefix, generate_verse_marker_from_line
 
@@ -46,7 +46,7 @@ class TestSNG(unittest.TestCase):
         self.assertEqual(song.path, Path(path))
 
         new_path = Path("test_output/EG Lieder/")
-        shutil.rmtree(new_path.parent, ignore_errors=True)
+        rmtree(new_path.parent, ignore_errors=True)
         # path.walk with rmdir and unlink would require python 3.12
         """for root, dirs, files in new_path.walk(top_down=False):
             for name in files:
@@ -64,53 +64,69 @@ class TestSNG(unittest.TestCase):
         Test file that checks that no title is read with sample file which does not contain title line
         Will also fail if empty line handling does not exist
         """
-        song = SngFile("./testData/022 Die Liebe des Retters.sng")
-        song.parse_param("#Title=Die Liebe des Retters")
+        song = SngFile("./testData/EG Lieder/001 Macht Hoch die Tuer.sng")
+        song.parse_param("#Title=Macht Hoch die Tür")
 
-        target = {"Title": "Die Liebe des Retters"}
-        self.assertEqual(song.header["Title"], target["Title"])
+        expected_output = {"Title": "Macht Hoch die Tür"}
+        self.assertEqual(song.header["Title"], expected_output["Title"])
 
-        song2 = SngFile("./testData/022 Die Liebe des Retters_missing_title.sng")
+        song2 = SngFile("./testData/Test/sample_missing_headers.sng")
         self.assertNotIn("Title", song2.header)
 
     def test_header_title_fix(self) -> None:
         """Checks that header title is fixed for one sample file."""
-        song = SngFile("./testData/022 Die Liebe des Retters_missing_title.sng", "FJx")
+        test_data_dir = Path("testData/Test")
+        sample_filename = "sample_missing_headers.sng"
+        copyfile(
+            test_data_dir / sample_filename,
+            test_data_dir / (sample_filename + "_bak"),
+        )
+
+        song = SngFile(test_data_dir / sample_filename, "Test")
         self.assertNotIn("Title", song.header)
         song.validate_header_title(fix=False)
         self.assertNotIn("Title", song.header)
         song.validate_header_title(fix=True)
-        self.assertEqual("Die Liebe des Retters_missing_title", song.header["Title"])
+        self.assertEqual(sample_filename[:-4], song.header["Title"])
 
-    def test_header_title_special(self) -> None:
-        """Checks that header title is not fixed for sample file which had issues on log."""
-        song = SngFile("./testData/Psalm/751 Psalm 130.sng")
+        # cleanup
+        Path(test_data_dir / (sample_filename + "_bak")).rename(
+            test_data_dir / sample_filename
+        )
+
+    def test_header_title_valid_no_change(self) -> None:
+        """Checks that header title is not fixed for sample file which is psalm with valid title."""
+        test_data_dir = Path("testData/EG Psalmen & Sonstiges")
+        sample_filename = "709 Herr, sei nicht ferne.sng"
+
+        song = SngFile(test_data_dir / sample_filename)
         self.assertIn("Title", song.header)
-        self.assertEqual(
-            "Ich harre des Herrn, denn bei ihm ist die Gnade", song.header["Title"]
-        )
+        self.assertEqual(sample_filename[4:-4], song.header["Title"])
         song.validate_header_title(fix=True)
-        self.assertEqual(
-            "Ich harre des Herrn, denn bei ihm ist die Gnade", song.header["Title"]
-        )
+        self.assertEqual(sample_filename[4:-4], song.header["Title"])
 
     def test_header_title_special2(self) -> None:
-        """Checks that header title is not fixed for sample file which had issues in log which had issues on log."""
+        """Checks that header title is not fixed.
+
+        for sample file which had issues in log which had issues on log.
+        """
         # 2022-06-03 10:56:20,370 root       DEBUG    Fixed title to (Psalm NGÜ) in Psalm 23 NGÜ.sng
         # -> Number should not be ignored if no SongPrefix
-        song = SngFile("./testData/Psalm 23 NGÜ.sng")
+        song = SngFile(
+            "./testData//Wwdlp (Wo wir dich loben, wachsen neue Lieder plus)/909.1 Psalm 85 I.sng"
+        )
         self.assertIn("Title", song.header)
-        self.assertEqual("Psalm 23 NGÜ", song.header["Title"])
+        self.assertEqual("Psalm 85 I", song.header["Title"])
         song.validate_header_title(fix=True)
-        self.assertEqual("Psalm 23 NGÜ", song.header["Title"])
+        self.assertEqual("Psalm 85 I", song.header["Title"])
 
         # 2022-06-03 10:56:20,370 root       DEBUG    Song without a Title in Header:Gesegneten Sonntag.sng
         # 2022-06-03 10:56:20,370 root       DEBUG    Fixed title to (Sonntag) in Gesegneten Sonntag.sng
         # Fixed by correcting contains_songbook_prefix() method
-        song = SngFile("./testData/Gesegneten Sonntag.sng")
+        song = SngFile("./testData/Herzlich Willkommen.sng")
         self.assertNotIn("Title", song.header)
         song.validate_header_title(fix=True)
-        self.assertEqual("Gesegneten Sonntag", song.header["Title"])
+        self.assertEqual("Herzlich Willkommen", song.header["Title"])
 
     def test_header_title_special3(self) -> None:
         """Test a special cases of title which contains a number and or of songbook prefix."""
