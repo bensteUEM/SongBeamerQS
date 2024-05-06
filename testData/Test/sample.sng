@@ -14,13 +14,15 @@
 #Comments=77u/RW50c3ByaWNodCBuaWNodCBkZXIgVmVyc2lvbiBhdXMgZGVtIEVHIQ==
 ---
 Verse 1
-1. Stille Nacht, heilige Nacht!
-Alles schläft, einsam wacht
-nur das traute, hochheilige Paar.
-Holder Knabe im lockigen Haar,
+1. this sample is used in multiple tests of test_sng.py
+* test_content_stop_verse_order
+* test_header_complete
+* test_header_songbook
 ---
-schlaf in himmlischer Ruh,
-schlaf in himmlischer Ruh.
+* test_validate_header_background
+* test_file_write
+* test_content_intro_slide
+* test_content_stop_verse_order
 ---
 Verse 2
 2. Stille Nacht, heilige Nacht!

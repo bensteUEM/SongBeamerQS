@@ -820,33 +820,39 @@ class TestSNG(unittest.TestCase):
         4. File does have STOP but not at end and should not stay this way
         """
         # 1. File does not have STOP
-        song = SngFile("./testData/079 Höher_reformat.sng")
+        test_dir = Path("./testData/Test")
+        test_filename = "sample_header_only.sng"
+        song = SngFile(test_dir / test_filename)
         self.assertNotIn("STOP", song.header["VerseOrder"])
         self.assertTrue(song.validate_stop_verseorder(fix=True))
         self.assertIn("STOP", song.header["VerseOrder"])
 
         # 2. File does already have STOP
-        song = SngFile("./testData/022 Die Liebe des Retters.sng")
+        test_dir = Path("./testData/Test")
+        test_filename = "sample.sng"
+        song = SngFile(test_dir / test_filename)
         self.assertIn("STOP", song.header["VerseOrder"])
         self.assertTrue(song.validate_stop_verseorder())
         self.assertIn("STOP", song.header["VerseOrder"])
 
         # 3. File does have STOP but not at end and should stay this way
-        song = SngFile("./testData/085 O Haupt voll Blut und Wunden.sng")
-        self.assertEqual("STOP", song.header["VerseOrder"][5])
-        self.assertNotEqual("STOP", song.header["VerseOrder"][11])
+        test_dir = Path("./testData/Test")
+        test_filename = "sample_stop_not_at_end.sng"
+        song = SngFile(test_dir / test_filename)
+        self.assertEqual("STOP", song.header["VerseOrder"][1])
+        self.assertNotEqual("STOP", song.header["VerseOrder"][2])
         self.assertNotEqual("STOP", song.header["VerseOrder"][-1])
         self.assertTrue(song.validate_stop_verseorder(should_be_at_end=False))
-        self.assertEqual("STOP", song.header["VerseOrder"][5])
+        self.assertEqual("STOP", song.header["VerseOrder"][1])
+        self.assertNotEqual("STOP", song.header["VerseOrder"][2])
         self.assertNotEqual("STOP", song.header["VerseOrder"][-1])
-        self.assertNotEqual("STOP", song.header["VerseOrder"][11])
 
         # 4. File does have STOP but not at end and should not stay this way
-        song = SngFile("./testData/085 O Haupt voll Blut und Wunden.sng")
-        self.assertEqual("STOP", song.header["VerseOrder"][5])
+        song = SngFile(test_dir / test_filename)
+        self.assertEqual("STOP", song.header["VerseOrder"][1])
         self.assertNotEqual("STOP", song.header["VerseOrder"][-1])
         self.assertTrue(song.validate_stop_verseorder(fix=True, should_be_at_end=True))
-        self.assertNotEqual("STOP", song.header["VerseOrder"][5])
+        self.assertNotEqual("STOP", song.header["VerseOrder"][1])
         self.assertEqual("STOP", song.header["VerseOrder"][-1])
 
     def test_validate_suspicious_encoding(self) -> None:
