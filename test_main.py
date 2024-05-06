@@ -22,7 +22,7 @@ from main import (
     get_ct_songs_as_df,
     parse_sng_from_directory,
     prepare_required_song_tags,
-    read_test_songs_to_df,
+    read_songs_to_df,
     upload_local_songs_by_id,
     upload_new_local_songs_and_generate_ct_id,
     write_df_to_file,
@@ -96,7 +96,7 @@ class TestSNG(unittest.TestCase):
 
     def test_eg_with_songbook_prefix(self) -> None:
         """Check that all fixable songs in EG Lieder do have EG Songbook prefix."""
-        songs_df = read_test_songs_to_df()
+        songs_df = read_songs_to_df(testing=True)
 
         filter1 = songs_df["path"] == Path("testData/EG Lieder")
         filter2 = songs_df["path"] == Path("testData/EG Psalmen & Sonstiges")
