@@ -9,7 +9,7 @@ from SNG_DEFAULTS import SngDefaultHeader
 
 
 class SngFileParserPart(abc.ABC):
-    """Main class that defines one single SongBeamer SNG file."""
+    """Part of SngFile class that defines methods used to parse and write sng files."""
 
     def __init__(self, filename: str, songbook_prefix: str = "") -> None:
         """Default Construction for a SNG File and it's params.

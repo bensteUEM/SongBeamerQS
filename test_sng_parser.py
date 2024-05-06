@@ -12,7 +12,7 @@ from SngFile import SngFile
 class TestSNGParser(unittest.TestCase):
     """Test Class for SNG related class and methods.
 
-    only Parser part
+    Anything but Parser
     """
 
     def __init__(self, *args: any, **kwargs: any) -> None:
