@@ -1,8 +1,8 @@
-#LangCount=1
-#Editor=Benedict's Python Script am 2023-01-22
+﻿#LangCount=1
+#Editor=Benedict's Python Script am 2024-05-06
 #Version=3
-#Title=Test
-#Author=TestAuthor
+#Title=sample_no_ct
+#Author=Benedict
 #BackgroundImage=_ChurchMediaDrop\Dan-Stevers_Ascent_Stills\smeary clouds_4k.jpg
 #VerseOrder=Intro,Vers 1,STOP
 #Songbook= 
@@ -12,3 +12,8 @@ Intro
 ---
 Vers 1
 This file can be used for any testing that has valid data but no ChurchTools id yet
+used in test_main.py
+* test_add_id_to_local_song_if_available_in_ct
+* test_upload_new_local_songs_and_generate_ct_id
+* test_upload_local_songs_by_id
+* test_apply_ct_song_sng_count_qs_tag
