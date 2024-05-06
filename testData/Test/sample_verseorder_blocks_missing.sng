@@ -2,6 +2,9 @@
 ---
 used in test_header_verse_order_complete
 first should be a new "unknown block" not in verse order
+it is used in 
+* test_header_verse_order_complete
+* test_content
 ---
 $$M=Testnameblock
 This is a custom block

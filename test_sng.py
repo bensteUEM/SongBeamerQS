@@ -497,22 +497,29 @@ class TestSNG(unittest.TestCase):
 
         Test to check if a content without proper label is replaced as unknown and custom content header is read
         """
-        song = SngFile("./testData/022 Die Liebe des Retters.sng")
-        target = ["Intro", "Strophe 1", "Refrain 1", "Strophe 2", "Bridge"]
-        markers = song.content.keys()
+        # regular file with intro and named blocks
+        test_dir = Path("./testData/Test")
+        test_filename = "sample_languages.sng"
+        song = SngFile(test_dir / test_filename)
+        expected_versemarkers_set = {"Intro", "Verse 1", "Verse 2"}
+        test_versemarkers_set = set(song.content.keys())
 
-        for marker in markers:
-            self.assertIn(marker, target)
+        self.assertEqual(expected_versemarkers_set, test_versemarkers_set)
 
-        # Special Exceptions
-        song2 = SngFile("./testData/022 Die Liebe des Retters_missing_block.sng")
-        target = ["Unknown", "$$M=Testnameblock", "Refrain 1", "Strophe 2", "Bridge"]
-        markers = song2.content.keys()
+        # something with an auto detected "Unknown block" and custom block
+        test_dir = Path("./testData/Test")
+        test_filename = "sample_verseorder_blocks_missing.sng"
+        song = SngFile(test_dir / test_filename)
+        expected_versemarkers_set = {
+            "Unknown",
+            "$$M=Testnameblock",
+            "Refrain 1",
+            "Strophe 2",
+            "Bridge",
+        }
+        test_versemarkers_set = set(song.content.keys())
 
-        for marker in markers:
-            self.assertIn(marker, target)
-
-        self.assertIn("Testnameblock", song2.content["$$M=Testnameblock"][0])
+        self.assertEqual(expected_versemarkers_set, test_versemarkers_set)
 
     def test_content_implicit_blocks(self) -> None:
         """Checks if all Markers from the Demo Set are detected.
