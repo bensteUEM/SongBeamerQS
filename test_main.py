@@ -17,14 +17,16 @@ from main import (
     add_id_to_local_song_if_available_in_ct,
     apply_ct_song_sng_count_qs_tag,
     check_ct_song_categories_exist_as_folder,
+    clean_all_songs,
     download_missing_online_songs,
     generate_songbook_column,
     get_ct_songs_as_df,
     parse_sng_from_directory,
     prepare_required_song_tags,
-    read_test_songs_to_df,
+    read_songs_to_df,
     upload_local_songs_by_id,
     upload_new_local_songs_and_generate_ct_id,
+    validate_ct_songs_exist_locally_by_name_and_category,
     write_df_to_file,
 )
 from SngFile import SngFile
@@ -96,7 +98,7 @@ class TestSNG(unittest.TestCase):
 
     def test_eg_with_songbook_prefix(self) -> None:
         """Check that all fixable songs in EG Lieder do have EG Songbook prefix."""
-        songs_df = read_test_songs_to_df()
+        songs_df = read_songs_to_df(testing=True)
 
         filter1 = songs_df["path"] == Path("testData/EG Lieder")
         filter2 = songs_df["path"] == Path("testData/EG Psalmen & Sonstiges")
@@ -198,6 +200,29 @@ class TestSNG(unittest.TestCase):
             filenames=["709 Herr, sei nicht ferne.sng"],
         )
         self.assertIn("Verse", songs_temp[0].content.keys())
+
+    def test_validate_ct_songs_exist_locally_by_name_and_category(self) -> None:
+        """Test function proving one case of validate_ct_songs_exist_locally_by_name_and_category.
+
+        uses one song which does not have a CT id and tries to match by name and category
+        """
+        test_dir = Path("./testData/Test")
+        test_filename = "sample_no_ct.sng"
+        song = SngFile(test_dir / test_filename)
+        self.assertNotIn("id", song.header)
+
+        test_local_df = pd.DataFrame([song], columns=["SngFile"])
+        test_local_df["filename"] = test_filename
+        test_local_df["path"] = test_dir
+
+        test_ct_id = 3064
+        test_ct_df = pd.json_normalize(self.api.get_songs(song_id=test_ct_id))
+
+        result = validate_ct_songs_exist_locally_by_name_and_category(
+            df_sng=test_local_df, df_ct=test_ct_df
+        )
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result.iloc[0]["_merge"], "both")
 
     def test_add_id_to_local_song_if_available_in_ct(self) -> None:
         """This should verify that add_id_to_local_song_if_available_in_ct is working as expected."""
@@ -541,3 +566,23 @@ class TestSNG(unittest.TestCase):
         tags_by_name = prepare_required_song_tags(api=self.api)
         self.assertIn("QS: missing sng", tags_by_name)
         self.assertIn("QS: too many sng", tags_by_name)
+
+    def test_clean_all_songs(self) -> None:
+        """Method executing "clean_all_songs" on some songs.
+
+        assuming if header does not match original first parsing something was cleaned
+        each individual methods applied are tested individually
+        """
+        test_dir = Path("testData/Test")
+        test_filenames = ["sample.sng", "sample_churchsongid_caps.sng"]
+
+        songs = [SngFile(test_dir / test_filename) for test_filename in test_filenames]
+        test_df = pd.DataFrame(songs, columns=["SngFile"])
+
+        cleaned_df = clean_all_songs(df_sng=test_df)
+        expected_songs = [
+            SngFile(test_dir / test_filename) for test_filename in test_filenames
+        ]
+
+        self.assertNotEqual(expected_songs[0], cleaned_df.iloc[0]["SngFile"])
+        self.assertNotEqual(expected_songs[1], cleaned_df.iloc[1]["SngFile"])
