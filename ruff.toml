@@ -40,6 +40,9 @@ ignore = [
 
     #ToDo Items
     "FIX",
+
+    #Abstacts used to split file
+    "B024", #is an abstract base class, but it has no abstract methods
 ]
 
 extend-ignore = [] #Skip rules that need more code cleaning...
