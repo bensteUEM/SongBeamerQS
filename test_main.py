@@ -14,6 +14,7 @@ from ChurchToolsApi import ChurchToolsApi
 
 import SNG_DEFAULTS
 from main import (
+    add_id_to_local_song_if_available_in_ct,
     apply_ct_song_sng_count_qs_tag,
     check_ct_song_categories_exist_as_folder,
     download_missing_online_songs,
@@ -200,12 +201,24 @@ class TestSNG(unittest.TestCase):
 
     def test_add_id_to_local_song_if_available_in_ct(self) -> None:
         """This should verify that add_id_to_local_song_if_available_in_ct is working as expected."""
-        self.assertFalse(
-            True,
-            "Not Implemented see https://github.com/bensteUEM/SongBeamerQS/issues/13",
-        )
-        # TODO (bensteUEM): implement test_add_id_to_local_song_if_available_in_ct
-        # https://github.com/bensteUEM/SongBeamerQS/issues/13
+        test_dir = Path("./testData/Test")
+        test_filename = "sample_no_ct.sng"
+        copyfile(test_dir / test_filename, test_dir / (test_filename + "_bak"))
+        song = SngFile(test_dir / test_filename)
+        self.assertNotIn("id", song.header)
+
+        test_local_df = pd.DataFrame([song], columns=["SngFile"])
+        test_local_df["filename"] = test_filename
+        test_local_df["path"] = test_dir
+
+        test_ct_id = 3064
+        test_ct_df = pd.json_normalize(self.api.get_songs(song_id=test_ct_id))
+
+        add_id_to_local_song_if_available_in_ct(df_sng=test_local_df, df_ct=test_ct_df)
+        self.assertEqual(song.header["id"], str(test_ct_id))
+
+        # cleanup
+        (test_dir / (test_filename + "_bak")).rename(test_dir / test_filename)
 
     def test_download_missing_online_songs(self) -> None:
         """ELKW1610.krz.tools specific test case for the named function (using 2 specific song IDs).

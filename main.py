@@ -379,7 +379,9 @@ def add_id_to_local_song_if_available_in_ct(
     logging.info("Starting add_id_to_local_song_if_available_in_ct()")
     logging.critical(
         "This function might destroy your data in case a songname exists twice in one songbook #13"
-    )  # 13 TODO
+    )
+    # TODO (bensteUEM):  Extend functionality of add_id_to_local_song_if_available_in_ct()
+    # https://github.com/bensteUEM/SongBeamerQS/issues/13
 
     compare_by_id_df = validate_ct_songs_exist_locally_by_id(df_ct, df_sng)
 
