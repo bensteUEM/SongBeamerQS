@@ -207,21 +207,25 @@ def generate_ct_compare_columns(df_sng: pd.DataFrame) -> None:
     df_sng["category.name"] = df_sng["SngFile"].apply(lambda x: x.path.name)
 
 
-def clean_all_songs(df: pd.DataFrame) -> None:
+def clean_all_songs(df_sng: pd.DataFrame) -> pd.DataFrame:
     """Helper function which runs cleaning methods for sng files on a dataframe.
 
-    Params
-        df_sng: Dataframe to work on
+    Arguments:
+        df_sng: Dataframe to work on - must have SngFile instances as attribute column
+    Returns:
+        a copy of the original dataframe with cleaning improvements applied
     """
+    df_result = df_sng.copy()
+
     logging.info("starting validate_verse_order_coverage() with fix")
-    df["SngFile"].apply(lambda x: x.validate_verse_order_coverage(fix=True))
+    df_result["SngFile"].apply(lambda x: x.validate_verse_order_coverage(fix=True))
 
     logging.info("starting fix_intro_slide()")
-    df["SngFile"].apply(lambda x: x.fix_intro_slide())
+    df_result["SngFile"].apply(lambda x: x.fix_intro_slide())
 
     # Fixing without auto moving to end because sometimes on purpose, and cases might be
     logging.info("starting validate_stop_verseorder(fix=True, should_be_at_end=False)")
-    df["SngFile"].apply(
+    df_result["SngFile"].apply(
         lambda x: x.validate_stop_verseorder(fix=True, should_be_at_end=False)
     )
     # Logging cases that are not at end ...
@@ -229,12 +233,16 @@ def clean_all_songs(df: pd.DataFrame) -> None:
     # df_sng['SngFile'].apply(lambda x: x.validate_stop_verseorder(fix=False, should_be_at_end=True))
 
     logging.info("starting validate_verse_numbers() with fix")
-    df["SngFile"].apply(lambda x: x.validate_verse_numbers(fix=True))
+    df_result["SngFile"].apply(lambda x: x.validate_verse_numbers(fix=True))
 
     logging.info("starting validate_content_slides_number_of_lines() with fix")
-    df["SngFile"].apply(lambda x: x.validate_content_slides_number_of_lines(fix=True))
+    df_result["SngFile"].apply(
+        lambda x: x.validate_content_slides_number_of_lines(fix=True)
+    )
 
-    validate_all_headers(df, True)
+    validate_all_headers(df_result, True)
+
+    return df_result
 
 
 def write_df_to_file(df_sng: pd.DataFrame, target_dir: str | None = None) -> None:
@@ -681,7 +689,7 @@ if __name__ == "__main__":
 
     songs_temp = []
     df_sng = read_songs_to_df()
-    clean_all_songs(df_sng)
+    df_sng = clean_all_songs(df_sng=df_sng)
     write_df_to_file(df_sng)
 
     api = ChurchToolsApi(domain=ct_domain, ct_token=ct_token)

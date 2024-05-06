@@ -25,10 +25,11 @@ Verse 1
 * test_content_stop_verse_order
 ---
 Verse 2
-2. Stille Nacht, heilige Nacht!
-Hirten erst kundgemacht,
-durch der Engel Halleluja
-tönt es laut von fern und nah:
+2. it is also used in test_main.py
+* test_validate_comment_special_case
+* test_upload_local_songs_by_id
+* test_write_df_to_file
+* test_clean_all_songs
 ---
 Christ, der Retter, ist da,
 Christ, der Retter, ist da!

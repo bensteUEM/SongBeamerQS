@@ -17,6 +17,7 @@ from main import (
     add_id_to_local_song_if_available_in_ct,
     apply_ct_song_sng_count_qs_tag,
     check_ct_song_categories_exist_as_folder,
+    clean_all_songs,
     download_missing_online_songs,
     generate_songbook_column,
     get_ct_songs_as_df,
@@ -565,3 +566,23 @@ class TestSNG(unittest.TestCase):
         tags_by_name = prepare_required_song_tags(api=self.api)
         self.assertIn("QS: missing sng", tags_by_name)
         self.assertIn("QS: too many sng", tags_by_name)
+
+    def test_clean_all_songs(self) -> None:
+        """Method executing "clean_all_songs" on some songs.
+
+        assuming if header does not match original first parsing something was cleaned
+        each individual methods applied are tested individually
+        """
+        test_dir = Path("testData/Test")
+        test_filenames = ["sample.sng", "sample_churchsongid_caps.sng"]
+
+        songs = [SngFile(test_dir / test_filename) for test_filename in test_filenames]
+        test_df = pd.DataFrame(songs, columns=["SngFile"])
+
+        cleaned_df = clean_all_songs(df_sng=test_df)
+        expected_songs = [
+            SngFile(test_dir / test_filename) for test_filename in test_filenames
+        ]
+
+        self.assertNotEqual(expected_songs[0], cleaned_df.iloc[0]["SngFile"])
+        self.assertNotEqual(expected_songs[1], cleaned_df.iloc[1]["SngFile"])

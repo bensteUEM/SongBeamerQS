@@ -5,4 +5,9 @@ Is used to check that ChurchSongId is converted to ChurchSongID
 ---
 Is used to check empty slides by double --- without text in between
 Content count should be 4 on this sng
+It is used in test_main.py
+* test_clean_all_songs
+Also in test_sng.py
+* test_content_empty_block
+* test_header_church_song_id_caps
 ---
