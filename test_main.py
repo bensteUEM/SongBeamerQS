@@ -25,6 +25,7 @@ from main import (
     read_songs_to_df,
     upload_local_songs_by_id,
     upload_new_local_songs_and_generate_ct_id,
+    validate_ct_songs_exist_locally_by_name_and_category,
     write_df_to_file,
 )
 from SngFile import SngFile
@@ -198,6 +199,29 @@ class TestSNG(unittest.TestCase):
             filenames=["709 Herr, sei nicht ferne.sng"],
         )
         self.assertIn("Verse", songs_temp[0].content.keys())
+
+    def test_validate_ct_songs_exist_locally_by_name_and_category(self) -> None:
+        """Test function proving one case of validate_ct_songs_exist_locally_by_name_and_category.
+
+        uses one song which does not have a CT id and tries to match by name and category
+        """
+        test_dir = Path("./testData/Test")
+        test_filename = "sample_no_ct.sng"
+        song = SngFile(test_dir / test_filename)
+        self.assertNotIn("id", song.header)
+
+        test_local_df = pd.DataFrame([song], columns=["SngFile"])
+        test_local_df["filename"] = test_filename
+        test_local_df["path"] = test_dir
+
+        test_ct_id = 3064
+        test_ct_df = pd.json_normalize(self.api.get_songs(song_id=test_ct_id))
+
+        result = validate_ct_songs_exist_locally_by_name_and_category(
+            df_sng=test_local_df, df_ct=test_ct_df
+        )
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result.iloc[0]["_merge"], "both")
 
     def test_add_id_to_local_song_if_available_in_ct(self) -> None:
         """This should verify that add_id_to_local_song_if_available_in_ct is working as expected."""
