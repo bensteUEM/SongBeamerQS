@@ -105,40 +105,22 @@ def validate_all_headers(df_to_change: pd.DataFrame, fix: bool = False) -> pd.Se
     return headers_valid
 
 
-def read_baiersbronn_songs_to_df() -> pd.DataFrame:
+def read_songs_to_df(testing: bool = False) -> pd.DataFrame:
     """Default method which reads all known directories used at Evangelische Kirchengemeinde Baiersbronn.
 
     requires all directories from SNG_DEFAULTS to be present
+    Arguments:
+        * testing: if SNG_DEFAULTS.KnownDirectory or "testData/" should be used
     """
     songs_temp = []
 
     for key, value in SNG_DEFAULTS.KnownFolderWithPrefix.items():
-        dirname = SNG_DEFAULTS.KnownDirectory + key
-        dirprefix = value
-        songs_temp.extend(
-            parse_sng_from_directory(directory=dirname, songbook_prefix=dirprefix)
-        )
-
-    result_df = pd.DataFrame(songs_temp, columns=["SngFile"])
-    result_df["filename"] = ""
-    result_df["path"] = ""
-
-    for index, value in result_df["SngFile"].items():
-        result_df.loc[(index, "filename")] = value.filename
-        result_df.loc[(index, "path")] = value.path
-    return result_df
-
-
-def read_test_songs_to_df() -> pd.DataFrame:
-    """Default method which reads all known directories used for testing.
-
-    Skips directories that do not exist
-    """
-    songs_temp = []
-    for key, value in SNG_DEFAULTS.KnownFolderWithPrefix.items():
-        dirname = "testData/" + key
-        if not Path(dirname).exists():
-            continue
+        if testing:
+            dirname = "testData/" + key
+            if not Path(dirname).exists():
+                continue
+        else:
+            dirname = SNG_DEFAULTS.KnownDirectory + key
         dirprefix = value
         songs_temp.extend(
             parse_sng_from_directory(directory=dirname, songbook_prefix=dirprefix)
@@ -225,21 +207,25 @@ def generate_ct_compare_columns(df_sng: pd.DataFrame) -> None:
     df_sng["category.name"] = df_sng["SngFile"].apply(lambda x: x.path.name)
 
 
-def clean_all_songs(df: pd.DataFrame) -> None:
+def clean_all_songs(df_sng: pd.DataFrame) -> pd.DataFrame:
     """Helper function which runs cleaning methods for sng files on a dataframe.
 
-    Params
-        df_sng: Dataframe to work on
+    Arguments:
+        df_sng: Dataframe to work on - must have SngFile instances as attribute column
+    Returns:
+        a copy of the original dataframe with cleaning improvements applied
     """
+    df_result = df_sng.copy()
+
     logging.info("starting validate_verse_order_coverage() with fix")
-    df["SngFile"].apply(lambda x: x.validate_verse_order_coverage(fix=True))
+    df_result["SngFile"].apply(lambda x: x.validate_verse_order_coverage(fix=True))
 
     logging.info("starting fix_intro_slide()")
-    df["SngFile"].apply(lambda x: x.fix_intro_slide())
+    df_result["SngFile"].apply(lambda x: x.fix_intro_slide())
 
     # Fixing without auto moving to end because sometimes on purpose, and cases might be
     logging.info("starting validate_stop_verseorder(fix=True, should_be_at_end=False)")
-    df["SngFile"].apply(
+    df_result["SngFile"].apply(
         lambda x: x.validate_stop_verseorder(fix=True, should_be_at_end=False)
     )
     # Logging cases that are not at end ...
@@ -247,12 +233,16 @@ def clean_all_songs(df: pd.DataFrame) -> None:
     # df_sng['SngFile'].apply(lambda x: x.validate_stop_verseorder(fix=False, should_be_at_end=True))
 
     logging.info("starting validate_verse_numbers() with fix")
-    df["SngFile"].apply(lambda x: x.validate_verse_numbers(fix=True))
+    df_result["SngFile"].apply(lambda x: x.validate_verse_numbers(fix=True))
 
     logging.info("starting validate_content_slides_number_of_lines() with fix")
-    df["SngFile"].apply(lambda x: x.validate_content_slides_number_of_lines(fix=True))
+    df_result["SngFile"].apply(
+        lambda x: x.validate_content_slides_number_of_lines(fix=True)
+    )
 
-    validate_all_headers(df, True)
+    validate_all_headers(df_result, True)
+
+    return df_result
 
 
 def write_df_to_file(df_sng: pd.DataFrame, target_dir: str | None = None) -> None:
@@ -698,8 +688,8 @@ if __name__ == "__main__":
     logging.info("Excecuting Main RUN")
 
     songs_temp = []
-    df_sng = read_baiersbronn_songs_to_df()
-    clean_all_songs(df_sng)
+    df_sng = read_songs_to_df()
+    df_sng = clean_all_songs(df_sng=df_sng)
     write_df_to_file(df_sng)
 
     api = ChurchToolsApi(domain=ct_domain, ct_token=ct_token)
@@ -714,7 +704,7 @@ if __name__ == "__main__":
     upload_new_local_songs_and_generate_ct_id(df_sng, df_ct)
 
     # To be safe - re-read all data sources and upload
-    df_sng = read_baiersbronn_songs_to_df()
+    df_sng = read_songs_to_df()
     df_ct = get_ct_songs_as_df(api)
     download_missing_online_songs(df_sng, df_ct, api)
 

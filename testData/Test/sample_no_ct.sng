@@ -13,6 +13,7 @@ Intro
 Vers 1
 This file can be used for any testing that has valid data but no ChurchTools id yet
 used in test_main.py
+* test_validate_ct_songs_exist_locally_by_name_and_category
 * test_add_id_to_local_song_if_available_in_ct
 * test_upload_new_local_songs_and_generate_ct_id
 * test_upload_local_songs_by_id
