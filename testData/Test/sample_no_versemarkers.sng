@@ -1,0 +1,31 @@
+#Title=sample_no_versemarkers
+#Author=Benedict
+#VerseOrder=Intro,Unknown,Verse 99,STOP
+---
+Intro
+---
+Unknown
+1. first verse within an unknown block
+---
+2. second verse within an unknown block
+---
+Test Teil 2 no new verse
+should be same block
+---
+R: Refrain Test
+new chorus block which is missing versemarker
+---
+B1: Bridge Test
+new bridge 1 block without versemarker
+---
+Chorus 2: anoher one
+this is a chorus but missing verse marker
+---
+10. another verse
+with multiple columns
+that could be a verse 10
+if detected accordingly
+---
+Verse 99
+99. already existing numbered verse
+at the end of file

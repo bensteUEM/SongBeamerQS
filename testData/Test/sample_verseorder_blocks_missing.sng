@@ -1,0 +1,23 @@
+﻿#VerseOrder=Intro,Strophe 1,Strophe 2,Refrain 1,Refrain 1,Strophe 2,Refrain 1,Refrain 1,Bridge,Bridge,Intro,Refrain 1,Refrain 1,STOP
+---
+used in test_header_verse_order_complete
+first should be a new "unknown block" not in verse order
+it is used in 
+* test_header_verse_order_complete
+* test_content
+---
+$$M=Testnameblock
+This is a custom block
+Initial verseOrder should not match blocks!
+---
+Refrain 1
+ref 1 text
+---
+Strophe 2
+verse 2 text
+as there is no Intro or Strophe2 
+this is supposed to be the first
+Verse order item after fixing
+---
+Bridge
+bridge text

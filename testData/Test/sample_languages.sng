@@ -1,0 +1,33 @@
+﻿#LangCount=2
+#Title=Titel in Deutsch
+#TitleLang2=title in english
+#OTitle=original title in english
+#VerseOrder=Intro,Verse 1,Verse 2,STOP
+#Editor=SongBeamer 6.00g
+#Version=3
+#Author=Benedict Text
+#Translation=Benedicts Beispiel
+#Melody=
+#CCLI=
+#(c)=Public Domain
+#Songbook= 
+#ChurchSongID= 
+#id=2034
+---
+Intro
+---
+Verse 1
+1. Eine Zeile Deutsch
+1. One line in english
+deutscher text
+english text
+Verwendet in
+* test_header_complete
+* test_content
+* test_validate_header_background(self) -> None:
+---
+Verse 2
+##1 2. Eine Zeile mit Sprachmarkierung
+##2 2. One line with language marker
+##1 deutscher text
+##2 english text

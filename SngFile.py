@@ -237,7 +237,7 @@ class SngFile:
         * existance of SngTitleNumberChars
         * existance of contains_number
 
-        Anything that has no Songbook prefix could be special and is skipped as valid
+        Anything that has no Songbook prefix could be special (e.g. is psalm) is skipped as valid
 
         Args:
             fix: if it should be attempt to fix itself
