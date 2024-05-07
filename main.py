@@ -15,10 +15,23 @@ import pandas as pd
 from ChurchToolsApi import ChurchToolsApi
 
 import SNG_DEFAULTS
-from secure.config import ct_domain, ct_token  # local config ommited from github repo
 from SngFile import SngFile
 
 logger = logging.getLogger(__name__)
+
+ct_domain = os.getenv("CT_DOMAIN")
+ct_token = os.getenv("CT_TOKEN")
+
+if ct_domain is None or ct_token is None:
+    from secure.config import ct_domain, ct_token
+
+    logger.info(
+        "ct_domain or ct_token missing in env variables - using local config instead"
+    )
+    from secure import config
+
+    ct_domain = config.ct_domain
+    ct_token = config.ct_token
 
 
 def parse_sng_from_directory(
@@ -266,25 +279,34 @@ def write_df_to_file(df_sng: pd.DataFrame, target_dir: str | None = None) -> Non
 
 
 def check_ct_song_categories_exist_as_folder(
-    ct_song_categories: list[str], path: str
-) -> bool:
-    """Method which check whether all Song Categories of ChurchTools exist in the specified folder.
+    ct_song_categories: list[str], directory: Path, fix: bool = False
+) -> set[str] | None:
+    """Method which check whether Song Categories of ChurchTools exist in the specified folder.
 
     Params:
         ct_song_categories: List of all ChurchTools Song categories
-        path: for local files
+        directory: location of the SNG file collection to check for subfolders
+        fix: if missing folders for song categories should be created
     Returns:
-        if all CT categories exist as folder in local path
+        None if all exist, otherwise set of folder names that are missing
     """
-    logger.debug("checking categories %s in %s", ct_song_categories, path)
-    local_directories = os.listdir(path)
+    logger.debug("checking categories %s in %s", ct_song_categories, directory)
 
-    for category in ct_song_categories:
-        if category not in local_directories:
-            logger.warning("Missing CT category %s in %s", category, path)
-            return False
+    categories_in_ct = set(ct_song_categories)
+    categories_in_directory = {folder.name for folder in directory.iterdir()}
 
-    return True
+    missing_directories = categories_in_ct - categories_in_directory
+    if len(missing_directories) == 0:
+        return None
+
+    if fix:
+        for folder in missing_directories:
+            directory.mkdir(folder)
+        return check_ct_song_categories_exist_as_folder(
+            ct_song_categories=ct_song_categories, directory=directory, fix=False
+        )
+    logger.warning("Missing CT category %s in %s", missing_directories, directory)
+    return missing_directories
 
 
 def validate_ct_songs_exist_locally_by_name_and_category(

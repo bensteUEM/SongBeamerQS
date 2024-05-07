@@ -61,6 +61,8 @@ class TestSNG(unittest.TestCase):
         ct_token = os.getenv("CT_TOKEN")
 
         if ct_domain is None or ct_token is None:
+            from secure.config import ct_domain, ct_token  # noqu PLC0415
+
             logger.info(
                 "ct_domain or ct_token missing in env variables - using local config instead"
             )
@@ -69,7 +71,7 @@ class TestSNG(unittest.TestCase):
             ct_domain = config.ct_domain
             ct_token = config.ct_token
 
-        self.api = ChurchToolsApi(config.ct_domain, ct_token=config.ct_token)
+        self.api = ChurchToolsApi(domain=ct_domain, ct_token=ct_token)
 
     def test_ct_connection_established(self) -> None:
         """Checks that an API connection to a CT instance was establied.
@@ -90,11 +92,28 @@ class TestSNG(unittest.TestCase):
         songs = self.api.get_songs()
         df_ct = pd.json_normalize(songs)
 
-        self.assertTrue(
-            check_ct_song_categories_exist_as_folder(
-                list(df_ct["category.name"].unique()), SNG_DEFAULTS.KnownDirectory
-            )
+        expected_in_testing = list(df_ct["category.name"].unique())
+
+        missing_directories = check_ct_song_categories_exist_as_folder(
+            ct_song_categories=expected_in_testing,
+            directory=Path("./testData"),
+            fix=False,
         )
+        # ELKW1610.krz.tools specific test case for the named function
+        ommited_in_tests = {
+            "Hintergrundmusik",
+            "Feiert Jesus 3",
+            "Musical - Leuchte, leuchte Weihnachtsstern",
+            "Sonstige Texte",
+            "Sonstige Lieder",
+            "Feiert Jesus 2",
+            "Feiert Jesus 5",
+            "Feiert Jesus 6",
+            "Feiert Jesus 1",
+            "Feiert Jesus 4",
+        }
+
+        self.assertEqual(len(missing_directories - ommited_in_tests), 0)
 
     def test_eg_with_songbook_prefix(self) -> None:
         """Check that all fixable songs in EG Lieder do have EG Songbook prefix."""
@@ -257,25 +276,26 @@ class TestSNG(unittest.TestCase):
         """
         # 1. prepare
         songs_temp = []
-        dirname = "testData/"
-        dirprefix = "TEST"
+        test_dir = Path("testData/")
 
         sample1_id = 762
 
         sample2_id = 1113
         sample2_name = "002 Er ist die rechte Freudensonn.sng"
-        test2path = dirname + "/EG Lieder/" + sample2_name
+        test2path = test_dir / "EG Lieder" / sample2_name
 
-        Path.unlink(test2path, missing_ok=True)
+        Path(test2path).unlink(missing_ok=True)
 
         # 2. read all songs from known folders in testData
         for key, value in SNG_DEFAULTS.KnownFolderWithPrefix.items():
-            dirname = "./testData/" + key
-            if not Path(dirname).exists():
+            folder = test_dir / key
+            if not folder.exists():
                 continue
             dirprefix = value
             songs_temp.extend(
-                parse_sng_from_directory(directory=dirname, songbook_prefix=dirprefix)
+                parse_sng_from_directory(
+                    directory=str(folder), songbook_prefix=dirprefix
+                )
             )
 
         df_sng_test = pd.DataFrame(songs_temp, columns=["SngFile"])
