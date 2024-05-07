@@ -1,9 +1,18 @@
 """This module includes utilities used independant of sng instances."""
 
+import json
 import logging
+import logging.config
 import re
+from pathlib import Path
 
 import SNG_DEFAULTS
+
+config_file = Path("logging_config.json")
+with config_file.open(encoding="utf-8") as f_in:
+    logging_config = json.load(f_in)
+    logging.config.dictConfig(config=logging_config)
+logger = logging.getLogger(__name__)
 
 
 def contains_songbook_prefix(text: str) -> bool:
@@ -16,9 +25,7 @@ def contains_songbook_prefix(text: str) -> bool:
     """
     result = False
     for prefix in SNG_DEFAULTS.SngSongBookPrefix:
-        songbook_regex = r"({}\W+.*)|(.*\W+{})|({}\d+.*)|(.*\d+{})|(^{})|({}$)".format(
-            prefix, prefix, prefix, prefix, prefix, prefix
-        )
+        songbook_regex = rf"({prefix}\W+.*)|(.*\W+{prefix})|({prefix}\d+.*)|(.*\d+{prefix})|(^{prefix})|({prefix}$)"
         result |= re.match(songbook_regex, text.upper()) is not None
 
     return result
@@ -83,7 +90,7 @@ def validate_suspicious_encoding_str(text: str, fix: bool = False) -> tuple[bool
     """
     valid = True
     if re.match("Ã¤|Ã¶|Ã¼|Ã\\x84|Ã\\x96|Ã\\x9c|Ã\\x9f", text):
-        logging.info("Found problematic encoding in str '%s'", text)
+        logger.info("Found problematic encoding in str '%s'", text)
         if fix:
             orginal_text = text
             text = re.sub("Ã¤", "ä", text, count=0)
@@ -94,9 +101,9 @@ def validate_suspicious_encoding_str(text: str, fix: bool = False) -> tuple[bool
             text = re.sub("Ã\x9c", "Ü", text, count=0)
             text = re.sub("Ã\x9f", "ß", text, count=0)
             if text != orginal_text:
-                logging.debug("replaced %s by %s", orginal_text, text)
+                logger.debug("replaced %s by %s", orginal_text, text)
             else:
-                logging.warning("%s - could not be fixed automatically", orginal_text)
+                logger.warning("%s - could not be fixed automatically", orginal_text)
         else:
             valid = False
     return valid, text

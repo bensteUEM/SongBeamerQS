@@ -7,6 +7,8 @@ from pathlib import Path
 
 from SNG_DEFAULTS import SngDefaultHeader
 
+logger = logging.getLogger(__name__)
+
 
 class SngFileParserPart(abc.ABC):
     """Part of SngFile class that defines methods used to parse and write sng files."""
@@ -40,14 +42,14 @@ class SngFileParserPart(abc.ABC):
             with Path(filename).open(encoding="utf-8") as file_object:
                 content = file_object.read()
             if content[0] == "\ufeff":
-                logging.debug("%s is detected as utf-8 because of BOM", filename)
+                logger.debug("%s is detected as utf-8 because of BOM", filename)
                 content = content[1:]
             else:
-                logging.info("%s is read as utf-8 but no BOM", filename)
+                logger.info("%s is read as utf-8 but no BOM", filename)
         except UnicodeDecodeError:
             with Path(filename).open(encoding="iso-8859-1") as file_object:
                 content = file_object.read()
-            logging.info(
+            logger.info(
                 "%s is read as iso-8859-1 - be aware that encoding is change upon write!",
                 filename,
             )
@@ -73,7 +75,7 @@ class SngFileParserPart(abc.ABC):
                     song_blocks.append([])
                 else:  # lyrics line
                     song_blocks[-1].append(line_no_space)
-        logging.debug("Parsing content for: %s", self.filename)
+        logger.debug("Parsing content for: %s", self.filename)
         self.parse_content(song_blocks)
 
     def parse_content(self, temp_content: list[list[str]]) -> None:
@@ -133,7 +135,7 @@ class SngFileParserPart(abc.ABC):
         """
         new_path = new_parent_dir / self.path.name
         new_path.mkdir(parents=True, exist_ok=True)
-        logging.debug("Changing path from %s to %s", self.path, new_path)
+        logger.debug("Changing path from %s to %s", self.path, new_path)
         self.path = new_path
 
     def write_file(self, suffix: str = "", encoding: str = "utf-8") -> None:

@@ -1,12 +1,20 @@
 """This module contains tests for most methods defined in SngFile.py."""
 
+import json
 import logging
+import logging.config
 import re
 import unittest
 from pathlib import Path
 from shutil import copyfile
 
 from SngFile import SngFile
+
+config_file = Path("logging_config.json")
+with config_file.open(encoding="utf-8") as f_in:
+    logging_config = json.load(f_in)
+    logging.config.dictConfig(config=logging_config)
+logger = logging.getLogger(__name__)
 
 
 class TestSNGHeaderValidation(unittest.TestCase):
@@ -23,14 +31,6 @@ class TestSNGHeaderValidation(unittest.TestCase):
             kwargs: passthrough named arguments
         """
         super().__init__(*args, **kwargs)
-
-        logging.basicConfig(
-            filename="logs/TestSNG.log",
-            encoding="utf-8",
-            format="%(asctime)s %(name)-10s %(levelname)-8s %(message)s",
-            level=logging.DEBUG,
-        )
-        logging.info("Excecuting TestSNG RUN")
 
     def test_header_title_fix(self) -> None:
         """Checks that header title is fixed for one sample file."""
@@ -203,7 +203,7 @@ class TestSNGHeaderValidation(unittest.TestCase):
         self.assertEqual(
             cm.output,
             [
-                f"WARNING:root:Missing required headers in ({test_file_name}) ['Title', 'CCLI']"
+                f"WARNING:SngFileHeaderValidationPart:Missing required headers in ({test_file_name}) ['Title', 'CCLI']"
             ],
         )
 
@@ -232,7 +232,7 @@ class TestSNGHeaderValidation(unittest.TestCase):
         self.assertEqual(
             cm.output,
             [
-                f"WARNING:root:Missing required headers in ({test_file_name}) "
+                f"WARNING:SngFileHeaderValidationPart:Missing required headers in ({test_file_name}) "
                 "['Author', 'Melody', 'CCLI', 'Translation']"
             ],
         )
@@ -289,7 +289,7 @@ class TestSNGHeaderValidation(unittest.TestCase):
         self.assertEqual(
             cm.output,
             [
-                f"WARNING:root:Missing required digits as first block in filename {test_filename} - can't fix songbook"
+                f"WARNING:SngFileHeaderValidationPart:Missing required digits as first block in filename {test_filename} - can't fix songbook"
             ],
         )
 
@@ -304,8 +304,8 @@ class TestSNGHeaderValidation(unittest.TestCase):
         self.assertEqual(
             cm.output,
             [
-                f"DEBUG:root:testData/Test/{test_filename} is detected as utf-8 because of BOM",
-                "DEBUG:root:Parsing content for: sample.sng",
+                f"DEBUG:SngFileParserPart:testData/Test/{test_filename} is detected as utf-8 because of BOM",
+                "DEBUG:SngFileParserPart:Parsing content for: sample.sng",
             ],
         )
 
@@ -365,14 +365,19 @@ class TestSNGHeaderValidation(unittest.TestCase):
 
         with self.assertLogs(level="DEBUG") as cm:
             self.assertFalse(song.validate_header_background(fix=False))
-        self.assertEqual(cm.output, [f"DEBUG:root:No Background in ({test_filename})"])
+        self.assertEqual(
+            cm.output,
+            [f"DEBUG:SngFileHeaderValidationPart:No Background in ({test_filename})"],
+        )
 
         song = SngFile(test_dir / test_filename, "test")
         with self.assertLogs(level="WARN") as cm:
             self.assertFalse(song.validate_header_background(fix=True))
         self.assertEqual(
             cm.output,
-            [f"WARNING:root:Can't fix background for ({test_filename})"],
+            [
+                f"WARNING:SngFileHeaderValidationPart:Can't fix background for ({test_filename})"
+            ],
         )
 
         # Case 3. Psalm with no picture
@@ -382,13 +387,19 @@ class TestSNGHeaderValidation(unittest.TestCase):
 
         with self.assertLogs(level="DEBUG") as cm:
             self.assertFalse(song.validate_header_background(fix=False))
-        self.assertEqual(cm.output, [f"DEBUG:root:No Background in ({test_filename})"])
+        self.assertEqual(
+            cm.output,
+            [f"DEBUG:SngFileHeaderValidationPart:No Background in ({test_filename})"],
+        )
 
         song = SngFile(test_dir / test_filename, "EG")
         with self.assertLogs(level="DEBUG") as cm:
             self.assertTrue(song.validate_header_background(fix=True))
         self.assertEqual(
-            cm.output, [f"DEBUG:root:Fixing background for Psalm in ({test_filename})"]
+            cm.output,
+            [
+                f"DEBUG:SngFileHeaderValidationPart:Fixing background for Psalm in ({test_filename})"
+            ],
         )
 
         # Case 4. Psalm with wrong picture
@@ -401,7 +412,7 @@ class TestSNGHeaderValidation(unittest.TestCase):
         self.assertEqual(
             cm.output,
             [
-                f"DEBUG:root:Incorrect background for Psalm in ({test_filename}) not fixed"
+                f"DEBUG:SngFileHeaderValidationPart:Incorrect background for Psalm in ({test_filename}) not fixed"
             ],
         )
 
@@ -409,7 +420,10 @@ class TestSNGHeaderValidation(unittest.TestCase):
         with self.assertLogs(level="DEBUG") as cm:
             self.assertTrue(song.validate_header_background(fix=True))
         self.assertEqual(
-            cm.output, [f"DEBUG:root:Fixing background for Psalm in ({test_filename})"]
+            cm.output,
+            [
+                f"DEBUG:SngFileHeaderValidationPart:Fixing background for Psalm in ({test_filename})"
+            ],
         )
 
         # Case 5. Psalm with correct picture
@@ -450,7 +464,7 @@ class TestSNGHeaderValidation(unittest.TestCase):
         self.assertEqual(
             cm.output,
             [
-                f'INFO:root:Psalm "{test_filename}"'
+                f'INFO:SngFileHeaderValidationPart:Psalm "{test_filename}"'
                 " can not be auto corrected - please adjust manually ( , )"
             ],
         )
@@ -495,7 +509,7 @@ class TestSNGHeaderValidation(unittest.TestCase):
         self.assertEqual(
             cm.output,
             [
-                f"WARNING:root:Verse Order and Blocks don't match in {test_filename}",
+                f"WARNING:SngFileHeaderValidationPart:Verse Order and Blocks don't match in {test_filename}",
             ],
         )
 
