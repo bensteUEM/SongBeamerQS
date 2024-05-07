@@ -3,7 +3,7 @@
 
 /secure/
 .idea
-/logs/
+/logs/*
 Downloads
 *.csv
 

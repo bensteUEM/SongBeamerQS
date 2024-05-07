@@ -1,0 +1,30 @@
+# This workflow will install Python dependencies, run tests and ruff lint with a single version of Python
+
+name: Python Lint & Pytest
+
+on: 
+  push:
+  pull_request:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v5.1.0
+      with:
+        python-version: "3.10"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: ruff check
+      run: |
+        ruff check        
+    - name: Test with Unittest
+      run: |
+        python -m pytest 
