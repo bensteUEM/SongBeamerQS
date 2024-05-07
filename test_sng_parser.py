@@ -1,12 +1,20 @@
 """This module contains tests for most methods defined in SngFile.py."""
 
 import filecmp
+import json
 import logging
+import logging.config
 import unittest
 from pathlib import Path
 from shutil import rmtree
 
 from SngFile import SngFile
+
+config_file = Path("logging_config.json")
+with config_file.open(encoding="utf-8") as f_in:
+    logging_config = json.load(f_in)
+    logging.config.dictConfig(config=logging_config)
+logger = logging.getLogger(__name__)
 
 
 class TestSNGParser(unittest.TestCase):
@@ -23,14 +31,6 @@ class TestSNGParser(unittest.TestCase):
             kwargs: passthrough named arguments
         """
         super().__init__(*args, **kwargs)
-
-        logging.basicConfig(
-            filename="logs/TestSNG.log",
-            encoding="utf-8",
-            format="%(asctime)s %(name)-10s %(levelname)-8s %(message)s",
-            level=logging.DEBUG,
-        )
-        logging.info("Excecuting TestSNG RUN")
 
     def test_file_name(self) -> None:
         """Checks if song contains correct filename and path information."""
@@ -139,21 +139,21 @@ class TestSNGParser(unittest.TestCase):
         # Part 2
         with self.assertLogs(level=logging.DEBUG) as cm:
             sng = SngFile(iso_file_path)
-        expected1 = "INFO:root:testData/ISO-UTF8/Herr du wollest uns bereiten_iso.sng is read as iso-8859-1 - be aware that encoding is change upon write!"
+        expected1 = "INFO:SngFileParserPart:testData/ISO-UTF8/Herr du wollest uns bereiten_iso.sng is read as iso-8859-1 - be aware that encoding is change upon write!"
         self.assertEqual(expected1, cm.output[0])
         self.assertEqual(2, len(cm.output))
 
         # Part 3
         with self.assertLogs(level=logging.DEBUG) as cm:
             sng = SngFile(utf_file_path)
-        expected1 = "DEBUG:root:testData/ISO-UTF8/Herr du wollest uns bereiten_ct_utf8.sng is detected as utf-8 because of BOM"
+        expected1 = "DEBUG:SngFileParserPart:testData/ISO-UTF8/Herr du wollest uns bereiten_ct_utf8.sng is detected as utf-8 because of BOM"
         self.assertEqual(expected1, cm.output[0])
         self.assertEqual(2, len(cm.output))
 
         # Part 4
         with self.assertLogs(level=logging.INFO) as cm:
             sng = SngFile(no_bom_utf_file_path)
-        expected1 = "INFO:root:testData/ISO-UTF8/Herr du wollest uns bereiten_noBOM_utf8.sng is read as utf-8 but no BOM"
+        expected1 = "INFO:SngFileParserPart:testData/ISO-UTF8/Herr du wollest uns bereiten_noBOM_utf8.sng is read as utf-8 but no BOM"
         self.assertEqual(expected1, cm.output[0])
         self.assertEqual(1, len(cm.output))
 
@@ -168,3 +168,7 @@ class TestSNGParser(unittest.TestCase):
             "\ufeff", text[0], "UTF8 file read with correct encoding including BOM"
         )
         Path.unlink(iso2utf_file_path)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -1,9 +1,18 @@
 """This module contains tests for most methods defined in SngFile.py."""
 
+import json
 import logging
+import logging.config
 import unittest
+from pathlib import Path
 
 from sng_utils import contains_songbook_prefix, generate_verse_marker_from_line
+
+config_file = Path("logging_config.json")
+with config_file.open(encoding="utf-8") as f_in:
+    logging_config = json.load(f_in)
+    logging.config.dictConfig(config=logging_config)
+logger = logging.getLogger(__name__)
 
 
 class TestSNGUtils(unittest.TestCase):
@@ -18,18 +27,11 @@ class TestSNGUtils(unittest.TestCase):
         """
         super().__init__(*args, **kwargs)
 
-        logging.basicConfig(
-            filename="logs/TestSNG.log",
-            encoding="utf-8",
-            format="%(asctime)s %(name)-10s %(levelname)-8s %(message)s",
-            level=logging.DEBUG,
-        )
-        logging.info("Excecuting TestSNG RUN")
-
     def test_helper_contains_songbook_prefix(self) -> None:
         """Test that runs various variations of songbook parts which should be detected by improved helper method."""
         # negative samples
         self.assertFalse(contains_songbook_prefix("gesegnet"))
+        logger.debug("finished negative samples")
 
         # positive samples
         self.assertTrue(contains_songbook_prefix("EG"))
@@ -41,6 +43,7 @@ class TestSNGUtils(unittest.TestCase):
         self.assertTrue(contains_songbook_prefix("EG-999"))
         self.assertTrue(contains_songbook_prefix("999EG"))
         self.assertTrue(contains_songbook_prefix("999-EG"))
+        logger.debug("finished EG samples")
 
         self.assertTrue(contains_songbook_prefix("FJ"))
         self.assertTrue(contains_songbook_prefix("FJ999"))
@@ -54,6 +57,9 @@ class TestSNGUtils(unittest.TestCase):
         self.assertTrue(contains_songbook_prefix("999/FJ5"))
         self.assertTrue(contains_songbook_prefix("999-FJ5"))
         self.assertTrue(contains_songbook_prefix("999.FJ5"))
+
+        logger.debug("finished FJ samples")
+        logger.debug("finished test_helper_contains_songbook_prefix")
 
     def test_generate_verse_marker_from_line(self) -> None:
         """Test sample lines that could be converted to verse labels."""
@@ -84,6 +90,8 @@ class TestSNGUtils(unittest.TestCase):
         for sample, expected_result in samples.items():
             result = generate_verse_marker_from_line(sample)
             self.assertEqual(result, expected_result)
+
+        logger.debug("finished test_generate_verse_marker_from_line")
 
 
 if __name__ == "__main__":

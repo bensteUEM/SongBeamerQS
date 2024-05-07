@@ -4,7 +4,9 @@ defining some "activites" reading local files and connecting to a server
 It mainly works based on df comparison
 """
 
+import json
 import logging
+import logging.config
 import os.path
 import time
 from pathlib import Path
@@ -15,6 +17,8 @@ from ChurchToolsApi import ChurchToolsApi
 import SNG_DEFAULTS
 from secure.config import ct_domain, ct_token  # local config ommited from github repo
 from SngFile import SngFile
+
+logger = logging.getLogger(__name__)
 
 
 def parse_sng_from_directory(
@@ -31,8 +35,8 @@ def parse_sng_from_directory(
     """
     if filenames is None:
         filenames = []
-    logging.info("Parsing: %s", directory)
-    logging.info("With Prefix: %s", songbook_prefix)
+    logger.info("Parsing: %s", directory)
+    logger.info("With Prefix: %s", songbook_prefix)
 
     result = []
     directory_list = filter(
@@ -46,7 +50,7 @@ def parse_sng_from_directory(
         current_song = SngFile(directory + "/" + sng_filename, songbook_prefix)
         if "Editor" not in current_song.header:
             current_song.header["Editor"] = SNG_DEFAULTS.SngDefaultHeader["Editor"]
-            logging.info("Added missing Editor for: %s", sng_filename)
+            logger.info("Added missing Editor for: %s", sng_filename)
         result.append(current_song)
     return result
 
@@ -66,22 +70,22 @@ def validate_all_headers(df_to_change: pd.DataFrame, fix: bool = False) -> pd.Se
     Returns:
         boolean Series with True for all entries that have no issues
     """
-    logging.info("Starting validate_all_headers(%s)", fix)
+    logger.info("Starting validate_all_headers(%s)", fix)
 
     # 1. Validate Title
-    logging.info("Starting validate_header_title(%s)", fix)
+    logger.info("Starting validate_header_title(%s)", fix)
     headers_valid = df_to_change["SngFile"].apply(
         lambda x: x.validate_header_title(fix)
     )
 
     # 2. Validate Songbook Entries
-    logging.info("Starting validate_header_songbook(%s)", fix)
+    logger.info("Starting validate_header_songbook(%s)", fix)
     headers_valid &= df_to_change["SngFile"].apply(
         lambda x: x.validate_header_songbook(fix)
     )
 
     # 3. Remove all Illegal headers
-    logging.info("Starting validate_headers_illegal_removed(%s)", fix)
+    logger.info("Starting validate_headers_illegal_removed(%s)", fix)
     headers_valid &= df_to_change["SngFile"].apply(
         lambda x: x.validate_headers_illegal_removed(fix)
     )
@@ -91,7 +95,7 @@ def validate_all_headers(df_to_change: pd.DataFrame, fix: bool = False) -> pd.Se
 
     # Set Background for all Psalm entries
     psalms_select = df_to_change["SngFile"].apply(lambda x: x.is_psalm())
-    logging.info(
+    logger.info(
         "Starting validate_header_background(%s) for %s psalms", fix, sum(psalms_select)
     )
     headers_valid &= df_to_change[psalms_select]["SngFile"].apply(
@@ -99,7 +103,7 @@ def validate_all_headers(df_to_change: pd.DataFrame, fix: bool = False) -> pd.Se
     )
 
     # 6. Check that all required headers are present
-    logging.info("Starting validate_headers()")
+    logger.info("Starting validate_headers()")
     df_to_change["SngFile"].apply(lambda x: x.validate_headers())
 
     return headers_valid
@@ -159,7 +163,7 @@ def generate_title_column(df_to_change: pd.DataFrame) -> None:
             df_to_change.loc[(index, "Title")] = value.header["Title"]
         else:
             df_to_change.loc[(index, "Title")] = None
-            logging.info("Song without a Title in Header: %s", value.filename)
+            logger.info("Song without a Title in Header: %s", value.filename)
 
 
 def generate_songbook_column(df_to_change: pd.DataFrame) -> pd.DataFrame:
@@ -217,25 +221,25 @@ def clean_all_songs(df_sng: pd.DataFrame) -> pd.DataFrame:
     """
     df_result = df_sng.copy()
 
-    logging.info("starting validate_verse_order_coverage() with fix")
+    logger.info("starting validate_verse_order_coverage() with fix")
     df_result["SngFile"].apply(lambda x: x.validate_verse_order_coverage(fix=True))
 
-    logging.info("starting fix_intro_slide()")
+    logger.info("starting fix_intro_slide()")
     df_result["SngFile"].apply(lambda x: x.fix_intro_slide())
 
     # Fixing without auto moving to end because sometimes on purpose, and cases might be
-    logging.info("starting validate_stop_verseorder(fix=True, should_be_at_end=False)")
+    logger.info("starting validate_stop_verseorder(fix=True, should_be_at_end=False)")
     df_result["SngFile"].apply(
         lambda x: x.validate_stop_verseorder(fix=True, should_be_at_end=False)
     )
     # Logging cases that are not at end ...
-    # logging.info('starting validate_stop_verseorder(fix=False, should_be_at_end=True)')
+    # logger.info('starting validate_stop_verseorder(fix=False, should_be_at_end=True)')
     # df_sng['SngFile'].apply(lambda x: x.validate_stop_verseorder(fix=False, should_be_at_end=True))
 
-    logging.info("starting validate_verse_numbers() with fix")
+    logger.info("starting validate_verse_numbers() with fix")
     df_result["SngFile"].apply(lambda x: x.validate_verse_numbers(fix=True))
 
-    logging.info("starting validate_content_slides_number_of_lines() with fix")
+    logger.info("starting validate_content_slides_number_of_lines() with fix")
     df_result["SngFile"].apply(
         lambda x: x.validate_content_slides_number_of_lines(fix=True)
     )
@@ -254,10 +258,10 @@ def write_df_to_file(df_sng: pd.DataFrame, target_dir: str | None = None) -> Non
     if target_dir:
         target_path = Path(target_dir)
 
-        logging.info("starting write_path_change(%s)", target_path)
+        logger.info("starting write_path_change(%s)", target_path)
         df_sng["SngFile"].apply(lambda x: x.write_path_change(target_path))
 
-    logging.info("starting write_file()")
+    logger.info("starting write_file()")
     df_sng["SngFile"].apply(lambda x: x.write_file())
 
 
@@ -272,12 +276,12 @@ def check_ct_song_categories_exist_as_folder(
     Returns:
         if all CT categories exist as folder in local path
     """
-    logging.debug("checking categories %s in %s", ct_song_categories, path)
+    logger.debug("checking categories %s in %s", ct_song_categories, path)
     local_directories = os.listdir(path)
 
     for category in ct_song_categories:
         if category not in local_directories:
-            logging.warning("Missing CT category %s in %s", category, path)
+            logger.warning("Missing CT category %s in %s", category, path)
             return False
 
     return True
@@ -300,7 +304,7 @@ def validate_ct_songs_exist_locally_by_name_and_category(
     """
     generate_ct_compare_columns(df_sng)
 
-    logging.info("validate_ct_songs_exist_locally_by_name_and_category()")
+    logger.info("validate_ct_songs_exist_locally_by_name_and_category()")
     df_ct_join_name = df_sng.merge(
         df_ct, on=["name", "category.name"], how="right", indicator=True
     )
@@ -309,7 +313,7 @@ def validate_ct_songs_exist_locally_by_name_and_category(
         by=["category.name", "name"]
     )
     for issue in issues[["name", "category.name", "id_y"]].iterrows():
-        logging.warning(
+        logger.warning(
             "Song (%s) in category (%s) exists as ChurchTools ID=%s but not matched locally",
             issue[1]["name"],
             issue[1]["category.name"],
@@ -337,14 +341,14 @@ def validate_ct_songs_exist_locally_by_id(
     # prep df id, category and name columns
     generate_ct_compare_columns(df_sng)
 
-    logging.info("validate_ct_songs_exist_locally_by_id()")
+    logger.info("validate_ct_songs_exist_locally_by_id()")
     df_ct_join_id = df_sng.merge(df_ct, on=["id"], how="right", indicator=True)
 
     issues = df_ct_join_id[df_ct_join_id["_merge"] != "both"].sort_values(
         by=["category.name_y", "name_y"]
     )
     for issue in issues[["name_y", "category.name_y", "id"]].iterrows():
-        logging.warning(
+        logger.warning(
             "Song (%s) in category (%s) exists with ChurchTools ID=%s online but ID not matched locally",
             issue[1]["name_y"],
             issue[1]["category.name_y"],
@@ -366,8 +370,8 @@ def add_id_to_local_song_if_available_in_ct(
         df_sng: All local songs to check - a copy i used for processing ...
         df_ct:  All known songs from ChurchTools
     """
-    logging.info("Starting add_id_to_local_song_if_available_in_ct()")
-    logging.critical(
+    logger.info("Starting add_id_to_local_song_if_available_in_ct()")
+    logger.critical(
         "This function might destroy your data in case a songname exists twice in one songbook #13"
     )
     # TODO (bensteUEM):  Extend functionality of add_id_to_local_song_if_available_in_ct()
@@ -392,14 +396,14 @@ def add_id_to_local_song_if_available_in_ct(
     for _index, row in overwrite_id_by_name_cat.iterrows():
         if isinstance(row["SngFile_x"], SngFile):
             row["SngFile_x"].set_id(row["id_y"])
-            logging.debug(
+            logger.debug(
                 "Prepare overwrite id %s for song %s with new id %s",
                 row["id_y"],
                 row["filename_x"],
                 row["id_y"],
             )
         else:
-            logging.warning(
+            logger.warning(
                 'CT song ID= %s from (%s) with title "%s" not found locally',
                 row["id_y"],
                 row["category.name"],
@@ -438,7 +442,7 @@ def download_missing_online_songs(
     is_successful = True
     for song_id in ids:
         song = ct_api_reference.get_songs(song_id=song_id)[0]
-        logging.debug(
+        logger.debug(
             'Downloading CT song id=%s "%s" (%s)',
             song_id,
             song["name"],
@@ -453,7 +457,7 @@ def download_missing_online_songs(
         filename = f"{song['name']}.sng"
 
         if Path.exists(Path("{file_path_in_collection}/{filename}")):
-            logging.warning(
+            logger.warning(
                 "Local file %s from CT ID %s does already exist - try automatch instead!",
                 filename,
                 song_id,
@@ -468,14 +472,14 @@ def download_missing_online_songs(
             target_path=str(file_path_in_collection),
         )
         if result:
-            logging.debug(
+            logger.debug(
                 "Downloaded %s into %s from CT IT %s",
                 filename,
                 file_path_in_collection,
                 song_id,
             )
         else:
-            logging.debug(
+            logger.debug(
                 "Failed to download %s into %s from CT IT %s",
                 filename,
                 file_path_in_collection,
@@ -520,7 +524,7 @@ def upload_new_local_songs_and_generate_ct_id(
         ccli = row["SngFile"].header.get("CCLI", "")
         copy = row["SngFile"].header.get("(c)", "")
 
-        logging.info(
+        logger.info(
             "Uploading Song '%s' with Category ID '%s' from '%s' with (C) from '%s' and CCLI '%s'",
             title,
             category_id,
@@ -535,7 +539,7 @@ def upload_new_local_songs_and_generate_ct_id(
             copyright=copy,
             ccli=ccli,
         )
-        logging.debug("Created new Song with ID '%s'", song_id)
+        logger.debug("Created new Song with ID '%s'", song_id)
         api.add_song_tag(song_id=song_id, song_tag_id=default_tag_id)
         row["SngFile"].set_id(song_id)
         row["SngFile"].write_file()
@@ -578,10 +582,10 @@ def upload_local_songs_by_id(df_sng: pd.DataFrame, df_ct: pd.DataFrame) -> None:
             overwrite=True,
         )
         if progress % 50 == 0:
-            logging.info("Finished upload %s of %s - sleep 15", progress, target)
+            logger.info("Finished upload %s of %s - sleep 15", progress, target)
             time.sleep(15)
 
-    logging.info(
+    logger.info(
         "upload_local_songs_by_id - will overwrite all CT SNG default arrangement files with known ID"
     )
 
@@ -637,7 +641,7 @@ def prepare_required_song_tags(api: ChurchToolsApi) -> dict:
         # name = "QS: missing sng"
         # tag_id = api.create_tag(name=name,type="songs")
         # tags_by_name[name]=tag_id
-        # logging.info("created %s with ID=%s on instance because song tag did not exist", name, tag_id)
+        # logger.info("created %s with ID=%s on instance because song tag did not exist", name, tag_id)
 
     # too many sng
     if "QS: too many sng" not in tags_by_name:
@@ -647,7 +651,7 @@ def prepare_required_song_tags(api: ChurchToolsApi) -> dict:
         # name = "QS: too many sng"
         # tag_id = api.create_tag(name=name,type="songs")
         # tags_by_name[name]=tag_id
-        # logging.info("created %s with ID=%s on instance because song tag did not exist", name, tag_id)
+        # logger.info("created %s with ID=%s on instance because song tag did not exist", name, tag_id)
 
     return tags_by_name
 
@@ -674,18 +678,16 @@ def validate_ct_song_sng_count(api: ChurchToolsApi) -> None:
         )
         if song_count % 25 == 0:
             # avoid Too many requests. Rate Limit Exceeded.
-            logging.debug("sleep 1 second after %s / %s", song_count, len_songs)
+            logger.debug("sleep 1 second after %s / %s", song_count, len_songs)
             time.sleep(1)
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        filename="logs/main.py.log",
-        encoding="utf-8",
-        format="%(asctime)s %(name)-10s %(levelname)-8s %(message)s",
-        level=logging.DEBUG,
-    )
-    logging.info("Excecuting Main RUN")
+    config_file = Path("logging_config.json")
+    with config_file.open(encoding="utf-8") as f_in:
+        logging_config = json.load(f_in)
+        logging.config.dictConfig(config=logging_config)
+    logger.info("Excecuting Main RUN")
 
     songs_temp = []
     df_sng = read_songs_to_df()
@@ -714,4 +716,4 @@ if __name__ == "__main__":
     upload_local_songs_by_id(df_sng, df_ct)
     """
 
-    logging.info("Main Method finished")
+    logger.info("Main Method finished")

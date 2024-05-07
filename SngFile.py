@@ -1,13 +1,22 @@
 """This file is used to define SngFile class and somee helper methods related to it's usage."""
 
+import json
 import logging
+import logging.config
 import re
 from itertools import chain
+from pathlib import Path
 
 import SNG_DEFAULTS
 from sng_utils import generate_verse_marker_from_line, validate_suspicious_encoding_str
 from SngFileHeaderValidationPart import SngFileHeaderValidation
 from SngFileParserPart import SngFileParserPart
+
+config_file = Path("logging_config.json")
+with config_file.open(encoding="utf-8") as f_in:
+    logging_config = json.load(f_in)
+    logging.config.dictConfig(config=logging_config)
+logger = logging.getLogger(__name__)
 
 
 class SngFile(SngFileParserPart, SngFileHeaderValidation):
@@ -31,13 +40,13 @@ class SngFile(SngFileParserPart, SngFileHeaderValidation):
         if "Intro" not in self.header["VerseOrder"]:
             self.header["VerseOrder"].insert(0, "Intro")
             self.update_editor_because_content_modified()
-            logging.debug("Added Intro to VerseOrder of (%s)", self.filename)
+            logger.debug("Added Intro to VerseOrder of (%s)", self.filename)
 
         if "Intro" not in self.content:
             intro = {"Intro": [["Intro"], []]}
             self.content = {**intro, **self.content}
             self.update_editor_because_content_modified()
-            logging.debug("Added Intro Block to (%s)", self.filename)
+            logger.debug("Added Intro Block to (%s)", self.filename)
 
     def validate_content_slides_number_of_lines(
         self, number_of_lines: int = 4, fix: bool = False
@@ -61,7 +70,7 @@ class SngFile(SngFileParserPart, SngFileHeaderValidation):
             has_issues |= len(verse_block[-1]) > number_of_lines
 
             if has_issues and fix:
-                logging.debug(
+                logger.debug(
                     "Fixing block length %s in (%s) to %s lines",
                     verse_label,
                     self.filename,
@@ -109,7 +118,7 @@ class SngFile(SngFileParserPart, SngFileHeaderValidation):
 
                 # check if new block name already exists
                 if new_key in new_content:
-                    logging.debug(
+                    logger.debug(
                         "\t Appending %s to existing Verse label %s",
                         old_key,
                         new_key,
@@ -122,7 +131,7 @@ class SngFile(SngFileParserPart, SngFileHeaderValidation):
                     ]
                 # If it's a new label after fix
                 else:
-                    logging.debug(
+                    logger.debug(
                         "New Verse label from %s to %s in (%s)",
                         old_key,
                         new_key,
@@ -140,7 +149,7 @@ class SngFile(SngFileParserPart, SngFileHeaderValidation):
             # Any regular block w/o versemarker
             if not is_valid_verse_label_list:
                 all_verses_valid &= is_valid_verse_label_list
-                logging.debug(
+                logger.debug(
                     "Invalid verse label %s not fixed in (%s)",
                     verse_label_list,
                     self.filename,
@@ -205,7 +214,7 @@ class SngFile(SngFileParserPart, SngFileHeaderValidation):
                         line, fix=fix
                     )
                     if not is_valid:
-                        logging.info(
+                        logger.info(
                             "Found problematic encoding [%s] in %s %s slide line %s of %s",
                             checked_line,
                             verse[1],
@@ -244,7 +253,7 @@ class SngFile(SngFileParserPart, SngFileHeaderValidation):
         Returns:
             dict of blocks or None
         """
-        logging.info("Started generate_verses_from_unknown()")
+        logger.info("Started generate_verses_from_unknown()")
 
         old_block = self.content.get("Unknown")
 
@@ -265,7 +274,7 @@ class SngFile(SngFileParserPart, SngFileHeaderValidation):
 
             current_block_name = " ".join(new_block_name).strip()
 
-            logging.debug(
+            logger.debug(
                 "Detected new '%s' in 'Unknown' block of (%s)",
                 current_block_name,
                 self.filename,
@@ -284,7 +293,7 @@ class SngFile(SngFileParserPart, SngFileHeaderValidation):
         self.header["VerseOrder"][
             position_of_unknown : position_of_unknown + 1
         ] = new_block_keys
-        logging.info(
+        logger.info(
             "Added new '%s' in Verse Order of (%s)", new_block_keys, self.filename
         )
         self.content.pop("Unknown")
@@ -292,7 +301,7 @@ class SngFile(SngFileParserPart, SngFileHeaderValidation):
         # TODO (bensteUEM): check what happens if already exists
         # https://github.com/bensteUEM/SongBeamerQS/issues/35
 
-        logging.info(
+        logger.info(
             "Replaced 'Unknown' with '%s' in Verse Order of (%s)",
             new_block_keys,
             self.filename,
