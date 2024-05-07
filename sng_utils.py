@@ -25,9 +25,7 @@ def contains_songbook_prefix(text: str) -> bool:
     """
     result = False
     for prefix in SNG_DEFAULTS.SngSongBookPrefix:
-        songbook_regex = r"({}\W+.*)|(.*\W+{})|({}\d+.*)|(.*\d+{})|(^{})|({}$)".format(
-            prefix, prefix, prefix, prefix, prefix, prefix
-        )
+        songbook_regex = rf"({prefix}\W+.*)|(.*\W+{prefix})|({prefix}\d+.*)|(.*\d+{prefix})|(^{prefix})|({prefix}$)"
         result |= re.match(songbook_regex, text.upper()) is not None
 
     return result
