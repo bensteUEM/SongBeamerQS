@@ -276,25 +276,26 @@ class TestSNG(unittest.TestCase):
         """
         # 1. prepare
         songs_temp = []
-        dirname = "testData/"
-        dirprefix = "TEST"
+        test_dir = Path("testData/")
 
         sample1_id = 762
 
         sample2_id = 1113
         sample2_name = "002 Er ist die rechte Freudensonn.sng"
-        test2path = dirname + "/EG Lieder/" + sample2_name
+        test2path = test_dir / "EG Lieder" / sample2_name
 
-        Path.unlink(test2path, missing_ok=True)
+        Path(test2path).unlink(missing_ok=True)
 
         # 2. read all songs from known folders in testData
         for key, value in SNG_DEFAULTS.KnownFolderWithPrefix.items():
-            dirname = "./testData/" + key
-            if not Path(dirname).exists():
+            folder = test_dir / key
+            if not folder.exists():
                 continue
             dirprefix = value
             songs_temp.extend(
-                parse_sng_from_directory(directory=dirname, songbook_prefix=dirprefix)
+                parse_sng_from_directory(
+                    directory=str(folder), songbook_prefix=dirprefix
+                )
             )
 
         df_sng_test = pd.DataFrame(songs_temp, columns=["SngFile"])

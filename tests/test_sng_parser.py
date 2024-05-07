@@ -109,28 +109,28 @@ class TestSNGParser(unittest.TestCase):
         4. Parses an utf-8 file without BOM
         5. Parsing iso file writes utf8 and checks if output file has BOM
         """
-        path = "testData/ISO-UTF8/"
-        iso_file_path = path + "Herr du wollest uns bereiten_iso.sng"
+        path = Path("testData/ISO-UTF8/")
+        iso_file_path = path / "Herr du wollest uns bereiten_iso.sng"
         iso2utf_file_name = "Herr du wollest uns bereiten_iso2utf.sng"
-        iso2utf_file_path = path + iso2utf_file_name
-        utf_file_path = path + "Herr du wollest uns bereiten_ct_utf8.sng"
-        no_bom_utf_file_path = path + "Herr du wollest uns bereiten_noBOM_utf8.sng"
+        iso2utf_file_path = path / iso2utf_file_name
+        utf_file_path = path / "Herr du wollest uns bereiten_ct_utf8.sng"
+        no_bom_utf_file_path = path / "Herr du wollest uns bereiten_noBOM_utf8.sng"
 
         # Part 1
-        with Path(iso_file_path).open(encoding="iso-8859-1") as file_iso_as_iso:
+        with iso_file_path.open(encoding="iso-8859-1") as file_iso_as_iso:
             text = file_iso_as_iso.read()
         self.assertEqual("#", text[0], "ISO file read with correct ISO encoding")
 
-        with Path(iso_file_path).open(
-            encoding="utf-8"
-        ) as file_iso_as_utf, self.assertRaises(UnicodeDecodeError) as cm:
+        with iso_file_path.open(encoding="utf-8") as file_iso_as_utf, self.assertRaises(
+            UnicodeDecodeError
+        ) as cm:
             text = file_iso_as_utf.read()
 
-        with Path(utf_file_path).open(encoding="iso-8859-1") as file_utf_as_iso:
+        with utf_file_path.open(encoding="iso-8859-1") as file_utf_as_iso:
             text = file_utf_as_iso.read()
             self.assertEqual("ï»¿", text[0:3], "UTF8 file read with wrong encoding")
 
-        with Path(utf_file_path).open(encoding="utf-8") as file_utf_as_utf:
+        with utf_file_path.open(encoding="utf-8") as file_utf_as_utf:
             text = file_utf_as_utf.read()
         self.assertEqual(
             "\ufeff", text[0], "UTF8 file read with correct encoding including BOM"
@@ -162,12 +162,12 @@ class TestSNGParser(unittest.TestCase):
         sng.filename = iso2utf_file_name
         sng.write_file()
 
-        with Path(iso2utf_file_path).open(encoding="utf-8") as file_iso2utf:
+        with iso2utf_file_path.open(encoding="utf-8") as file_iso2utf:
             text = file_iso2utf.read()
         self.assertEqual(
             "\ufeff", text[0], "UTF8 file read with correct encoding including BOM"
         )
-        Path.unlink(iso2utf_file_path)
+        iso2utf_file_path.unlink()
 
 
 if __name__ == "__main__":
