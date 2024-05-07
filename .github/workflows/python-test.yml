@@ -28,3 +28,6 @@ jobs:
     - name: Test with Unittest
       run: |
         python -m pytest 
+      env:
+          CT_DOMAIN: ${{ secrets.CT_DOMAIN }}
+          CT_TOKEN: ${{ secrets.CT_TOKEN }}

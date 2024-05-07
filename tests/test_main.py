@@ -61,6 +61,8 @@ class TestSNG(unittest.TestCase):
         ct_token = os.getenv("CT_TOKEN")
 
         if ct_domain is None or ct_token is None:
+            from secure.config import ct_domain, ct_token  # noqu PLC0415
+
             logger.info(
                 "ct_domain or ct_token missing in env variables - using local config instead"
             )
@@ -69,7 +71,7 @@ class TestSNG(unittest.TestCase):
             ct_domain = config.ct_domain
             ct_token = config.ct_token
 
-        self.api = ChurchToolsApi(config.ct_domain, ct_token=config.ct_token)
+        self.api = ChurchToolsApi(domain=ct_domain, ct_token=ct_token)
 
     def test_ct_connection_established(self) -> None:
         """Checks that an API connection to a CT instance was establied.

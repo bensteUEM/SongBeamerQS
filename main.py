@@ -15,10 +15,23 @@ import pandas as pd
 from ChurchToolsApi import ChurchToolsApi
 
 import SNG_DEFAULTS
-from secure.config import ct_domain, ct_token  # local config ommited from github repo
 from SngFile import SngFile
 
 logger = logging.getLogger(__name__)
+
+ct_domain = os.getenv("CT_DOMAIN")
+ct_token = os.getenv("CT_TOKEN")
+
+if ct_domain is None or ct_token is None:
+    from secure.config import ct_domain, ct_token
+
+    logger.info(
+        "ct_domain or ct_token missing in env variables - using local config instead"
+    )
+    from secure import config
+
+    ct_domain = config.ct_domain
+    ct_token = config.ct_token
 
 
 def parse_sng_from_directory(
