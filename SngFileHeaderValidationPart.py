@@ -317,6 +317,61 @@ class SngFileHeaderValidation(abc.ABC):
         self.update_editor_because_content_modified()
         return True
 
+    def validate_stop_verseorder(
+        self, fix: bool = False, should_be_at_end: bool = False
+    ) -> bool:
+        """Method which checks that a STOP exists in VerseOrder headers and corrects it.
+
+        Params:
+            should_be_at_end removes any 'STOP' and makes sure only one at end exists
+            fix: bool if it should be attempt to fix itself
+        Returns:
+            if something is wrong after applying method
+        """
+        result = True
+        # STOP exists but not at end
+        if (
+            should_be_at_end
+            and "STOP" in self.header["VerseOrder"]
+            and self.header["VerseOrder"][-1] != "STOP"
+        ):
+            if fix:
+                logging.debug("Removing STOP from %s", self.header["VerseOrder"])
+                self.header["VerseOrder"].remove("STOP")
+                self.update_editor_because_content_modified()
+                logging.debug(
+                    "STOP removed at old position in (%s) because not at end",
+                    self.filename,
+                )
+                result = True
+            else:
+                logging.warning(
+                    "STOP from (%s) not at end but not fixed in %s",
+                    self.filename,
+                    self.header["VerseOrder"],
+                )
+                result = False
+
+        # STOP missing overall
+        if "STOP" not in self.header["VerseOrder"]:
+            if fix:
+                self.header["VerseOrder"].append("STOP")
+                logging.debug(
+                    "STOP added at end of VerseOrder of %s: %s",
+                    self.filename,
+                    self.header["VerseOrder"],
+                )
+                self.update_editor_because_content_modified()
+                result = True
+            else:
+                result = False
+                logging.warning(
+                    "STOP missing in (%s) but not fixed in %s",
+                    self.filename,
+                    self.header["VerseOrder"],
+                )
+        return result
+
     def fix_header_church_song_id_caps(self) -> bool:
         """Function which replaces any caps of e.g. ChurchSongId to ChurchSongID in header keys."""
         if "ChurchSongID" not in self.header:
