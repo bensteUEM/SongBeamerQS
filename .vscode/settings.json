@@ -1,13 +1,6 @@
 {
-    "python.testing.unittestArgs": [
-        "-v",
-        "-s",
-        ".",
-        "-p",
-        "test_*.py"
-    ],
-    "python.testing.pytestEnabled": false,
-    "python.testing.unittestEnabled": true,
     "autoDocstring.docstringFormat": "google-notypes",
-    "editor.formatOnSaveMode": "modifications"
+    "editor.formatOnSaveMode": "modifications",
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
 }
