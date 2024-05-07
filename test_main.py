@@ -2,7 +2,9 @@
 
 import datetime
 import filecmp
+import json
 import logging
+import logging.config
 import os
 import time
 import unittest
@@ -31,6 +33,12 @@ from main import (
 )
 from SngFile import SngFile
 
+config_file = Path("logging_config.json")
+with config_file.open(encoding="utf-8") as f_in:
+    logging_config = json.load(f_in)
+    logging.config.dictConfig(config=logging_config)
+logger = logging.getLogger(__name__)
+
 
 class TestSNG(unittest.TestCase):
     """Test Class for SNG related class and methods."""
@@ -44,14 +52,6 @@ class TestSNG(unittest.TestCase):
         """
         super().__init__(*args, **kwargs)
 
-        logging.basicConfig(
-            filename="logs/TestMain.log",
-            encoding="utf-8",
-            format="%(asctime)s %(name)-10s %(levelname)-8s %(message)s",
-            level=logging.DEBUG,
-        )
-        logging.info("Excecuting Test Main RUN")
-
     def setUp(self) -> None:
         """Setup of TestCase.
 
@@ -61,7 +61,7 @@ class TestSNG(unittest.TestCase):
         ct_token = os.getenv("CT_TOKEN")
 
         if ct_domain is None or ct_token is None:
-            logging.info(
+            logger.info(
                 "ct_domain or ct_token missing in env variables - using local config instead"
             )
             from secure import config
@@ -586,3 +586,7 @@ class TestSNG(unittest.TestCase):
 
         self.assertNotEqual(expected_songs[0], cleaned_df.iloc[0]["SngFile"])
         self.assertNotEqual(expected_songs[1], cleaned_df.iloc[1]["SngFile"])
+
+
+if __name__ == "__main__":
+    unittest.main()

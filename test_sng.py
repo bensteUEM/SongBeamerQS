@@ -1,10 +1,18 @@
 """This module contains tests for most methods defined in SngFile.py."""
 
+import json
 import logging
+import logging.config
 import unittest
 from pathlib import Path
 
 from SngFile import SngFile
+
+config_file = Path("logging_config.json")
+with config_file.open(encoding="utf-8") as f_in:
+    logging_config = json.load(f_in)
+    logging.config.dictConfig(config=logging_config)
+logger = logging.getLogger(__name__)
 
 
 class TestSNG(unittest.TestCase):
@@ -21,14 +29,6 @@ class TestSNG(unittest.TestCase):
             kwargs: passthrough named arguments
         """
         super().__init__(*args, **kwargs)
-
-        logging.basicConfig(
-            filename="logs/TestSNG.log",
-            encoding="utf-8",
-            format="%(asctime)s %(name)-10s %(levelname)-8s %(message)s",
-            level=logging.DEBUG,
-        )
-        logging.info("Excecuting TestSNG RUN")
 
     def test_content_empty_block(self) -> None:
         """Test case with a SNG file that contains and empty block because it ends with ---."""
@@ -235,25 +235,25 @@ class TestSNG(unittest.TestCase):
         with self.assertLogs(level="DEBUG") as cm:
             result = song.validate_suspicious_encoding(fix=True)
             self.assertTrue(result, "Should have fixed issues within the file")
-        info_template_prefix = "INFO:root:Found problematic encoding in str '"
+        info_template_prefix = "INFO:sng_utils:Found problematic encoding in str '"
 
         messages = [
             f"{info_template_prefix}Ã¤aaaÃ¤a'",
-            "DEBUG:root:replaced Ã¤aaaÃ¤a by äaaaäa",
+            "DEBUG:sng_utils:replaced Ã¤aaaÃ¤a by äaaaäa",
             f"{info_template_prefix}Ã¤'",
-            "DEBUG:root:replaced Ã¤ by ä",
+            "DEBUG:sng_utils:replaced Ã¤ by ä",
             f"{info_template_prefix}Ã¶'",
-            "DEBUG:root:replaced Ã¶ by ö",
+            "DEBUG:sng_utils:replaced Ã¶ by ö",
             f"{info_template_prefix}Ã¼'",
-            "DEBUG:root:replaced Ã¼ by ü",
+            "DEBUG:sng_utils:replaced Ã¼ by ü",
             f"{info_template_prefix}Ã\x84'",
-            "DEBUG:root:replaced Ã\x84 by Ä",
+            "DEBUG:sng_utils:replaced Ã\x84 by Ä",
             f"{info_template_prefix}Ã\x96'",
-            "DEBUG:root:replaced Ã\x96 by Ö",
+            "DEBUG:sng_utils:replaced Ã\x96 by Ö",
             f"{info_template_prefix}Ã\x9c'",
-            "DEBUG:root:replaced Ã\x9c by Ü",
+            "DEBUG:sng_utils:replaced Ã\x9c by Ü",
             f"{info_template_prefix}Ã\x9f'",
-            "DEBUG:root:replaced Ã\x9f by ß",
+            "DEBUG:sng_utils:replaced Ã\x9f by ß",
         ]
         self.assertEqual(messages, cm.output)
 

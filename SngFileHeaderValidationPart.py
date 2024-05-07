@@ -9,6 +9,8 @@ import SNG_DEFAULTS
 from SNG_DEFAULTS import KnownSongBookPsalmRange, SngIllegalHeader
 from sng_utils import contains_songbook_prefix
 
+logger = logging.getLogger(__name__)
+
 
 class SngFileHeaderValidation(abc.ABC):
     """Part of SngFile class that defines methods used to validate and fix headers."""
@@ -53,7 +55,7 @@ class SngFileHeaderValidation(abc.ABC):
         result = len(missing) == 0
 
         if not result:
-            logging.warning(
+            logger.warning(
                 "Missing required headers in (%s) %s", self.filename, missing
             )
 
@@ -98,7 +100,7 @@ class SngFileHeaderValidation(abc.ABC):
             return self.fix_header_title()
 
         if bool(error_message):
-            logging.warning(error_message)
+            logger.warning(error_message)
             return False
         # no fix, but no error
         return True
@@ -115,7 +117,7 @@ class SngFileHeaderValidation(abc.ABC):
             error_message = (
                 f"Can't fix title is Psalm {self.filename} without complete heading"
             )
-            logging.warning(error_message)
+            logger.warning(error_message)
         else:
             for part in title_as_list:
                 if all(
@@ -124,7 +126,7 @@ class SngFileHeaderValidation(abc.ABC):
                     title_as_list.remove(part)
                     self.update_editor_because_content_modified()
             self.header["Title"] = " ".join(title_as_list)
-            logging.debug(
+            logger.debug(
                 "Fixed title to (%s) in %s", self.header["Title"], self.filename
             )
         return self.validate_header_title(fix=False)
@@ -170,7 +172,7 @@ class SngFileHeaderValidation(abc.ABC):
             # EG Psalms in EG Württemberg EG 701-758
             # Syntax should be EG xxx - Psalm Y
 
-        logging.debug("songbook_valid == %s", songbook_valid)
+        logger.debug("songbook_valid == %s", songbook_valid)
 
         if fix and not songbook_valid:
             self.fix_header_church_song_id_caps()
@@ -178,7 +180,7 @@ class SngFileHeaderValidation(abc.ABC):
             songbook_valid = self.validate_header_songbook(fix=False)
 
         if not songbook_valid:
-            logging.error(
+            logger.error(
                 "Problem occurred with Songbook Fixing of %s - kept original Songbook=%s,ChurchSongID=%s",
                 self.filename,
                 self.header["Songbook"],
@@ -216,7 +218,7 @@ class SngFileHeaderValidation(abc.ABC):
         if fix:
             return self.fix_header_background()
 
-        logging.debug(error_message)
+        logger.debug(error_message)
         return False
 
         # TODO (bensteUEM): validate background against resolution list
@@ -236,11 +238,11 @@ class SngFileHeaderValidation(abc.ABC):
         """
         if self.is_psalm():
             self.header["BackgroundImage"] = "Evangelisches Gesangbuch.jpg"
-            logging.debug("Fixing background for Psalm in (%s)", self.filename)
+            logger.debug("Fixing background for Psalm in (%s)", self.filename)
             self.update_editor_because_content_modified()
             return True
 
-        logging.warning("Can't fix background for (%s)", self.filename)
+        logger.warning("Can't fix background for (%s)", self.filename)
         return False
 
     def validate_verse_order_coverage(self, fix: bool = False) -> bool:
@@ -275,12 +277,12 @@ class SngFileHeaderValidation(abc.ABC):
         if fix:
             return self.fix_verse_order_coverage()
 
-        logging.warning("Verse Order and Blocks don't match in %s", self.filename)
+        logger.warning("Verse Order and Blocks don't match in %s", self.filename)
         if "VerseOrder" not in self.header:
-            logging.debug("Missing VerseOrder in (%s)", self.filename)
+            logger.debug("Missing VerseOrder in (%s)", self.filename)
         else:
-            logging.debug("\t Not fixed: Order: %s", str(self.header["VerseOrder"]))
-            logging.debug("\t Not fixed: Blocks: %s", list(self.content.keys()))
+            logger.debug("\t Not fixed: Order: %s", str(self.header["VerseOrder"]))
+            logger.debug("\t Not fixed: Blocks: %s", list(self.content.keys()))
 
         return verses_in_order
 
@@ -309,7 +311,7 @@ class SngFileHeaderValidation(abc.ABC):
             if v in self.content or "$$M=" + v in self.content or v == "STOP"
         ]
 
-        logging.debug(
+        logger.debug(
             "Fixed VerseOrder to %s in (%s)",
             self.header["VerseOrder"],
             self.filename,
@@ -379,7 +381,7 @@ class SngFileHeaderValidation(abc.ABC):
                 if "ChurchSongID".upper() == i.upper():
                     self.header["ChurchSongID"] = self.header[i]
                     del self.header[i]
-                    logging.debug(
+                    logger.debug(
                         "Changed Key from %s to ChurchSongID in %s", i, self.filename
                     )
                     self.update_editor_because_content_modified()
@@ -397,7 +399,7 @@ class SngFileHeaderValidation(abc.ABC):
                 if i.upper() == "CCLI":
                     self.header["CCLI"] = self.header[i]
                     del self.header[i]
-                    logging.debug("Changed Key from %s to CCLI in %s", i, self.filename)
+                    logger.debug("Changed Key from %s to CCLI in %s", i, self.filename)
                     self.update_editor_because_content_modified()
                     return True
         return False
@@ -415,11 +417,11 @@ class SngFileHeaderValidation(abc.ABC):
                 if fix:
                     self.header.pop(key)
                     self.update_editor_because_content_modified()
-                    logging.debug(
+                    logger.debug(
                         "Removed %s from (%s) as illegal header", key, self.filename
                     )
                 else:
-                    logging.debug(
+                    logger.debug(
                         "Not fixing illegal header %s in (%s)", key, self.filename
                     )
                     return False
@@ -448,12 +450,12 @@ class SngFileHeaderValidation(abc.ABC):
         if self.songbook_prefix != "":  # Not empty Prefix
             # If the file should follow a songbook prefix logic
             if self.songbook_prefix in SNG_DEFAULTS.KnownSongBookPrefix:
-                logging.warning(
+                logger.warning(
                     "Missing required digits as first block in filename %s - can't fix songbook",
                     self.filename,
                 )
             else:
-                logging.warning(
+                logger.warning(
                     "Unknown Songbook Prefix - can't complete fix songbook of %s",
                     self.filename,
                 )
@@ -465,7 +467,7 @@ class SngFileHeaderValidation(abc.ABC):
         ):
             self.header["Songbook"] = " "
             self.header["ChurchSongID"] = " "
-            logging.debug(
+            logger.debug(
                 "Corrected Songbook / ChurchSongID from (%s) to (%s) in %s",
                 songbook_before_change,
                 self.header["Songbook"],
@@ -490,7 +492,7 @@ class SngFileHeaderValidation(abc.ABC):
         if self.is_psalm():
             self.header["Songbook"] = self.header.get("Songbook", " ")
             self.header["ChurchSongID"] = self.header.get("ChurchSongID", " ")
-            logging.info(
+            logger.info(
                 'Psalm "%s" can not be auto corrected - please adjust manually (%s,%s)',
                 self.filename,
                 self.header["Songbook"],
@@ -511,7 +513,7 @@ class SngFileHeaderValidation(abc.ABC):
         ):
             self.header["Songbook"] = songbook
             self.header["ChurchSongID"] = songbook
-            logging.debug(
+            logger.debug(
                 "Corrected Songbook / ChurchSongID from (%s) to (%s) in %s",
                 songbook_before_change,
                 self.header["Songbook"],
@@ -541,16 +543,16 @@ class SngFileHeaderValidation(abc.ABC):
             and self.header["VerseOrder"][-1] != "STOP"
         ):
             if fix:
-                logging.debug("Removing STOP from %s", self.header["VerseOrder"])
+                logger.debug("Removing STOP from %s", self.header["VerseOrder"])
                 self.header["VerseOrder"].remove("STOP")
                 self.update_editor_because_content_modified()
-                logging.debug(
+                logger.debug(
                     "STOP removed at old position in (%s) because not at end",
                     self.filename,
                 )
                 result = True
             else:
-                logging.warning(
+                logger.warning(
                     "STOP from (%s) not at end but not fixed in %s",
                     self.filename,
                     self.header["VerseOrder"],
@@ -561,7 +563,7 @@ class SngFileHeaderValidation(abc.ABC):
         if "STOP" not in self.header["VerseOrder"]:
             if fix:
                 self.header["VerseOrder"].append("STOP")
-                logging.debug(
+                logger.debug(
                     "STOP added at end of VerseOrder of %s: %s",
                     self.filename,
                     self.header["VerseOrder"],
@@ -570,7 +572,7 @@ class SngFileHeaderValidation(abc.ABC):
                 result = True
             else:
                 result = False
-                logging.warning(
+                logger.warning(
                     "STOP missing in (%s) but not fixed in %s",
                     self.filename,
                     self.header["VerseOrder"],
@@ -595,7 +597,7 @@ class SngFileHeaderValidation(abc.ABC):
             is_valid, checked_line = validate_suspicious_encoding_str(header, fix=fix)
             if not is_valid:
                 valid = False
-                logging.info(
+                logger.info(
                     "Found problematic encoding [%s] in header [%s] in %s",
                     checked_line,
                     headername,
@@ -651,7 +653,7 @@ def validate_suspicious_encoding_str(text: str, fix: bool = False) -> tuple[bool
     """
     valid = True
     if re.match("Ã¤|Ã¶|Ã¼|Ã\\x84|Ã\\x96|Ã\\x9c|Ã\\x9f", text):
-        logging.info("Found problematic encoding in str '%s'", text)
+        logger.info("Found problematic encoding in str '%s'", text)
         if fix:
             orginal_text = text
             text = re.sub("Ã¤", "ä", text, count=0)
@@ -662,9 +664,9 @@ def validate_suspicious_encoding_str(text: str, fix: bool = False) -> tuple[bool
             text = re.sub("Ã\x9c", "Ü", text, count=0)
             text = re.sub("Ã\x9f", "ß", text, count=0)
             if text != orginal_text:
-                logging.debug("replaced %s by %s", orginal_text, text)
+                logger.debug("replaced %s by %s", orginal_text, text)
             else:
-                logging.warning("%s - could not be fixed automatically", orginal_text)
+                logger.warning("%s - could not be fixed automatically", orginal_text)
         else:
             valid = False
     return valid, text
