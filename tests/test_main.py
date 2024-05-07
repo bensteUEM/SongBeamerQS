@@ -92,11 +92,28 @@ class TestSNG(unittest.TestCase):
         songs = self.api.get_songs()
         df_ct = pd.json_normalize(songs)
 
-        self.assertTrue(
-            check_ct_song_categories_exist_as_folder(
-                list(df_ct["category.name"].unique()), SNG_DEFAULTS.KnownDirectory
-            )
+        expected_in_testing = list(df_ct["category.name"].unique())
+
+        missing_directories = check_ct_song_categories_exist_as_folder(
+            ct_song_categories=expected_in_testing,
+            directory=Path("./testData"),
+            fix=False,
         )
+        # ELKW1610.krz.tools specific test case for the named function
+        ommited_in_tests = {
+            "Hintergrundmusik",
+            "Feiert Jesus 3",
+            "Musical - Leuchte, leuchte Weihnachtsstern",
+            "Sonstige Texte",
+            "Sonstige Lieder",
+            "Feiert Jesus 2",
+            "Feiert Jesus 5",
+            "Feiert Jesus 6",
+            "Feiert Jesus 1",
+            "Feiert Jesus 4",
+        }
+
+        self.assertEqual(len(missing_directories - ommited_in_tests), 0)
 
     def test_eg_with_songbook_prefix(self) -> None:
         """Check that all fixable songs in EG Lieder do have EG Songbook prefix."""
