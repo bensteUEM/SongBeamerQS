@@ -6,10 +6,22 @@ on:
   push:
   pull_request:
 
+env:
+  CT_DOMAIN: ${{ vars.CT_DOMAIN }}
+  CT_TOKEN: ${{ secrets.CT_TOKEN }}
+
 jobs:
+  list-domain:
+    runs-on: ubuntu-latest
+    environment: Ev. Kirche Baiersbronn (ELKW1610.krz.tools)
+
+    steps:
+      - name: show CT_DOMAIN for this job
+        run: echo $CT_DOMAIN
   build:
 
     runs-on: ubuntu-latest
+    environment: Ev. Kirche Baiersbronn (ELKW1610.krz.tools)
 
     steps:
     - uses: actions/checkout@v4
@@ -25,9 +37,6 @@ jobs:
     - name: ruff check
       run: |
         ruff check        
-    - name: Test with Unittest
+    - name: Test with Pytest
       run: |
         python -m pytest 
-      env:
-          CT_DOMAIN: ${{ secrets.CT_DOMAIN }}
-          CT_TOKEN: ${{ secrets.CT_TOKEN }}
