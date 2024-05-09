@@ -11,6 +11,9 @@ from SngFile import SngFile
 config_file = Path("logging_config.json")
 with config_file.open(encoding="utf-8") as f_in:
     logging_config = json.load(f_in)
+    log_directory = Path(logging_config["handlers"]["file"]["filename"]).parent
+    if not log_directory.exists():
+        log_directory.mkdir(parents=True)
     logging.config.dictConfig(config=logging_config)
 logger = logging.getLogger(__name__)
 
