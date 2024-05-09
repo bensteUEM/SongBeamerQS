@@ -140,37 +140,44 @@ class SngFileHeaderValidation(abc.ABC):
         Returns:
             if songbook is valid at end of method
         """
+        songbook_valid = True
+
         # Validate Headers
         if "ChurchSongID" not in self.header or "Songbook" not in self.header:
             # Hint - ChurchSongID ' '  or '' is automatically removed from SongBeamer on Editing in Songbeamer itself
             songbook_valid = False
         else:
+            # All entries that are consistent and not part of knwon songbooks are considered valids
             songbook_valid = self.header["ChurchSongID"] == self.header["Songbook"]
 
-            # Check that songbook_prefix is part of songbook
-            songbook_valid &= self.songbook_prefix in self.header["Songbook"]
+            if (
+                self.songbook_prefix in self.header["Songbook"]
+                and self.songbook_prefix != ""
+            ):
+                # Check that songbook_prefix is part of songbook
+                songbook_valid = self.songbook_prefix in self.header["Songbook"]
 
-            # Check Syntax with Regex, either FJx/yyy, EG YYY, EG YYY.YY or or EG XXX - Psalm X or Wwdlp YYY
-            # ^(Wwdlp \d{3})|(FJ([1-6])\/\d{3})|(EG \d{3}(( - Psalm )\d{1,3})?)$
-            songbook_regex = (
-                r"^(Wwdlp \d{3})$|(^FJ([1-6])\/\d{3})$|"
-                r"^(EG \d{3}(\.\d{1,2})?)( - Psalm \d{1,3}( .{1,3})?)?$"
-            )
-            songbook_valid &= (
-                re.match(songbook_regex, self.header["Songbook"]) is not None
-            )
+                # Check Syntax with Regex, either FJx/yyy, EG YYY, EG YYY.YY or or EG XXX - Psalm X or Wwdlp YYY
+                # ^(Wwdlp \d{3})|(FJ([1-6])\/\d{3})|(EG \d{3}(( - Psalm )\d{1,3})?)$
+                songbook_regex = (
+                    r"^(Wwdlp \d{3})$|(^FJ([1-6])\/\d{3})$|"
+                    r"^(EG \d{3}(\.\d{1,2})?)( - Psalm \d{1,3}( .{1,3})?)?$"
+                )
+                songbook_valid &= (
+                    re.match(songbook_regex, self.header["Songbook"]) is not None
+                )
 
-            # Check for remaining that "&" should not be present in Songbook
-            # songbook_invalid |= self.header["Songbook"].contains('&')
-            # sample is EG 548 & WWDLP 170 = loc 77
-            # -> no longer needed because of regex check
+                # Check for remaining that "&" should not be present in Songbook
+                # songbook_invalid |= self.header["Songbook"].contains('&')
+                # sample is EG 548 & WWDLP 170 = loc 77
+                # -> no longer needed because of regex check
 
-            # TODO (bensteUEM): low Prio - check numeric range of songbooks
-            # https://github.com/bensteUEM/SongBeamerQS/issues/34
+                # TODO (bensteUEM): low Prio - check numeric range of songbooks
+                # https://github.com/bensteUEM/SongBeamerQS/issues/34
 
-            # EG 1 - 851 incl.non numeric e.g. 178.14
-            # EG Psalms in EG Württemberg EG 701-758
-            # Syntax should be EG xxx - Psalm Y
+                # EG 1 - 851 incl.non numeric e.g. 178.14
+                # EG Psalms in EG Württemberg EG 701-758
+                # Syntax should be EG xxx - Psalm Y
 
         logger.debug("songbook_valid == %s", songbook_valid)
 

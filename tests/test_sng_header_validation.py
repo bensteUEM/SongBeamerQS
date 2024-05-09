@@ -314,10 +314,11 @@ class TestSNGHeaderValidation(unittest.TestCase):
 
     def test_header_songbook_special(self) -> None:
         """Test checking special cases discovered in logging while programming."""
+        test_dir = Path("./testData/EG Psalmen & Sonstiges")
+        test_filename = "709 Herr, sei nicht ferne.sng"
+
         # The file should already have correct ChurchSongID but did raise an error on logging
-        song = SngFile(
-            "./testData/EG Psalmen & Sonstiges/709 Herr, sei nicht ferne.sng", "EG"
-        )
+        song = SngFile(filename=test_dir / test_filename, songbook_prefix="EG")
         self.assertEqual("EG 709 - Psalm 22 I", song.header["ChurchSongID"])
         self.assertEqual("EG 709 - Psalm 22 I", song.header["Songbook"])
 
@@ -327,6 +328,18 @@ class TestSNGHeaderValidation(unittest.TestCase):
 
         self.assertEqual("EG 709 - Psalm 22 I", song.header["ChurchSongID"])
         self.assertEqual("EG 709 - Psalm 22 I", song.header["Songbook"])
+
+    def test_validate_header_songbook_empty(self) -> None:
+        """Test should treat "Songbook= " as valid."""
+        test_dir = Path("./testData/Test")
+        test_filename = "sample.sng"
+        song = SngFile(filename=test_dir / test_filename)
+
+        with self.assertLogs(level=logging.DEBUG) as cm:
+            song.validate_header_songbook(fix=False)
+
+        expected_logs = ["DEBUG:SngFileHeaderValidationPart:songbook_valid == True"]
+        self.assertEqual(cm.output, expected_logs)
 
     def test_header_church_song_id_caps(self) -> None:
         """Test that checks for incorrect capitalization in ChurchSongID and it's autocorrect.
