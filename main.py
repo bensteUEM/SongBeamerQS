@@ -47,8 +47,7 @@ def parse_sng_from_directory(
     """
     if filenames is None:
         filenames = []
-    logger.info("Parsing: %s", directory)
-    logger.info("With Prefix: %s", songbook_prefix)
+    logger.info("Parsing: %s with Prefix: %s", directory, songbook_prefix)
 
     result = []
     directory_list = filter(
