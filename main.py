@@ -4,7 +4,6 @@ defining some "activites" reading local files and connecting to a server
 It mainly works based on df comparison
 """
 
-import json
 import logging
 import logging.config
 import os.path
@@ -702,40 +701,3 @@ def validate_ct_song_sng_count(api: ChurchToolsApi) -> None:
             # avoid Too many requests. Rate Limit Exceeded.
             logger.debug("sleep 1 second after %s / %s", song_count, len_songs)
             time.sleep(1)
-
-
-if __name__ == "__main__":
-    config_file = Path("logging_config.json")
-    with config_file.open(encoding="utf-8") as f_in:
-        logging_config = json.load(f_in)
-        logging.config.dictConfig(config=logging_config)
-    logger.info("Excecuting Main RUN")
-
-    songs_temp = []
-    df_sng = read_songs_to_df()
-    df_sng = clean_all_songs(df_sng=df_sng)
-    write_df_to_file(df_sng)
-
-    api = ChurchToolsApi(domain=ct_domain, ct_token=ct_token)
-    validate_ct_song_sng_count(api)
-
-    # Match all SongIDs from CT to local songs where missing
-    df_ct = get_ct_songs_as_df(api)
-    add_id_to_local_song_if_available_in_ct(df_sng, df_ct)
-
-    # Upload all songs into CT that are new
-    df_ct = get_ct_songs_as_df(api)
-    upload_new_local_songs_and_generate_ct_id(df_sng, df_ct)
-
-    # To be safe - re-read all data sources and upload
-    df_sng = read_songs_to_df()
-    df_ct = get_ct_songs_as_df(api)
-    download_missing_online_songs(df_sng, df_ct, api)
-
-    """
-    df_sng = read_baiersbronn_songs_to_df()
-    df_ct = get_ct_songs_as_df()
-    upload_local_songs_by_id(df_sng, df_ct)
-    """
-
-    logger.info("Main Method finished")

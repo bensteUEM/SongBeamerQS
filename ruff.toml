@@ -44,8 +44,13 @@ ignore = [
     #Abstacts used to split file
     "B024", #is an abstract base class, but it has no abstract methods
 ]
-
 extend-ignore = [] #Skip rules that need more code cleaning...
+
+[lint.per-file-ignores]
+"notebooks/*.ipynb" = [
+    "T201", #print
+    "E402" #import outside top-level
+    ]
 
 [lint.pydocstyle]
 convention = "google"
