@@ -3,8 +3,7 @@
 
 /secure/
 .idea
-/logs/*
-!/logs/.gitkeep
+*/logs/*
 Downloads
 *.csv
 
