@@ -1,17 +1,11 @@
 """This module includes utilities used independant of sng instances."""
 
-import json
 import logging
 import logging.config
 import re
-from pathlib import Path
 
 import SNG_DEFAULTS
 
-config_file = Path("logging_config.json")
-with config_file.open(encoding="utf-8") as f_in:
-    logging_config = json.load(f_in)
-    logging.config.dictConfig(config=logging_config)
 logger = logging.getLogger(__name__)
 
 
