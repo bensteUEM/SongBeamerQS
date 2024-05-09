@@ -1,21 +1,15 @@
 """This file is used to define SngFile class and somee helper methods related to it's usage."""
 
-import json
 import logging
 import logging.config
 import re
 from itertools import chain
-from pathlib import Path
 
 import SNG_DEFAULTS
 from sng_utils import generate_verse_marker_from_line, validate_suspicious_encoding_str
 from SngFileHeaderValidationPart import SngFileHeaderValidation
 from SngFileParserPart import SngFileParserPart
 
-config_file = Path("logging_config.json")
-with config_file.open(encoding="utf-8") as f_in:
-    logging_config = json.load(f_in)
-    logging.config.dictConfig(config=logging_config)
 logger = logging.getLogger(__name__)
 
 
