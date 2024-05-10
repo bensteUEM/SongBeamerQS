@@ -314,7 +314,12 @@ class TestSNG(unittest.TestCase):
         df_ct_test = pd.json_normalize(ct_songs)
 
         # 4. start download of mising songs
-        result = download_missing_online_songs(df_sng_test, df_ct_test, self.api)
+        result = download_missing_online_songs(
+            df_sng=df_sng_test,
+            df_ct=df_ct_test,
+            ct_api_reference=self.api,
+            collection_path="./testData",
+        )
         self.assertTrue(result)
 
         # 5. check if download successful

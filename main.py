@@ -368,7 +368,7 @@ def validate_ct_songs_exist_locally_by_id(
         by=["category.name_y", "name_y"]
     )
     for issue in issues[["name_y", "category.name_y", "id"]].iterrows():
-        logger.warning(
+        logger.info(
             "Song (%s) in category (%s) exists with ChurchTools ID=%s online but ID not matched locally",
             issue[1]["name_y"],
             issue[1]["category.name_y"],
@@ -439,7 +439,10 @@ def add_id_to_local_song_if_available_in_ct(
 
 
 def download_missing_online_songs(
-    df_sng: pd.DataFrame, df_ct: pd.DataFrame, ct_api_reference: ChurchToolsApi
+    df_sng: pd.DataFrame,
+    df_ct: pd.DataFrame,
+    ct_api_reference: ChurchToolsApi,
+    collection_path: str = SNG_DEFAULTS.KnownDirectory,
 ) -> bool:
     """Function which will check which songs are missing (by ID) and tries to download them to the respective folders.
 
@@ -450,12 +453,11 @@ def download_missing_online_songs(
         df_sng: DataFrame with all local files
         df_ct: DataFrame with all online files
         ct_api_reference: direct access to ChurchTools API instance
+        collection_path: directory used to store SNG files - should contain one subfolder per category defaults to SNG_DEFAULTS value
     Returns:
         Success message
     """
     compare = validate_ct_songs_exist_locally_by_id(df_ct, df_sng)
-    song_path = compare[compare["path"].notna()].iloc[0]["path"]
-    collection_path = song_path.parent
 
     ids = compare[compare["SngFile"].apply(lambda x: not isinstance(x, SngFile))]["id"]
 
@@ -469,43 +471,47 @@ def download_missing_online_songs(
             song["category"],
         )
 
-        default_arrangement_id = next(
-            item["id"] for item in song["arrangements"] if item["isDefault"] is True
+        default_arrangement = next(
+            item for item in song["arrangements"] if item["isDefault"] is True
         )
         category_name = song["category"]["name"]
         file_path_in_collection = Path(f"{collection_path}/{category_name}")
-        filename = f"{song['name']}.sng"
 
-        if Path.exists(Path("{file_path_in_collection}/{filename}")):
-            logger.warning(
-                "Local file %s from CT ID %s does already exist - try automatch instead!",
-                filename,
-                song_id,
-            )
-            is_successful &= False
-            continue
+        for filename in [
+            file["name"]
+            for file in default_arrangement["files"]
+            if file["name"].endswith(".sng")
+        ]:
+            if Path.exists(Path("{file_path_in_collection}/{filename}")):
+                logger.warning(
+                    "Local file %s from CT ID %s does already exist - try automatch instead!",
+                    filename,
+                    song_id,
+                )
+                is_successful &= False
+                continue
 
-        result = ct_api_reference.file_download(
-            filename=filename,
-            domain_type="song_arrangement",
-            domain_identifier=default_arrangement_id,
-            target_path=str(file_path_in_collection),
-        )
-        if result:
-            logger.debug(
-                "Downloaded %s into %s from CT IT %s",
-                filename,
-                file_path_in_collection,
-                song_id,
+            result = ct_api_reference.file_download(
+                filename=filename,
+                domain_type="song_arrangement",
+                domain_identifier=default_arrangement["id"],
+                target_path=str(file_path_in_collection),
             )
-        else:
-            logger.debug(
-                "Failed to download %s into %s from CT IT %s",
-                filename,
-                file_path_in_collection,
-                song_id,
-            )
-        is_successful &= result
+            if result:
+                logger.info(
+                    "Downloaded %s into %s from CT ID=%s",
+                    filename,
+                    file_path_in_collection,
+                    song_id,
+                )
+            else:
+                logger.warning(
+                    "Failed to download %s into %s from CT ID=%s",
+                    filename,
+                    file_path_in_collection,
+                    song_id,
+                )
+            is_successful &= result
 
     return is_successful
 
