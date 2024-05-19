@@ -2,8 +2,7 @@
 *.sng
 
 /secure/
-.idea
-*/logs/*
+*.log*
 Downloads
 *.csv
 
