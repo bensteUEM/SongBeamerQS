@@ -1,19 +1,19 @@
 """This file is used to define SngFile class and somee helper methods related to it's usage."""
 
 import logging
-import logging.config
 import re
 from itertools import chain
 
 import SNG_DEFAULTS
 from sng_utils import generate_verse_marker_from_line, validate_suspicious_encoding_str
 from SngFileHeaderValidationPart import SngFileHeaderValidation
+from SngFileLanguagePart import SngFileLanguagePart
 from SngFileParserPart import SngFileParserPart
 
 logger = logging.getLogger(__name__)
 
 
-class SngFile(SngFileParserPart, SngFileHeaderValidation):
+class SngFile(SngFileParserPart, SngFileHeaderValidation, SngFileLanguagePart):
     """Main class that defines one single SongBeamer SNG file."""
 
     def __init__(self, filename: str, songbook_prefix: str = "") -> None:
