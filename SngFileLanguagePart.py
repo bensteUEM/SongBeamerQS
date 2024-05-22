@@ -6,7 +6,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class SngFileLanguagePart(abc.Abc):
+class SngFileLanguagePart(abc.ABC):
     """Part of SngFile class used with language specific actions.
 
     Args:
@@ -59,10 +59,19 @@ class SngFileLanguagePart(abc.Abc):
         Returns:
             set of all language markers used within the song
         """
-        not_implemented_link = "https://github.com/bensteUEM/SongBeamerQS/issues/61"
-        raise NotImplementedError(not_implemented_link)
-        # TODO@benste: Implement
-        # https://github.com/bensteUEM/SongBeamerQS/issues/61
+        language_markers = []
+        block: list
+        for block in self.content.values():
+            slide: list
+            for slide in block[1:]:
+                line: str
+                for line in slide:
+                    if line.startswith("##"):
+                        language_markers.append(line[:3])
+                    else:
+                        language_markers.append(None)
+
+        return set(language_markers)
 
     def validate_language_count(self, fix: bool = False) -> bool:
         """Validate the language count option in header.

@@ -29,6 +29,8 @@ ignore = [
     "ERA001", # commented-out-code (ERA001)#
     "FBT",    #flake8-boolean-trap (FBT)
 
+    "D100", # using class docstrings only module docstrings don't matter
+
     # Unittest style instead of pytest
     "PT009", # pytest-unittest-assertion (PT009)
     "PT027", #pytest-unittest-raises-assertion (PT027)
@@ -51,6 +53,10 @@ extend-ignore = [] #Skip rules that need more code cleaning...
     "T201", #print
     "E402" #import outside top-level
     ]
+
+"tests/*" =[
+    "S101", #pytest allow asserts
+]
 
 [lint.pydocstyle]
 convention = "google"
