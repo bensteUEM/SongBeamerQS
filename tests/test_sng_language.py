@@ -132,3 +132,35 @@ class TestSngLanguage:
         """
         result = SngFile._line_matches_languages(line=line, languages=languages)  # noqa: SLF001
         assert result == expected_result
+
+    @pytest.mark.parametrize(
+        ("filename", "verses", "fix", "expected_result"),
+        [
+            (Path("testData/Test") / "sample_languages.sng", ["Verse 1"], False, False),
+            (Path("testData/Test") / "sample_languages.sng", ["Verse 1"], True, True),
+            (Path("testData/Test") / "sample_languages.sng", ["Verse 2"], False, True),
+            (
+                Path("testData/Test") / "sample_languages.sng",
+                ["Verse 2", "Verse 2"],
+                False,
+                True,
+            ),
+        ],
+    )
+    def test_validate_header_language_count(
+        self, filename: str, verses: list[str] | None, fix: bool, expected_result: bool
+    ) -> None:
+        """Method testing different cases of validate_header_language_count.
+
+        Args:
+            filename: the file to use
+            verses: limit song to the specified list of verses only.
+            fix: if fix should be attempted_
+            expected_result: _description_
+        """
+        sample_song = SngFile(filename=filename)
+        sample_song.content = {
+            key: value for key, value in sample_song.content.items() if key in verses
+        }
+        result = sample_song.validate_header_language_count(fix=fix)
+        assert expected_result == result

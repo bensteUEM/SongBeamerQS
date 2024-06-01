@@ -110,12 +110,15 @@ class SngFileLanguagePart(abc.ABC):
 
         return set(language_markers)
 
-    def validate_language_count(self, fix: bool = False) -> bool:
+    def validate_header_language_count(self, fix: bool = False) -> bool:
         """Validate the language count option in header.
 
         * counts the number of languages explicitly used in content
         * checks if LangCount matches
         if fix LangCount header will be overwritten by number of identified languages
+        lines without langauge will count as ##1 in case explicit language markers exist
+
+        leverages get_content_unique_lang_markers in order to get number of languages
 
         Args:
             fix: should LangCount Header be overwritten? Defaults to False.
@@ -123,12 +126,29 @@ class SngFileLanguagePart(abc.ABC):
         Returns:
             if language_count is valid
         """
-        if fix:
-            pass
-        # TODO@benste: Implement
-        # https://github.com/bensteUEM/SongBeamerQS/issues/61
-        not_implemented_link = "https://github.com/bensteUEM/SongBeamerQS/issues/61"
-        raise NotImplementedError(not_implemented_link)
+        if "LangCount" in self.header:
+            languages_current_count = int(self.header["LangCount"])
+        else:
+            languages_current_count = -1
+
+        languages = self.get_content_unique_lang_markers()
+        languages_used_count = len(languages)
+        if len(languages) > 1 and None in languages:
+            languages_used_count -= 1
+
+        valid = languages_current_count == languages_used_count
+
+        if not valid and fix:
+            logger.info(
+                "overwriting langauge count from %s to %s",
+                languages_current_count,
+                languages_used_count,
+            )
+            self.header["LangCount"] = str(languages_used_count)
+            self.update_editor_because_content_modified()
+            valid = self.validate_header_language_count(fix=False)
+
+        return valid
 
     def validate_language_marker(self, fix: bool = False) -> bool:
         """Validate the language markers used in content.

@@ -1,4 +1,4 @@
-#LangCount=2
+﻿#LangCount=2
 #Title=Titel in Deutsch
 #TitleLang2=title in english
 #OTitle=original title in english
@@ -28,6 +28,7 @@ Verwendet in
 SngFileLanguagePart.py
 * test_get_content
 * test_get_content_unique_lang_markers
+* test_validate_header_language_count
 ---
 Verse 2
 ##1 2. Eine Zeile mit Sprachmarkierung
