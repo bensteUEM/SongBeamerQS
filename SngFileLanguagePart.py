@@ -16,6 +16,9 @@ class SngFileLanguagePart(abc.ABC):
     def get_content(self, languages: list[str] | None = None) -> dict:
         """Gets content list of the file.
 
+        Does NOT fix number of lines per slide
+        Keeps original song structure even in case of empty parts
+
         Arguments:
             languages: optional - list of language lines to keep, defaults to all
 
@@ -24,12 +27,46 @@ class SngFileLanguagePart(abc.ABC):
         """
         if not languages:
             languages = [None, "##1", "##2", "##3", "##4"]
-        # TODO@benste: Implement
-        # https://github.com/bensteUEM/SongBeamerQS/issues/61
-        not_implemented_link = "https://github.com/bensteUEM/SongBeamerQS/issues/61"
-        raise NotImplementedError(not_implemented_link)
+
+        block: list
+        for block in self.content.values():
+            slide: list
+            for slide in block[1:]:
+                slide[:] = [
+                    line
+                    for line in slide
+                    if self._line_matches_languages(line, languages)
+                ]
+                # versemarker ???
 
         return self.content
+
+    @classmethod
+    def _line_matches_languages(
+        cls, line: str, languages: list[str] | None = None
+    ) -> bool:
+        """Helper function which checks whether a line matches any of the language marker selections.
+
+        Args:
+            line: the line to check
+            languages: list of langaugemarkers to check for - None equals no langauge marker. Defaults to All.
+
+        Returns:
+            Whether the specified line starts with any of the languagemarkers
+        """
+        if not languages:
+            languages = [None, "##1", "##2", "##3", "##4"]
+
+        if None in languages and not line.startswith("##"):
+            return True
+
+        try:
+            languages_no_none = languages[:]
+            languages_no_none.remove(None)
+        except ValueError:
+            pass  # do nothing!
+
+        return line.startswith(tuple(languages_no_none))
 
     def genereate_content_by_lang(self, content: list[list]) -> dict:
         """Generate a new content dict by joining multiple content blocks overwriting the language order.

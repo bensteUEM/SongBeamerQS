@@ -26,6 +26,7 @@ select = ["ALL"]
 
 ignore = [
     "ANN101", # missing-type-function-argument (ANN001)#
+    "ANN102", # Missing type annotation for `cls` in classmethod
     "ERA001", # commented-out-code (ERA001)#
     "FBT",    #flake8-boolean-trap (FBT)
 
