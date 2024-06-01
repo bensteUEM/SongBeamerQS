@@ -35,3 +35,24 @@ Verse 2
 ##2 2. One line with language marker
 ##1 deutscher text
 ##2 english text
+---
+Verse 3
+Lang 1.1
+Lang 2.1
+##1 Lang 1.2
+Lang 1.3
+Lang 2.2
+---
+Verse 4
+Lang 1.1
+Lang 2.1
+##2 Lang 2.2
+Lang 1.2
+---
+Verse 5
+##2 Lang 2.1
+##2 lang 2.2
+##2 lang 2.3
+Lang 1.1
+Lang 2.4
+Lang 1.2

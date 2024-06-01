@@ -1,6 +1,7 @@
 """This file is used to define SngFile class and somee helper methods related to it's usage."""
 
 import abc
+import itertools
 import logging
 
 logger = logging.getLogger(__name__)
@@ -153,15 +154,83 @@ class SngFileLanguagePart(abc.ABC):
     def validate_language_marker(self, fix: bool = False) -> bool:
         """Validate the language markers used in content.
 
+        checks that the number of langauges in content matches the configuration from header
+
         Args:
-            fix: attempt to fix language marker usage Defaults to False.
+            fix: attempt to fix language marker usage. Defaults to False.
+            * in case there are no language markers and the expected number is greater ##1 and ##2 will be added alternatly
+            * in case some lines do have language markers and others don't the former will apply, skipping lines that already have a language marker
+            * this method MUSTN'T be applied on Psalms because they can have different language orders blocks longer than one line
 
         Returns:
             if language markers match LangCount header
         """
-        if fix:
-            pass
-        # TODO@benste: Implement
-        # https://github.com/bensteUEM/SongBeamerQS/issues/61
-        not_implemented_link = "https://github.com/bensteUEM/SongBeamerQS/issues/61"
-        raise NotImplementedError(not_implemented_link)
+        if self.is_psalm():
+            return self.validate_language_marker_psalm(fix=fix)
+
+        languages_expected = int(self.header["LangCount"])
+
+        # if only single language
+        if len(self.get_content_unique_lang_markers()) == 1 == languages_expected:
+            return True
+
+        language_markers_expected = [f"##{i+1} " for i in range(languages_expected)]
+        valid = True
+        for block in self.content.values():
+            for slide in block[1:]:
+                valid &= self.validate_language_marker_slide(
+                    slide, language_markers_expected=language_markers_expected, fix=fix
+                )
+        return valid
+
+    def validate_language_marker_slide(
+        self, slide: list[str], language_markers_expected: list, fix: bool = False
+    ) -> bool:
+        """More complex cases of validate_language_marker.
+
+        Args:
+            slide: the slide (list of lines) to check
+            language_markers_expected: prepared language markers that should be used
+            fix: attempt to fix language marker usage. Defaults to False.
+
+        Returns:
+            if language markers match LangCount header
+        """
+        # reset iterator for each slide
+        language_markers_iterator = itertools.cycle(language_markers_expected)
+        for index, line in enumerate(slide):
+            # skip lines with existing language marker
+            if line.startswith("##"):
+                continue
+            # add next language marker from iterator
+            if fix:
+                slide[index] = next(language_markers_iterator) + line
+                self.update_editor_because_content_modified()
+                continue
+            return False
+        return True
+
+    def validate_language_marker_psalm(self, fix: bool = False) -> bool:  # noqa: C901
+        """Method used for language_marker validation of psalms.
+
+        Auto Fixing is not possible!
+        Psalms should have 2 or 3 langauges indicated by ##1, ##3 and ##4 but not ##2
+        Arguments:
+            fix: if fix should be attempted - impossible for psalm!
+        Returns:
+            if language markers are as expected
+        """
+        for block in self.content.values():
+            for slide in block[1:]:
+                for line in slide:
+                    if line.startswith(("##1", "##3", "##4")):
+                        continue
+                    if fix:
+                        logger.warning(
+                            "Can't fix '%s' line in (%s) because it's a Psalm",
+                            line,
+                            self.filename,
+                        )
+                    return False
+
+        return True
