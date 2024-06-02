@@ -51,7 +51,14 @@ class TestSNG(unittest.TestCase):
         test_dir = Path("./testData/Test")
         test_filename = "sample_languages.sng"
         song = SngFile(test_dir / test_filename)
-        expected_versemarkers_set = {"Intro", "Verse 1", "Verse 2"}
+        expected_versemarkers_set = {
+            "Intro",
+            "Verse 1",
+            "Verse 2",
+            "Verse 3",
+            "Verse 4",
+            "Verse 5",
+        }
         test_versemarkers_set = set(song.content.keys())
 
         self.assertEqual(expected_versemarkers_set, test_versemarkers_set)
