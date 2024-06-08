@@ -27,6 +27,9 @@ class TestSngLanguage:
             (Path("testData/Test") / "sample_languages.sng", ["##1"]),
             (Path("testData/Test") / "sample_languages.sng", ["##2"]),
             (Path("testData/Test") / "sample_languages.sng", ["##3"]),
+            (Path("testData/Test") / "sample_languages.sng", [3]),
+            (Path("testData/Test") / "sample_languages.sng", [1, 2]),
+            (Path("testData/Test") / "sample_languages.sng", [None, 1, 2]),
         ],
     )
     def test_get_content(self, filename: Path, languages: list[str] | None) -> None:

@@ -14,7 +14,7 @@ class SngFileLanguagePart(abc.ABC):
         abc: placeholder that this class can not be used on it's own - SngFile should be used instead
     """
 
-    def get_content(self, languages: list[str] | None = None) -> dict:
+    def get_content(self, languages: list[str | int] | None = None) -> dict:  # noqa: C901
         """Gets content list of the file.
 
         Does NOT fix number of lines per slide
@@ -22,12 +22,18 @@ class SngFileLanguagePart(abc.ABC):
 
         Arguments:
             languages: optional - list of language lines to keep, defaults to all
+            can be list of str with language marker e.g. ["##1","##2"] or list of simplified int [1,2]
+            use None as list entry to keep parts without language marker
 
         Returns:
             content dict with only the languages indicated in argument
         """
         if not languages:
             languages = [None, "##1", "##2", "##3", "##4"]
+
+        for index, lang in enumerate(languages):
+            if isinstance(lang, int):
+                languages[index] = f"##{lang}"
 
         block: list
         for block in self.content.values():
