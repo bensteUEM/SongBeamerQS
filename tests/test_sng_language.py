@@ -264,9 +264,12 @@ class TestSngLanguage:
         assert not result
 
         problematic_line = "1 Unsere V�ter hofften auf dich;"
-        expected_log = "WARNING  SngFileLanguagePart:SngFileLanguagePart.py:229 "
-        f"Can't fix '{problematic_line}' line"
-        f" in ({sample_song.filename}) because it's a Psalm\n"
+        problematic_code_line = 299
+        expected_log = (
+            f"WARNING  SngFileLanguagePart:SngFileLanguagePart.py:{problematic_code_line} "
+            f"Can't fix '{problematic_line}' line"
+            f" in ({sample_song.filename}) because it's a Psalm\n"
+        )
 
         assert expected_log in caplog.text
 

@@ -46,7 +46,7 @@ SngSongBookPrefix = ["EG", "FJ", "WWDLP"]
 KnownSongBookPrefix = {"EG", "FJ1", "FJ2", "FJ3", "FJ4", "FJ5", "FJ6", "Wwdlp", "test"}
 
 KnownDirectory = (
-    "/home/benste/Documents/Kirchengemeinde Baiersbronn/Beamer/Songbeamer - Songs/"
+    "/home/benste/Dokumente/Kirchengemeinde Baiersbronn/Beamer/Songbeamer - Songs/"
 )
 KnownFolderWithPrefix = {
     "EG Lieder": "EG",
