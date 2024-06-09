@@ -29,6 +29,7 @@ SngFileLanguagePart.py
 * test_get_content
 * test_get_content_unique_lang_markers
 * test_validate_header_language_count
+* test_genereate_content_by_lang
 ---
 Verse 2
 ##1 2. Eine Zeile mit Sprachmarkierung

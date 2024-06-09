@@ -3,6 +3,7 @@
 import abc
 import itertools
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -76,23 +77,85 @@ class SngFileLanguagePart(abc.ABC):
 
         return line.startswith(tuple(languages_no_none))
 
-    def genereate_content_by_lang(self, content: list[list]) -> dict:
+    @classmethod
+    def _line_replace_language(cls, input_line: str, target_lang: int | str) -> str:
+        """Helper which will replace any existing language marker by specified new one.
+
+        Args:
+            input_line: existing line can start with ##1, ##2, ##3, ##4 which will be removed
+            target_lang: "##1" or 1 for lang 1; None for no language marker
+
+        Returns:
+            line with replace language marker
+        """
+        # prepare required target lang str
+        if isinstance(target_lang, str):
+            target_lang += " "
+        elif not target_lang:
+            target_lang = ""
+        elif isinstance(target_lang, int):
+            target_lang = f"##{target_lang} "
+
+        # replace existing language marker
+        if re.match(r"^##[1-4] ", string=input_line):
+            return re.sub(r"^##[1-4] ", target_lang, string=input_line)
+        # otherwise simply add language prefix
+        return target_lang + input_line
+
+    def genereate_content_by_lang(self, contents: list[list | None]) -> dict:  # noqa: C901
         """Generate a new content dict by joining multiple content blocks overwriting the language order.
 
         This will not overwrite content but provide a new content which could be used
+        * if list has only one block no language marker is used.
+        * multiple content blocks provided in list index position +1 is used as language marker
+        * None can be used to skip a language marker e.g. use 1. and 3. only
+
+        content blocks must EXACTLY match structure!
 
         Args:
-            content: list of content blocks, language marker will be overwritten to position in list
+            contents: list of content blocks, language marker will be overwritten to position in list
 
         Returns:
             one content list which includes any provided content block with respective language markers
         """
-        # TODO@benste: Implement
-        # https://github.com/bensteUEM/SongBeamerQS/issues/61
-        not_implemented_link = "https://github.com/bensteUEM/SongBeamerQS/issues/61"
-        raise NotImplementedError(not_implemented_link)
+        # prepare iterator for new language label
+        if len(contents) == 1:
+            language_markers = [""]
+        else:
+            language_markers = []
+            for index, content in enumerate(contents):
+                if content:
+                    language_markers.append(index + 1)
+        language_markers = itertools.cycle(language_markers)
 
-        return content
+        # keep contents with content only (remove None blocks indicating skipped language)
+        contents = [content for content in contents if content]
+
+        # iterate through all content blocks at the same time
+        new_content = {}
+        for verse_label, verse in content.items():
+            new_verse = [verse[0]]
+            for slide_no, slide in enumerate(verse[1:]):
+                new_slide = []
+                for line_no, line in enumerate(slide):
+                    if len(contents) == 1:
+                        new_slide.append(
+                            self._line_replace_language(
+                                input_line=line, target_lang=None
+                            )
+                        )
+                    for content in contents:
+                        new_line = content[verse_label][slide_no + 1][line_no]
+                        next_language = next(language_markers)
+                        new_slide.append(
+                            self._line_replace_language(
+                                input_line=new_line, target_lang=next_language
+                            )
+                        )
+                new_verse.append(new_slide)
+            new_content[verse_label] = new_verse
+
+        return new_content
 
     def get_content_unique_lang_markers(self) -> set:
         """Helper which gets the unique language markers explicitly used in the song.
