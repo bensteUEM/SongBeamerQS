@@ -35,18 +35,19 @@ class SngFileLanguagePart(abc.ABC):
             if isinstance(lang, int):
                 languages[index] = f"##{lang}"
 
-        block: list
-        for block in self.content.values():
-            slide: list
-            for slide in block[1:]:
-                slide[:] = [
+        new_content = {}
+        for verse_label, verse in self.content.items():
+            new_verse = [verse[0]]
+            for slide in verse[1:]:
+                new_slide = [
                     line
                     for line in slide
                     if self._line_matches_languages(line, languages)
                 ]
-                # versemarker ???
+                new_verse.append(new_slide)
+            new_content[verse_label] = new_verse
 
-        return self.content
+        return new_content
 
     @classmethod
     def _line_matches_languages(
