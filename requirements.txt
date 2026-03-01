@@ -7,3 +7,4 @@ jupyter
 ipykernel
 pytest
 pre-commit
+pytz

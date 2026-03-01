@@ -145,9 +145,8 @@ def read_songs_to_df(testing: bool = False) -> pd.DataFrame:
     result_df["filename"] = ""
     result_df["path"] = ""
 
-    for index, value in result_df["SngFile"].items():
-        result_df.loc[(index, "filename")] = value.filename
-        result_df.loc[(index, "path")] = value.path
+    result_df["filename"] = result_df["SngFile"].apply(lambda s: s.filename)
+    result_df["path"] = result_df["SngFile"].apply(lambda s: s.path)
     return result_df
 
 
